@@ -1,0 +1,73 @@
+[{
+    "head": "Midleton - Lift out of order",
+    "text": "The lifts at platform 1 and 2 are temporarily unavailable due to planned works. Iarnród Éireann Irish Rail apologise for the inconvenience caused.",
+    "start": "2026-05-17T00:00:00",
+    "end": "2026-12-28T23:59:00",
+    "locationCodes": ["MDLTN"],
+    "products": ["Train", "Bus"],
+    "eventStops": [{
+        "sStop": "Midleton",
+        "eStop": "Midleton",
+        "direction": "1"
+    }]
+}, {
+    "head": "Rush and Lusk - Lift out of order",
+    "text": "The lifts on platform 1 and 2 are currently out of service. Iarnród Éireann apologise for the inconvenience caused.",
+    "start": "2025-05-14T09:00:00",
+    "end": "2026-12-31T23:59:00",
+    "locationCodes": ["RLUSK"],
+    "products": ["Train"],
+    "eventStops": [{
+        "sStop": "Rush and Lusk",
+        "eStop": "Rush and Lusk",
+        "direction": "1"
+    }]
+}, {
+    "head": "Dublin Pearse - Lift out of order",
+    "text": "The lift at platform 2 is temporarily unavailable due to planned works. Iarnród Éireann Irish Rail apologise for the inconvenience caused.",
+    "start": "2025-12-09T00:00:00",
+    "end": "2026-12-30T23:59:00",
+    "locationCodes": ["PERSE"],
+    "products": ["Train", "DART", "Bus"],
+    "eventStops": [{
+        "sStop": "Dublin Pearse",
+        "eStop": "Dublin Pearse",
+        "direction": "1"
+    }]
+}, {
+    "head": "Ballinasloe - Lift out of order",
+    "text": "The lift at platform 1 is out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused.",
+    "start": "2026-04-07T00:00:00",
+    "end": "2026-12-31T23:59:00",
+    "locationCodes": ["BSLOE"],
+    "products": ["Train"],
+    "eventStops": [{
+        "sStop": "Ballinasloe",
+        "eStop": "Ballinasloe",
+        "direction": "1"
+    }]
+}, {
+    "head": "Athy - Lift out of order",
+    "text": "Lifts at platforms 1 and 2 are currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused.",
+    "start": "2026-07-15T09:00:00",
+    "end": "2026-12-31T23:59:00",
+    "locationCodes": ["ATHY"],
+    "products": ["Train"],
+    "eventStops": [{
+        "sStop": "Athy",
+        "eStop": "Athy",
+        "direction": "1"
+    }]
+}, {
+    "head": "Malahide - Lifts out of order",
+    "text": "The lifts at Malahide Station are currently out of service. Iarnród Éireann Irish Rail apologises for the inconvenience caused.",
+    "start": "2026-08-07T16:40:00",
+    "end": "2026-12-31T23:59:00",
+    "locationCodes": ["MHIDE"],
+    "products": ["Train", "DART"],
+    "eventStops": [{
+        "sStop": "Malahide",
+        "eStop": "Malahide",
+        "direction": "1"
+    }]
+}]

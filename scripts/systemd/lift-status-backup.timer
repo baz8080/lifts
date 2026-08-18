@@ -1,0 +1,11 @@
+[Unit]
+Description=Back up lift-status raw data daily
+Documentation=https://github.com/baz8080/lifts
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=1800
+
+[Install]
+WantedBy=timers.target

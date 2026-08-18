@@ -1,0 +1,41 @@
+[Unit]
+Description=Collect Irish Rail lift-status messages
+Documentation=https://github.com/baz8080/lifts
+# time-sync.target too: a Pi has no RTC, and a catch-up run stamped with a
+# pre-NTP clock lands in the wrong raw/messages-YYYYMMDD.jsonl file, which is
+# what rebuild replays in order.
+After=network-online.target time-sync.target
+Wants=network-online.target time-sync.target
+
+[Service]
+Type=oneshot
+User=lift-status
+Group=lift-status
+
+# systemd creates /var/lib/lift-status with the right ownership before every
+# run, so there is no directory-permission setup to get wrong.
+StateDirectory=lift-status
+Environment=LIFT_STATUS_DATA_DIR=/var/lib/lift-status
+
+# Carries LIFT_STATUS_API_KEY (required - the key is not in the repository)
+# and LIFT_STATUS_ALERT_WEBHOOK. chmod 600, owned by root. The leading '-'
+# allows the file not to exist, in which case the run fails loudly with the
+# "NO API KEY CONFIGURED" banner rather than collecting nothing in silence.
+EnvironmentFile=-/etc/lift-status.env
+
+WorkingDirectory=/opt/lift-status
+ExecStart=/usr/bin/python3 -m lift_status poll
+
+TimeoutStartSec=60
+
+# It reads its own code and writes one state directory. Nothing else.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target
