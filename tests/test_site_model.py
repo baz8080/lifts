@@ -209,6 +209,25 @@ class TestMergeEdits(SiteModelCase):
         self.assertEqual(len(outages), 2)
         self.assertEqual([o.ongoing for o in outages], [True, False])  # newest first
 
+    def test_a_reissue_merges_past_a_second_notice_still_up_at_the_station(self):
+        # Two lifts listed at one station; one notice is reworded. The other,
+        # still open, sorts between the closed notice and its replacement -
+        # matching only against the newest chain would leave them unmerged.
+        b = lift(text="The lift at platform 2 is currently out of service.")
+        a = lift(
+            text="The lift at platform 1 is currently out of service.", start="2026-08-02T09:00:00"
+        )
+        edit = T0 + timedelta(minutes=30)
+        b2 = dict(b, head="Athy - Lifts out of order")
+        self.poll(T0, [b, a])
+        self.poll(edit, [a, b2])
+        outages = self.load()
+        self.assertEqual(len(outages), 2)
+        merged = [o for o in outages if o.updates]
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0].first_seen, T0)
+        self.assertEqual(merged[0].updates[0][0], edit)
+
     def test_two_notices_up_at_once_at_one_station_stay_two(self):
         a = lift(text="The lift at platform 1 is currently out of service.")
         b = lift(
@@ -285,6 +304,25 @@ class TestStationMonth(SiteModelCase):
         self.assertEqual(model.national_month(outages, "2026-08", self.until)["station_days"], 1)
         self.assertEqual(len(render.shard(outages, ["2026-08"], self.until)["2026-08"]), 1)
 
+    def test_a_reissue_does_not_repaint_the_days_before_it(self):
+        # A planned-works notice replaced in the same poll by a fault: the days
+        # already observed as planned works stay blue, and only the days after
+        # the swap are red. The outage still reports the newest works flag.
+        fault = lift(planned=False, head="Athy - Lifts out of order")
+        self.poll(T0, [lift(planned=True)])
+        swap = T0 + timedelta(days=2)
+        self.poll(swap, [lift(planned=True)])
+        self.poll(swap + timedelta(minutes=30), [fault])
+        self.poll(swap + timedelta(days=1), [fault])
+        outages = self.load()
+        (o,) = outages
+        self.assertFalse(o.planned)
+        s = self.cells(outages)
+        self.assertEqual(s["cells"][7:9], "55")  # 8-9 Aug: planned works only
+        # 10 Aug carries both notices and a fault beats planned works; 11 Aug
+        # is the fault alone. Before the fix all five days read as faults.
+        self.assertEqual(s["cells"][9:11], "11")
+
     def test_ongoing_is_only_true_in_the_horizons_month(self):
         self.poll(T0, [lift()])
         self.poll(datetime(2026, 9, 2, tzinfo=timezone.utc), [lift()])
@@ -309,11 +347,13 @@ class TestStationMonth(SiteModelCase):
 
 class TestPartialDays(unittest.TestCase):
     def test_the_first_and_last_days_are_flagged(self):
+        # Dublin days, like the bars: 23:01 UTC is already the 18th in Dublin.
         until = datetime(2026, 8, 17, 23, 1, tzinfo=timezone.utc)
-        self.assertEqual(model.partial_days(until), ["2026-08-08", "2026-08-17"])
+        self.assertEqual(model.partial_days(until), ["2026-08-08", "2026-08-18"])
 
     def test_a_horizon_on_midnight_flags_the_day_before(self):
-        until = datetime(2026, 8, 18, 0, 0, tzinfo=timezone.utc)
+        # Midnight *in Dublin*, which in August is 23:00 the day before in UTC.
+        until = datetime(2026, 8, 17, 23, 0, tzinfo=timezone.utc)
         self.assertEqual(model.partial_days(until), ["2026-08-08", "2026-08-17"])
 
 

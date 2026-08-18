@@ -9,6 +9,7 @@ caught against data that has every wrinkle the synthetic tests do not.
 
 from __future__ import annotations
 
+import calendar
 import json
 import os
 import sqlite3
@@ -78,8 +79,8 @@ class TestRealCorpus(unittest.TestCase):
         for code, per_month in self.data["stats"].items():
             self.assertIn(code, self.data["stations"])
             for ym, m in per_month.items():
-                lo, hi = model.month_bounds(ym)
-                self.assertEqual(len(m[0]), (hi - lo).days)
+                year, month = int(ym[:4]), int(ym[5:7])
+                self.assertEqual(len(m[0]), calendar.monthrange(year, month)[1])
                 self.assertGreater(m[1] + m[2], 0)
 
     def test_the_first_day_of_collection_is_no_data_before_it_and_data_after(self):
@@ -89,7 +90,7 @@ class TestRealCorpus(unittest.TestCase):
 
     def test_initial_load_is_inside_the_budget(self):
         total, _ = render.size_report(self.site)
-        self.assertLess(total, 500 * 1024)
+        self.assertLess(total, render.BUDGET_BYTES)
 
 
 if __name__ == "__main__":

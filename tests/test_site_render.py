@@ -76,7 +76,7 @@ class TestWrite(SiteModelCase):
 
     def test_initial_load_is_inside_the_budget(self):
         total, report = render.size_report(self.site)
-        self.assertLess(total, 500 * 1024)
+        self.assertLess(total, render.BUDGET_BYTES)
         self.assertIn("initial load", report)
 
     def test_index_html_is_the_template_with_its_canonical_filled(self):
@@ -121,7 +121,7 @@ class TestWords(unittest.TestCase):
 
     def test_the_summary_keeps_the_two_clocks_apart(self):
         bits = render.summary_bits(
-            "2026-08-13T11:30", "2026-08-14T10:02", 0, "2026-05-05T00:00", "2026-12-31T23:59"
+            "2026-08-13T11:30", "2026-08-14T10:02", 0, "2026-05-05T00:00", "2026-12-31T23:59", 100
         )
         self.assertEqual(bits[0], "first listed 13 Aug 2026, 11:30")
         self.assertEqual(bits[1], "no longer listed 14 Aug 2026, 10:02")
@@ -142,6 +142,15 @@ class TestMonths(unittest.TestCase):
         self.assertEqual(
             model.month_list(model.COLLECTION_START, datetime(2026, 10, 2, tzinfo=timezone.utc)),
             ["2026-08", "2026-09", "2026-10"],
+        )
+
+    def test_a_month_arrives_at_its_first_midnight_not_at_the_start_time(self):
+        # COLLECTION_START is 21:30, and the Pages build runs at 05:40. Carrying
+        # that time of day forward hid the new month from the first build of
+        # every month, and with it every notice first listed that morning.
+        build_clock = datetime(2026, 9, 1, 5, 40, tzinfo=timezone.utc)
+        self.assertEqual(
+            model.month_list(model.COLLECTION_START, build_clock), ["2026-08", "2026-09"]
         )
 
 

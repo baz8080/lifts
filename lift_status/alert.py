@@ -169,7 +169,10 @@ def _suppressed(message: str) -> bool:
         sent_at = float(state.get("sent_at", 0))
         if state.get("digest") == digest and now - sent_at < ALERT_REPEAT_SECONDS:
             return True
-    except (OSError, ValueError, TypeError):
+    except (OSError, ValueError, TypeError, AttributeError):
+        # AttributeError: the file parsed but is not an object (`null`, a list,
+        # a bare string), so .get is not there. Best-effort means send, not die
+        # here - notify()'s own guard starts after this call.
         pass
     try:
         path.write_text(json.dumps({"digest": digest, "sent_at": now}), encoding="utf-8")

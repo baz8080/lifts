@@ -19,6 +19,10 @@ from pathlib import Path
 DB_FILENAME = "lift_status.db"
 RAW_DIRNAME = "raw"
 
+# Both entry points read this. One name, so `lift_status rebuild` and
+# `lift_site` with no flags can never look in two different places.
+DEFAULT_DATA_DIR = os.environ.get("LIFT_STATUS_DATA_DIR", "/data")
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

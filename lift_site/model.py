@@ -19,12 +19,15 @@ was not there. See notes/site.md for the numbers behind that.
 
 from __future__ import annotations
 
+import calendar
 import json
 import re
 import sqlite3
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from typing import NamedTuple
+
+from lift_status.parse import DUBLIN
 
 # The first poll landed at 2026-08-08T21:30:55Z. The feed only ever shows the
 # notices currently up, so nothing before this instant exists anywhere and days
@@ -67,18 +70,31 @@ def parse_utc(value):
     return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 
 
+def _local(dt):
+    """An instant as Dublin wall-clock, which is the clock the site files by."""
+    return dt.astimezone(DUBLIN)
+
+
+def _month_start(dt):
+    """The Dublin midnight that begins `dt`'s month."""
+    return _local(dt).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+
 def month_bounds(ym):
     year, month = int(ym[:4]), int(ym[5:7])
-    lo = datetime(year, month, 1, tzinfo=timezone.utc)
-    hi = datetime(year + (month == 12), month % 12 + 1, 1, tzinfo=timezone.utc)
+    lo = datetime(year, month, 1, tzinfo=DUBLIN)
+    hi = datetime(year + (month == 12), month % 12 + 1, 1, tzinfo=DUBLIN)
     return lo, hi
 
 
 def month_list(start, end):
-    months, cur = [], start.replace(day=1)
+    # From the month `start` falls in, by Dublin months. The time of day is
+    # dropped deliberately: keeping COLLECTION_START's 21:30 would hide a month
+    # from every build that ran earlier in the day than that on the 1st.
+    months, cur = [], _month_start(start)
     while cur <= end:
         months.append(f"{cur.year:04d}-{cur.month:02d}")
-        cur = (cur + timedelta(days=32)).replace(day=1)
+        cur = _month_start(cur + timedelta(days=32))
     return months
 
 
@@ -148,6 +164,11 @@ class Outage(NamedTuple):
     head: str
     text: str | None
     updates: tuple  # ((when, head, text), ...) for notices folded in by merge_edits
+    # ((first_seen, end, planned), ...), one per notice folded in. A merged
+    # outage takes its wording and works flag from the newest notice, but a day
+    # is coloured by what was listed *that* day - so a planned-works notice
+    # replaced by a fault does not repaint the planned days red.
+    segments: tuple = ()
 
 
 def observed_until(conn):
@@ -158,14 +179,15 @@ def observed_until(conn):
     Deliberately not `now` - the build clock keeps moving whether or not the
     Raspberry Pi is still polling, and a site that treats "no data" as "in
     service" publishes a clean bill of health for days nobody watched.
+
+    Nothing falls back to the notices: a message row is only ever written
+    between `begin_run_success` (which stamps outcome='ok') and `finalize_run`,
+    in one transaction, so a message can never outlive the ok run that saw it.
     """
     row = conn.execute(
         "SELECT MAX(started_at_utc) AS t FROM runs WHERE outcome = 'ok'"
     ).fetchone()
-    if row and row["t"]:
-        return parse_utc(row["t"])
-    row = conn.execute("SELECT MAX(last_seen_at_utc) AS t FROM messages").fetchone()
-    return parse_utc(row["t"]) if row and row["t"] else None
+    return parse_utc(row["t"])
 
 
 def _outage_from_row(row, until):
@@ -182,12 +204,13 @@ def _outage_from_row(row, until):
         # A closed row always has closed_at_utc; guard anyway rather than
         # publish an outage with no end.
         end = parse_utc(row["last_seen_at_utc"])
+    planned = is_planned(row["text_raw"])
     return Outage(
         id=row["id"],
         code=code,
         station=station,
         kind=kind,
-        planned=is_planned(row["text_raw"]),
+        planned=planned,
         start=start,
         first_seen=first_seen,
         end=end,
@@ -196,6 +219,7 @@ def _outage_from_row(row, until):
         head=row["head"],
         text=row["text_raw"],
         updates=(),
+        segments=((first_seen, end, planned),),
     )
 
 
@@ -220,15 +244,20 @@ def merge_edits(outages):
     merged = []
     for group in by_station.values():
         group.sort(key=lambda o: (o.first_seen, o.id))
-        chain = [group[0]]
-        for o in group[1:]:
-            prev = chain[-1]
-            if not prev.ongoing and o.first_seen == prev.end:
-                chain.append(o)
-                continue
-            merged.append(_fold(chain))
-            chain = [o]
-        merged.append(_fold(chain))
+        # Every chain stays open for a successor, not just the most recent one:
+        # a second notice still listed at the station (one lift per notice)
+        # sorts between a closed notice and its replacement, and comparing only
+        # against the last chain would leave that replacement unmerged.
+        chains = []
+        for o in group:
+            for chain in chains:
+                prev = chain[-1]
+                if not prev.ongoing and o.first_seen == prev.end:
+                    chain.append(o)
+                    break
+            else:
+                chains.append([o])
+        merged.extend(_fold(chain) for chain in chains)
     merged.sort(key=lambda o: (o.first_seen, o.id), reverse=True)
     return merged
 
@@ -247,6 +276,7 @@ def _fold(chain):
         head=last.head,
         text=last.text,
         updates=tuple((o.first_seen, o.head, o.text) for o in chain[1:]),
+        segments=tuple(seg for o in chain for seg in o.segments),
     )
 
 
@@ -286,7 +316,7 @@ def partial_days(until):
     that failed late on the last day reads as a quiet day. The colour still says
     what was seen; these dates let the page say the day was short.
     """
-    days = {COLLECTION_START.date(), (until - timedelta(microseconds=1)).date()}
+    days = {_local(COLLECTION_START).date(), _local(until - timedelta(microseconds=1)).date()}
     return sorted(d.isoformat() for d in days)
 
 
@@ -311,17 +341,38 @@ def listed_in(o, lo, hi):
     return o.ongoing and o.first_seen == o.end == hi
 
 
-def listed_days(o, lo, hi):
-    """The UTC dates on which the notice was listed inside [lo, hi)."""
-    cur, stop = max(o.first_seen, lo), min(o.end, hi)
-    if o.ongoing and cur == stop:
+def _span_days(start, end, lo, hi, ongoing):
+    """The Dublin dates covered by [start, end) inside [lo, hi).
+
+    Dublin, not UTC: the outage's own text is rendered in Dublin wall-clock
+    (see render._short), so bucketing by UTC date would colour 31 August for a
+    notice whose summary says it was first listed at 00:15 on 1 September.
+    """
+    cur, stop = max(start, lo), min(end, hi)
+    if ongoing and cur == stop:
         # Seen at the last poll and never before: on the feed at the horizon,
         # for no measurable time. That is still a listing on that day.
-        yield cur.date()
+        yield _local(cur).date()
         return
     while cur < stop:
-        yield cur.date()
-        cur = (cur + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        yield _local(cur).date()
+        cur = (_local(cur) + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+
+
+def listed_day_flags(o, lo, hi):
+    """(date, planned) per day listed inside [lo, hi), by the notice of that day."""
+    last = len(o.segments) - 1
+    for i, (seg_start, seg_end, seg_planned) in enumerate(o.segments):
+        for day in _span_days(seg_start, seg_end, lo, hi, o.ongoing and i == last):
+            yield day, seg_planned
+
+
+def listed_days(o, lo, hi):
+    """The Dublin dates on which the notice was listed inside [lo, hi)."""
+    for day, _ in listed_day_flags(o, lo, hi):
+        yield day
 
 
 def _day_code(has_lift, has_escalator, has_planned):
@@ -344,7 +395,7 @@ def station_month(outages, ym, now, until):
     still in the future; everything measured ends at `until`.
     """
     lo, hi = observed_window(ym, until)
-    month_lo, month_hi = month_bounds(ym)
+    month_lo = month_bounds(ym)[0]
 
     faults = planned = lifts = escalators = 0
     ongoing = False
@@ -365,9 +416,9 @@ def station_month(outages, ym, now, until):
         # only month an open notice can overlap the end of.
         ongoing = ongoing or (o.ongoing and o.end == hi)
 
-        for day in listed_days(o, lo, hi):
+        for day, day_planned in listed_day_flags(o, lo, hi):
             flags = per_day[day]
-            if o.planned:
+            if day_planned:
                 flags[2] = True
             elif o.kind == "lift":
                 flags[0] = True
@@ -376,9 +427,11 @@ def station_month(outages, ym, now, until):
 
     cells = []
     days_out = 0
-    for d in range(1, (month_hi - month_lo).days + 1):
+    # calendar, not (month_hi - month_lo).days: the March and October months
+    # are 23 and 25 hours short of a whole number of days in Dublin.
+    for d in range(1, calendar.monthrange(month_lo.year, month_lo.month)[1] + 1):
         day = date(month_lo.year, month_lo.month, d)
-        day_lo = datetime(day.year, day.month, day.day, tzinfo=timezone.utc)
+        day_lo = datetime(day.year, day.month, day.day, tzinfo=DUBLIN)
         if day_lo >= now:
             cells.append(DAY_FUTURE)
         elif day_lo + timedelta(days=1) <= COLLECTION_START or day_lo >= until:

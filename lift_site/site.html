@@ -284,6 +284,8 @@ var CELL = {
   5: "planned works", 8: "no data collected for this day", 9: "still to come"
 };
 var M3 = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var MFULL = ["January","February","March","April","May","June",
+             "July","August","September","October","November","December"];
 
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -291,6 +293,9 @@ function esc(s) {
   });
 }
 function monthLabel(ym) { return M3[+ym.slice(5, 7) - 1] + " " + ym.slice(0, 4); }
+// The station cards say "August 2026", matching s/<slug>.html word for word;
+// only the month tabs stay abbreviated, where the width is the constraint.
+function monthLabelLong(ym) { return MFULL[+ym.slice(5, 7) - 1] + " " + ym.slice(0, 4); }
 function num(n) { return n.toLocaleString("en-IE"); }
 function plural(n, word) { return num(n) + " " + word + (n === 1 ? "" : "s"); }
 function fmtDays(n) {
@@ -430,9 +435,9 @@ function renderStation() {
     var inner;
     if (loading) inner = '<div class="empty">Loading…</div>';
     else if (failed) inner = '<div class="empty">Could not load the outages for ' + esc(name) + ". Try reloading the page.</div>";
-    else if (!cases.length) inner = '<div class="empty">Nothing listed for ' + esc(name) + " in " + monthLabel(ym) + ".</div>";
+    else if (!cases.length) inner = '<div class="empty">Nothing listed for ' + esc(name) + " in " + monthLabelLong(ym) + ".</div>";
     else inner = cases.map(caseHtml).join("");
-    return '<div class="card"><h3>' + monthLabel(ym) + "</h3>" +
+    return '<div class="card"><h3>' + monthLabelLong(ym) + "</h3>" +
       '<div class="bar tall">' + dayCells(cellsFor(code, ym), ym) + "</div>" +
       '<div class="daycap"></div>' + inner + "</div>";
   }).join("");
@@ -440,18 +445,18 @@ function renderStation() {
   el.innerHTML = head + body;
 }
 
-function summaryBits(firstSeen, end, ongoing, start, listedEnd) {
+function summaryBits(firstSeen, end, ongoing, start, listedEnd, leadDays) {
   // Two clocks, kept apart in the prose: when the notice was listed and taken
   // down (observed here), and the start Irish Rail wrote on it (their claim).
   // Mirrored line for line in render.summary_bits() for the static pages.
+  // leadDays is computed in case_record from offset-aware instants: these
+  // strings are Dublin wall-clock with no offset, so subtracting them loses
+  // the hour at the October clock change.
   var bits = [firstSeen <= START_ISO ? "listed when collection began" : "first listed " + when(firstSeen)];
   bits.push(ongoing ? "still listed at the last poll" : "no longer listed " + when(end));
   if (start) {
     var claim = "Irish Rail's notice dates it from " + when(start);
-    if (start < firstSeen.slice(0, 10)) {
-      var days = Math.floor((new Date(firstSeen + "Z") - new Date(start + "Z")) / 86400000);
-      claim += " — " + fmtDays(days) + " before it was listed";
-    }
+    if (leadDays) claim += " — " + fmtDays(leadDays) + " before it was listed";
     bits.push(claim);
   }
   if (listedEnd) bits.push("listed end " + when(listedEnd));
@@ -459,10 +464,10 @@ function summaryBits(firstSeen, end, ongoing, start, listedEnd) {
 }
 
 function caseHtml(k) {
-  // [id, kind, planned, firstSeen, end, ongoing, start, listedEnd, head, text, updates]
+  // [id, kind, planned, firstSeen, end, ongoing, start, listedEnd, head, text, updates, hours, leadDays]
   var kind = k[1], planned = k[2], firstSeen = k[3], end = k[4], ongoing = k[5], start = k[6], listedEnd = k[7], text = k[9], ups = k[10];
-  var dur = firstSeen && end ? (new Date(end + "Z") - new Date(firstSeen + "Z")) / 3600000 : null;
-  var bits = summaryBits(firstSeen, end, ongoing, start, listedEnd);
+  var dur = k[11];  // computed in case_record, offset-aware
+  var bits = summaryBits(firstSeen, end, ongoing, start, listedEnd, k[12]);
   return '<div class="case" id="m' + k[0] + '"><div class="top">' +
     '<span class="where">' + esc(KIND[kind] || kind) + "</span>" +
     '<span class="tag ' + (planned ? "tag-p" : "tag-f") + '">' + (planned ? "Planned works" : "Out of service") + "</span>" +
@@ -508,7 +513,11 @@ function setMonth(m) { curMonth = m; render(); }
 
 function route() {
   var m = location.hash.match(/^#station\/(.+)$/);
-  curStation = m ? decodeURIComponent(m[1]) : null;
+  // A truncated or mangled link ("#station/%") makes decodeURIComponent throw,
+  // and route() is the last thing boot() does - an unguarded throw here leaves
+  // the reader looking at "Loading…" with no way back but editing the URL.
+  try { curStation = m ? decodeURIComponent(m[1]) : null; }
+  catch (e) { curStation = null; }
   if (curStation && !D.stations[curStation]) curStation = null;
   if (curStation) loadStation(curStation, render);
   render();

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import html
 import json
+import math
 import unicodedata
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -35,6 +36,10 @@ TITLE, DESC, BODY = "<!--TITLE-->", "<!--DESC-->", "<!--BODY-->"
 # handover; past it, something has stopped and the reader should be told rather
 # than left reading the day bars as a quiet week.
 STALE_AFTER = timedelta(hours=24)
+
+# What a reader downloads before touching anything. Named once: the build
+# prints it, the build warns past it, and the render tests assert it.
+BUDGET_BYTES = 500 * 1024
 
 MONTH_NAMES = (
     "January", "February", "March", "April", "May", "June",
@@ -112,9 +117,11 @@ def build(outages, now, until):
         for ym in months:
             s = model.station_month(rows, ym, now, until)
             if s["faults"] or s["planned"]:
+                # Five fields, and no more: the page reads m[0]..m[4], and
+                # every byte here is in the initial load for every station.
                 per_month[ym] = [
                     s["cells"], s["faults"], s["planned"], s["days_out"],
-                    1 if s["ongoing"] else 0, s["lifts"], s["escalators"],
+                    1 if s["ongoing"] else 0,
                 ]
         stats[code] = per_month
 
@@ -159,7 +166,15 @@ def build(outages, now, until):
 
 
 def case_record(o):
-    """One outage, as compact as it can be while staying readable in the file."""
+    """One outage, as compact as it can be while staying readable in the file.
+
+    The two durations are computed here, from the offset-aware instants, and
+    shipped: `_short` renders Dublin wall-clock without an offset, so anything
+    subtracting those strings loses the hour at the October clock change.
+    """
+    lead = None
+    if o.start.astimezone(DUBLIN).date() < o.first_seen.astimezone(DUBLIN).date():
+        lead = (o.first_seen - o.start).days
     return [
         o.id,
         o.kind,
@@ -172,6 +187,8 @@ def case_record(o):
         o.head,
         o.text or "",
         [[_short(when), head, text or ""] for when, head, text in o.updates],
+        round((o.end - o.first_seen).total_seconds() / 3600.0, 4),
+        lead,
     ]
 
 
@@ -200,12 +217,18 @@ def _when(ts):
     return f"{dt.day} {MONTH_NAMES[dt.month - 1][:3]} {dt.year}, {dt:%H:%M}"
 
 
+def _half_up(x):
+    # JS Math.round rounds a .5 up; Python's round() goes to even. Mirrored in
+    # site.html, so a 12.5 h listing has to read "13 h" on both, not 12 and 13.
+    return math.floor(x + 0.5)
+
+
 def _hours(h):
     if h < 1:
-        return f"{round(h * 60)} min"
+        return f"{_half_up(h * 60)} min"
     if h < 48:
-        return f"{h:.1f} h" if h < 10 else f"{round(h)} h"
-    return _days(round(h / 24))
+        return f"{h:.1f} h" if h < 10 else f"{_half_up(h)} h"
+    return _days(_half_up(h / 24))
 
 
 def _days(n):
@@ -219,11 +242,12 @@ def _days(n):
 COLLECTION_START_SHORT = _short(model.COLLECTION_START)
 
 
-def summary_bits(first_seen, end, ongoing, start, listed_end):
+def summary_bits(first_seen, end, ongoing, start, listed_end, lead_days=None):
     """The words under an outage. Mirrored line for line in site.html's caseHtml().
 
     Two clocks, kept apart in the prose: when the notice was listed and taken
     down (observed here), and the start Irish Rail wrote on it (their claim).
+    `lead_days` comes from case_record, computed on the offset-aware instants.
     """
     bits = [
         "listed when collection began"
@@ -233,9 +257,8 @@ def summary_bits(first_seen, end, ongoing, start, listed_end):
     bits.append("still listed at the last poll" if ongoing else f"no longer listed {_when(end)}")
     if start:
         claim = f"Irish Rail's notice dates it from {_when(start)}"
-        if start < first_seen[:10]:
-            days = (datetime.fromisoformat(first_seen) - datetime.fromisoformat(start)).days
-            claim += f" — {_days(days)} before it was listed"
+        if lead_days:
+            claim += f" — {_days(lead_days)} before it was listed"
         bits.append(claim)
     if listed_end:
         bits.append(f"listed end {_when(listed_end)}")
@@ -244,14 +267,12 @@ def summary_bits(first_seen, end, ongoing, start, listed_end):
 
 def _case_html(k):
     """The same markup site.html's caseHtml() builds, for the static page."""
-    kind, planned, first_seen, end, ongoing, start, listed_end, head, text, updates = k[1:]
+    (kind, planned, first_seen, end, ongoing, start, listed_end,
+     head, text, updates, hours, lead_days) = k[1:]
     span = ""
-    if first_seen and end:
-        hours = (
-            datetime.fromisoformat(end) - datetime.fromisoformat(first_seen)
-        ).total_seconds() / 3600.0
+    if hours is not None:
         span = "listed " + _hours(hours) + (" so far" if ongoing else "")
-    bits = summary_bits(first_seen, end, ongoing, start, listed_end)
+    bits = summary_bits(first_seen, end, ongoing, start, listed_end, lead_days)
     return "".join(
         [
             f'<div class="case" id="m{k[0]}"><div class="top">',
@@ -298,7 +319,11 @@ def _day_cells(cells, ym, partial):
         cap = f"{day}: {DAY_LABELS[ch]}"
         if ch not in "89" and day in partial:
             cap += PARTIAL_NOTE
-        out.append(f'<i class="b{ch}" title="{html.escape(cap)}"></i>')
+        # data-cap as well as title, and station.html has the same .daycap sink
+        # the app uses: a title tooltip is nothing at all on a phone, and these
+        # are the pages a search engine hands to one.
+        esc_cap = html.escape(cap)
+        out.append(f'<i class="b{ch}" title="{esc_cap}" data-cap="{esc_cap}"></i>')
     return "".join(out)
 
 
@@ -337,6 +362,7 @@ def station_page(code, data, by_month):
         cases = by_month.get(ym, [])
         body.append(f'<div class="card"><h2>{month_label(ym)}</h2>')
         body.append(f'<div class="bar">{_day_cells(cells, ym, data["partial"])}</div>')
+        body.append('<div class="daycap"></div>')
         if cases:
             body.append("".join(_case_html(k) for k in cases))
         else:
@@ -426,7 +452,7 @@ def size_report(site_dir):
         f"  {'index.html':<16}{initial['index.html'] / 1024:8.1f} KB",
         f"  {'data.js':<16}{initial['data.js'] / 1024:8.1f} KB",
         f"  {'initial load':<16}{sum(initial.values()) / 1024:8.1f} KB"
-        f"   (budget 500.0 KB)",
+        f"   (budget {BUDGET_BYTES / 1024:.1f} KB)",
         f"  {'station pages':<16}{sum(p.stat().st_size for p in pages) / 1024:8.1f} KB"
         f"   ({len(pages)} files)",
     ]

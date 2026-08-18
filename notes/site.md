@@ -94,19 +94,43 @@ seen at that very poll is listed for zero minutes - `first_seen`, `end` and
 the horizon coincide - and `listed_in` / `listed_days` count it in the
 horizon's month so the headline, the bar and the shard agree.
 
-### Displayed instants are Dublin wall-clock
+### Displayed instants are Dublin wall-clock, and so are the day buckets
 
 The start Irish Rail writes is a Dublin time with no offset ("since 5 May,
 00:00"). Rendered in UTC it becomes "4 May, 23:00", which misquotes them. So
 every timestamp on an outage is shown in Europe/Dublin; the build and horizon
 stamps stay UTC and say so.
 
+The day cells, the month filing and `partial_days` are bucketed in Dublin too
+— **2026-08-18**, after they were not. Bucketing by UTC date while printing
+Dublin wall-clock split them for four hours a day in summer: a notice first
+seen at the 23:15 UTC poll on 31 August lit the 31 August cell while its own
+summary read "first listed 1 Sep 2026, 00:15", and at a month boundary it was
+filed under August and absent from September. Two conventions for one date is
+a bug in either direction; the site says Dublin everywhere a reader can see.
+The cost is that a month is no longer a whole number of days — March is 23
+hours short and October 25 long — so the cell count comes from
+`calendar.monthrange`, never from subtracting the bounds.
+
+Durations are computed from the offset-aware instants and shipped in the case
+record (`hours`, `lead_days`) rather than recomputed from the rendered
+strings, which carry no offset: subtracting them loses the hour at the October
+change, and did.
+
 ## Open
 
-- **Grace misses.** `LIFT_STATUS_GRACE_MISSES` is 1, and a reopened notice has
-  its `closed_at_utc` nulled, so a one-poll flap reads as continuous. One
-  reopen exists (a delay notice, not a lift). If lift notices start flapping,
-  either raise the grace or teach the site to read the reopen count.
+- **A reopened notice publishes its gap as listed.** `LIFT_STATUS_GRACE_MISSES`
+  is 1, and a notice that vanishes and comes back *unchanged* reopens the same
+  row: `closed_at_utc` is nulled and `first_seen_at_utc` kept, so the site
+  paints the whole absence as listed — days that were polled every 30 minutes
+  and showed nothing. Any gap length qualifies, not just a one-poll flap.
+  The site cannot fix this alone: once the row is reopened the gap is nowhere
+  in `messages`, and `identity_key` is UNIQUE so the re-listing cannot become
+  its own row. It needs the collector to record the re-listing instant (an
+  intervals table, or a `previous_closed_at_utc` column) and the site to build
+  one outage per interval. One reopen exists so far, a delay notice, not a
+  lift. `merge_edits` already handles the *edited*-notice case; this is the
+  unchanged-notice one.
 - **Same-day merge tolerance.** The reissue rule is exact-poll. If Irish Rail
   turns out to reissue notices with a poll's gap, revisit with numbers.
 - **The 131 unidentifiable items** are all delay notices with empty

@@ -3,17 +3,29 @@
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from lift_status.store import DB_FILENAME
+from lift_status.store import DB_FILENAME, DEFAULT_DATA_DIR
 
 from . import model, render
 
-DEFAULT_DATA_DIR = os.environ.get("LIFT_STATUS_DATA_DIR", "data")
 DEFAULT_OUT = "out/site"
+
+
+def _parse_now(value):
+    """An ISO timestamp from the command line, as UTC.
+
+    Accepts the trailing `Z` the collector itself writes - `fromisoformat` only
+    learned it in 3.11, and this has to run on the 3.9 floor - and converts an
+    explicit offset rather than overwriting it.
+    """
+    text = value.strip()
+    if text.endswith(("Z", "z")):
+        text = text[:-1] + "+00:00"
+    dt = datetime.fromisoformat(text)
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
 
 
 def main(argv=None) -> int:
@@ -42,11 +54,7 @@ def main(argv=None) -> int:
         )
         return 1
 
-    now = (
-        datetime.fromisoformat(args.now).replace(tzinfo=timezone.utc)
-        if args.now
-        else datetime.now(timezone.utc)
-    )
+    now = _parse_now(args.now) if args.now else datetime.now(timezone.utc)
 
     outages, until = model.load_outages(db_path, now)
     if not outages:
@@ -63,7 +71,7 @@ def main(argv=None) -> int:
     # between the two is a collector that has stopped rather than a quiet week.
     lag = now - until
     print(f"  data covers up to {until:%Y-%m-%d %H:%M}Z ({lag.total_seconds() / 3600:.1f}h behind)")
-    if lag > render.STALE_AFTER:
+    if data["stale"]:
         print(
             "  WARNING: the collected data is stale; days past the horizon "
             "are published as no-data",
@@ -76,8 +84,11 @@ def main(argv=None) -> int:
     )
     total, report = render.size_report(args.out)
     print(report)
-    if total > 500 * 1024:
-        print("  WARNING: initial load is over the 500 KB budget", file=sys.stderr)
+    if total > render.BUDGET_BYTES:
+        print(
+            f"  WARNING: initial load is over the {render.BUDGET_BYTES // 1024} KB budget",
+            file=sys.stderr,
+        )
     return 0
 
 
