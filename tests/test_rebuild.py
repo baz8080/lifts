@@ -65,7 +65,9 @@ class TestRebuildRoundTrip(unittest.TestCase):
 
         # 3. B disappears -> closes. A duplicate of A (identical) is also
         #    present and must not be double-counted.
-        poll.run_poll(self.data_dir, client=FakeClient([(200, json.dumps([a_updated, dict(a_updated)]))]))
+        poll.run_poll(
+            self.data_dir, client=FakeClient([(200, json.dumps([a_updated, dict(a_updated)]))])
+        )
 
         # 4. A transient auth failure - must leave A/B state completely alone.
         poll.run_poll(self.data_dir, client=FakeClient([AuthError("401", status=401)]))
@@ -90,7 +92,10 @@ class TestRebuildRoundTrip(unittest.TestCase):
         # 8. Station C opens fresh, with an unexpected extra field (schema
         #    drift), still tracked despite the drift.
         c_drifted = dict(STATION_C, newField="surprise")
-        poll.run_poll(self.data_dir, client=FakeClient([(200, json.dumps([a_updated, STATION_B, c_drifted]))]))
+        poll.run_poll(
+            self.data_dir,
+            client=FakeClient([(200, json.dumps([a_updated, STATION_B, c_drifted]))]),
+        )
 
         before = _snapshot(self.data_dir)
 

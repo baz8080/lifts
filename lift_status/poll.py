@@ -40,12 +40,23 @@ class ApplyResult:
     diff: dict | None = None
 
 
-def apply_response(store: Store, run_uuid: str, fetched_at: str, http_status, body_text, network_error) -> ApplyResult:
+def apply_response(
+    store: Store, run_uuid: str, fetched_at: str, http_status, body_text, network_error
+) -> ApplyResult:
     """Classify one raw response and, only if it's genuinely usable, diff it.
 
     Used identically by a live poll run and by `rebuild` replaying the JSONL
     log, so the two can never classify the same response differently.
     """
+
+    def failed(outcome, detail, exit_code):
+        store.record_run_failure(
+            run_uuid, fetched_at, fetched_at, outcome, http_status, detail, exit_code
+        )
+        return ApplyResult(
+            outcome=outcome, exit_code=exit_code, http_status=http_status, error_detail=detail
+        )
+
     if http_status is None or http_status >= 400 or body_text is None:
         # Either a true network-level failure (no response at all) or an HTTP
         # error status. auth_error is split out because it needs a distinct,
@@ -59,20 +70,15 @@ def apply_response(store: Store, run_uuid: str, fetched_at: str, http_status, bo
         outcome = "auth_error" if http_status in (401, 403) else "unreachable"
         exit_code = alert.EXIT_AUTH if outcome == "auth_error" else alert.EXIT_UNREACHABLE
         detail = network_error or f"HTTP {http_status}"
-        store.record_run_failure(run_uuid, fetched_at, fetched_at, outcome, http_status, detail, exit_code)
-        return ApplyResult(outcome=outcome, exit_code=exit_code, http_status=http_status, error_detail=detail)
+        return failed(outcome, detail, exit_code)
 
     try:
         parsed = parse_top_level(body_text)
     except json.JSONDecodeError as exc:
-        detail = f"malformed JSON: {exc}"
-        store.record_run_failure(run_uuid, fetched_at, fetched_at, "parse_error", http_status, detail, alert.EXIT_SCHEMA_DRIFT)
-        return ApplyResult(outcome="parse_error", exit_code=alert.EXIT_SCHEMA_DRIFT, http_status=http_status, error_detail=detail)
+        return failed("parse_error", f"malformed JSON: {exc}", alert.EXIT_SCHEMA_DRIFT)
 
     if parsed is NOT_A_LIST:
-        detail = "response root is not a JSON list"
-        store.record_run_failure(run_uuid, fetched_at, fetched_at, "not_a_list", http_status, detail, alert.EXIT_SCHEMA_DRIFT)
-        return ApplyResult(outcome="not_a_list", exit_code=alert.EXIT_SCHEMA_DRIFT, http_status=http_status, error_detail=detail)
+        return failed("not_a_list", "response root is not a JSON list", alert.EXIT_SCHEMA_DRIFT)
 
     items = parsed
     drift_by_item = {i: check_item_schema(item) for i, item in enumerate(items)}
@@ -170,7 +176,8 @@ def _run(data_dir: Path, client: MessagesClient) -> int:
         result = apply_response(store, run_uuid, fetched_at, http_status, body_text, network_error)
 
     if result.outcome == "auth_error":
-        return alert.fail(alert.auth_banner(client.masked_key, result.error_detail or ""), result.exit_code)
+        banner = alert.auth_banner(client.masked_key, result.error_detail or "")
+        return alert.fail(banner, result.exit_code)
     if result.outcome == "unreachable":
         return alert.fail(alert.unreachable_banner(result.error_detail or ""), result.exit_code)
     if result.outcome in ("parse_error", "not_a_list"):

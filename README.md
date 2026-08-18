@@ -7,6 +7,9 @@ years, so it can accumulate enough history to look for patterns - which
 stations break most, how long outages tend to last, whether there's
 seasonality, and so on.
 
+The collected data is published as a status site at
+<https://baz8080.github.io/lifts> - see [The site](#the-site) below.
+
 Sibling project: [`esb`](https://github.com/baz8080/esb), which does the same
 thing for ESB Networks power outages. This project mirrors its architecture
 closely, adapted for a simpler single-endpoint API.
@@ -69,13 +72,46 @@ All accept `--data-dir` (default: `$LIFT_STATUS_DATA_DIR`, or `/data`).
 | `LIFT_STATUS_ALERT_WEBHOOK` | Where failure alerts are POSTed (an ntfy.sh topic URL works out of the box). An unchanged alert repeats at most daily, so a stuck fault doesn't push every 30 minutes |
 | `LIFT_STATUS_GRACE_MISSES` | Consecutive misses before a message is marked closed (default `1`: close on first miss) |
 
+## The site
+
+`lift_site` builds a static status page from the collected data and publishes
+it to <https://baz8080.github.io/lifts> - lift (elevator) and escalator
+outages by station, month by month, drilling into each station's full history.
+
+```bash
+python3 -m lift_site --data-dir /var/lib/lift-status     # writes out/site/
+```
+
+It reads `lift_status.db`, so run `rebuild` first if the database is stale.
+The overview lists the stations with a notice in the selected month; a
+station's page shows every month since collection began. There is no grade -
+the feed says only whether a notice is listed - and everything measured is the
+interval a notice was *listed* for. The start date Irish Rail writes on a
+notice is shown as their claim but colours nothing, because it routinely
+predates the listing by months over days the feed was watched and the notice
+was not there. "No longer listed" is the word used, never "fixed": there is
+no completion signal in the feed.
+
+`notes/site.md` has the decisions and the numbers behind them.
+`.github/workflows/pages.yml` rebuilds the database from
+[`lifts-data`](https://github.com/baz8080/lifts-data) and publishes the site
+daily and on every push to `main`. It needs Pages enabled once, under
+**Settings → Pages → source "GitHub Actions"**. GitHub disables the cron after
+60 days without a commit to *this* repository - the data lands in
+`lifts-data`, which does not count - so re-arm it when the email arrives.
+
 ## Running the tests
 
 Standard library only, no dependencies to install:
 
 ```
-python3 -m unittest discover tests
+python3 -m unittest discover -s tests -t .
 ```
+
+`tests/test_site_real.py` runs the site pipeline against the real corpus and
+skips unless `LIFT_STATUS_DATA_DIR` points at a data directory with a rebuilt
+database; CI sets it. `uv run --group dev ruff check` lints - uv and ruff are
+development tooling only, nothing at runtime needs them.
 
 The most important test is `tests/test_rebuild.py`: it drives a realistic
 run history (opens, updates, a close, a failed run that must change nothing,

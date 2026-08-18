@@ -9,9 +9,7 @@ import sys
 from . import __version__, alert
 from .client import MessagesClient
 from .poll import run_check, run_poll, run_rebuild
-from .store import Store
-
-DEFAULT_DATA_DIR = os.environ.get("LIFT_STATUS_DATA_DIR", "/data")
+from .store import DEFAULT_DATA_DIR, Store
 
 
 def _human_bytes(n: int) -> str:

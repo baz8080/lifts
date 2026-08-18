@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.0.1
+
+      - name: Install dev tooling
+        run: uv sync --group dev
+
+      - name: Lint
+        run: uv run ruff check
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # tests/test_site_real.py runs the whole pipeline against the real
+      # corpus, so it needs the data. Without it that file skips, and a
+      # silently skipped check is worse than none.
+      - name: Check out the collected data
+        uses: actions/checkout@v7
+        with:
+          repository: baz8080/lifts-data
+          path: lifts-data
+
+      - uses: astral-sh/setup-uv@v10.0.1
+
+      - name: Rebuild the database from the raw logs
+        run: uv run python -m lift_status --data-dir lifts-data rebuild
+
+      - name: Test
+        env:
+          LIFT_STATUS_DATA_DIR: lifts-data
+        run: uv run python -m unittest discover -s tests -t . --verbose
