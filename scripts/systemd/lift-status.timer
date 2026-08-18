@@ -1,0 +1,20 @@
+[Unit]
+Description=Poll Irish Rail lift-status messages every 30 minutes
+Documentation=https://github.com/baz8080/lifts
+
+[Timer]
+# Every 30 minutes, on the hour and the half hour. Use
+# `systemctl edit lift-status.timer` to override locally.
+OnCalendar=*:0/30
+
+# Run immediately if the Pi was off or asleep when a trigger was due. Closure
+# detection depends entirely on catching a message's disappearance between
+# consecutive runs - a long gap is a long blind spot in the history.
+Persistent=true
+
+# Do not hit the API exactly on the hour along with every other cron on
+# earth. Kept well under the interval so spacing stays roughly even.
+RandomizedDelaySec=180
+
+[Install]
+WantedBy=timers.target

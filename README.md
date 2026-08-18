@@ -1,1 +1,159 @@
 # lifts
+
+Tracks lift (elevator) outages at Irish Rail stations over time, by polling
+Irish Rail's realtime service-message feed every 30 minutes and recording
+which messages are present. Built to run unattended on a Raspberry Pi for
+years, so it can accumulate enough history to look for patterns - which
+stations break most, how long outages tend to last, whether there's
+seasonality, and so on.
+
+Sibling project: [`esb`](https://github.com/baz8080/esb), which does the same
+thing for ESB Networks power outages. This project mirrors its architecture
+closely, adapted for a simpler single-endpoint API.
+
+## How it works
+
+`GET https://connect.irishrail.ie/realtime/messages?lang=en` returns a flat
+JSON list of every current service-message banner - lift outages, but also
+unrelated notices, since the feed isn't lift-specific. Every message seen is
+recorded verbatim, regardless of content; filtering "is this actually about a
+lift" is left as a query-time concern over the stored data, not a collection-
+time decision.
+
+There is no reliable way to ask "is this fixed yet": each message carries an
+`end` field, but in every message observed so far it's set to a placeholder
+date near the end of the current calendar year, unrelated to when the actual
+issue is likely to be resolved. It's recorded anyway (in case it turns out to
+be useful later), but the only signal this project actually trusts for
+"fixed" is **a message that was present in one run and is absent from the
+next**.
+
+Since the API has no ID field for a message, identity is derived from `head`
++ `locationCodes` + `start`. This means an edited message (Irish Rail
+tweaking the wording, or correcting a start time by a few minutes) will look
+like the old message closing and a new one opening - a known, accepted
+limitation. Raw responses are kept forever, so this can be reprocessed with
+smarter matching later if it turns out to matter.
+
+The design's central concern is making sure a *failed* poll (network error,
+rejected API key, a changed response shape) can never be misread as "the list
+came back empty" - which would otherwise mark every currently-open message as
+fixed. See `lift_status/poll.py` for how that's enforced structurally, not
+just checked at runtime.
+
+## Storage
+
+- `raw/messages-YYYYMMDD.jsonl` - one line per poll *attempt*, success or
+  failure, written before any parsing. This is the actual source of truth.
+- `lift_status.db` - a derived SQLite database, entirely rebuildable from the
+  raw log via `rebuild`. Never back this up; back up `raw/` instead.
+
+## CLI
+
+```
+python3 -m lift_status poll         # run one collection pass (the scheduled command)
+python3 -m lift_status check        # verify the API key/connectivity; writes nothing
+python3 -m lift_status test-alert   # send a test alert through LIFT_STATUS_ALERT_WEBHOOK
+python3 -m lift_status rebuild      # rebuild the database from the raw JSONL logs
+python3 -m lift_status stats        # summarise what has been collected
+```
+
+All accept `--data-dir` (default: `$LIFT_STATUS_DATA_DIR`, or `/data`).
+
+### Environment variables
+
+| Variable | Purpose |
+|---|---|
+| `LIFT_STATUS_DATA_DIR` | Storage root (default `/var/lib/lift-status` once installed) |
+| `LIFT_STATUS_API_KEY` | **Required.** The `x-api-key` value, captured from a browser session. Deliberately not stored in this repository |
+| `LIFT_STATUS_ALERT_WEBHOOK` | Where failure alerts are POSTed (an ntfy.sh topic URL works out of the box). An unchanged alert repeats at most daily, so a stuck fault doesn't push every 30 minutes |
+| `LIFT_STATUS_GRACE_MISSES` | Consecutive misses before a message is marked closed (default `1`: close on first miss) |
+
+## Running the tests
+
+Standard library only, no dependencies to install:
+
+```
+python3 -m unittest discover tests
+```
+
+The most important test is `tests/test_rebuild.py`: it drives a realistic
+run history (opens, updates, a close, a failed run that must change nothing,
+a reopen, a duplicate, a schema-drift item) through the real `poll` code
+path, wipes the database, rebuilds it from the raw log alone, and asserts the
+result is identical.
+
+## Deploying to a Raspberry Pi
+
+```
+git clone git@github.com:baz8080/lifts.git
+cd lifts
+sudo sh scripts/install-native.sh
+```
+
+This is idempotent - re-run it after a `git pull` to deploy an update. It
+creates a `lift-status` system user, installs the code to
+`/opt/lift-status`, creates `/etc/lift-status.env` (chmod 600), and installs
+the systemd units. Then, following the printed instructions:
+
+1. Set `LIFT_STATUS_API_KEY` in `/etc/lift-status.env` (chmod 600, root-owned).
+   The key is not in this repository: it is Irish Rail's credential, captured
+   from a browser session, and committing it would publish it to everyone who
+   can read the repo. Capture it as described under "Recovering from a rotated
+   API key" below. With no key set, every run fails loudly with a "NO API KEY
+   CONFIGURED" banner rather than quietly collecting nothing.
+2. Set `LIFT_STATUS_ALERT_WEBHOOK` in the same file - pick an unguessable
+   ntfy.sh topic name, e.g. `https://ntfy.sh/<random-string>`, and subscribe to
+   it on your phone. **This step is not optional**: Irish Rail can rotate the
+   key at any time without notice. Without alerting, collection can stop
+   silently and nobody will know until the gap in the data is noticed much
+   later.
+3. `sudo lift test-alert` - confirm the alert actually reaches your phone.
+4. `sudo lift check` - confirm the current key still works.
+5. `sudo systemctl start lift-status.service` for one run now, then
+   `sudo systemctl enable --now lift-status.timer` for every 30 minutes.
+
+### Setting up the data backup
+
+Raw logs back up to a separate repository (`lifts-data`), pushed daily via a
+dedicated deploy key - mirroring the `esb`/`esb-data` pattern:
+
+1. Create a new (can be public) GitHub repo, e.g. `lifts-data`.
+2. Generate a deploy key with write access:
+   `sudo ssh-keygen -t ed25519 -f /etc/lift-status-deploy-key -N ""`, then add
+   `/etc/lift-status-deploy-key.pub` to the repo's Deploy Keys with write
+   access. **`chown` the private half to the service user** -
+   `sudo chown lift-status:lift-status /etc/lift-status-deploy-key` - since
+   `ssh-keygen` run under `sudo` leaves it root-owned, mode 600, and
+   `lift-status-backup.service` runs as the unprivileged `lift-status` user,
+   not root.
+3. `cd /var/lib/lift-status && sudo -u lift-status git init -b main && sudo -u lift-status git remote add origin git@github.com:<you>/lifts-data.git`
+4. `sudo systemctl enable --now lift-status-backup.timer`
+
+Separately, point your own NAS backup at `/var/lib/lift-status/` for a second
+copy - it's a plain directory of a SQLite file and JSONL text files, nothing
+NAS-backup-unfriendly about it.
+
+### Recovering from a rotated API key
+
+The key lives only in `/etc/lift-status.env` on the Pi, never in this
+repository. If `sudo lift check` starts failing, or an alert titled "API KEY
+REJECTED" arrives: open `https://www.irishrail.ie` in a browser, open
+devtools' Network tab, find the request to
+`connect.irishrail.ie/realtime/messages`, and copy the `x-api-key` header
+value into `LIFT_STATUS_API_KEY` in `/etc/lift-status.env`. No data is lost
+while this is broken except the gap in coverage itself - the raw log and
+database are untouched by an auth failure.
+
+## Known limitations
+
+- **Identity drift**: an edited `head` or a corrected `start` time produces a
+  new identity key, which looks like the old message closing and an
+  unrelated new one opening. Raw responses are kept forever in case this
+  needs smarter reprocessing later.
+- **No completion signal from the API**: `end` is recorded but not trusted;
+  "fixed" is inferred purely from a message's absence in a later run.
+- **Flapping**: `LIFT_STATUS_GRACE_MISSES` defaults to `1` (close on first
+  miss) for simplicity. If the data shows single-cycle blips causing
+  spurious close/reopen pairs, raise it - a message won't be marked closed
+  until it's missed that many consecutive successful runs in a row.

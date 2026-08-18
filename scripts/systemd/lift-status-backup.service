@@ -1,0 +1,25 @@
+[Unit]
+Description=Push lift-status raw logs to a git remote
+Documentation=https://github.com/baz8080/lifts
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=lift-status
+Group=lift-status
+StateDirectory=lift-status
+Environment=LIFT_STATUS_DATA_DIR=/var/lib/lift-status
+
+# The deploy key lives outside the data directory on purpose: the service
+# user's home *is* that directory, so a key in the default location would sit
+# inside the tree being backed up.
+# Quoted: systemd splits an unquoted Environment= value on whitespace into
+# separate assignments, which would set GIT_SSH_COMMAND to just "ssh".
+Environment="GIT_SSH_COMMAND=ssh -i /etc/lift-status-deploy-key -o IdentitiesOnly=yes -o UserKnownHostsFile=/etc/lift-status-known_hosts -o StrictHostKeyChecking=accept-new"
+
+EnvironmentFile=-/etc/lift-status.env
+ExecStart=/opt/lift-status/scripts/backup-to-git.sh
+
+[Install]
+WantedBy=multi-user.target
