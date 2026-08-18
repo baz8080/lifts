@@ -166,7 +166,8 @@ def _suppressed(message: str) -> bool:
     now = time.time()
     try:
         state = json.loads(path.read_text(encoding="utf-8"))
-        if state.get("digest") == digest and now - float(state.get("sent_at", 0)) < ALERT_REPEAT_SECONDS:
+        sent_at = float(state.get("sent_at", 0))
+        if state.get("digest") == digest and now - sent_at < ALERT_REPEAT_SECONDS:
             return True
     except (OSError, ValueError, TypeError):
         pass

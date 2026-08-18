@@ -84,7 +84,7 @@ class Store:
         self.conn.executescript(SCHEMA)
         self.raw_decode_errors = 0
 
-    def __enter__(self) -> "Store":
+    def __enter__(self) -> Store:
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:
@@ -150,7 +150,9 @@ class Store:
 
     # -- runs ----------------------------------------------------------
 
-    def record_run_failure(self, run_uuid, started_at, finished_at, outcome, http_status, error_detail, exit_code) -> None:
+    def record_run_failure(
+        self, run_uuid, started_at, finished_at, outcome, http_status, error_detail, exit_code
+    ) -> None:
         self.conn.execute(
             """INSERT INTO runs (
                 run_uuid, started_at_utc, finished_at_utc, outcome, http_status,
@@ -236,13 +238,17 @@ class Store:
                     """INSERT INTO messages (
                         identity_key, head, text_raw, start_raw, start_utc, end_raw, end_utc,
                         location_codes, products, event_stops, tz_ambiguous,
-                        first_seen_run_id, first_seen_at_utc, last_seen_run_id, last_seen_at_utc,
-                        status, consecutive_misses, missing_since_at_utc, closed_at_utc, reopen_count
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', 0, NULL, NULL, 0)""",
+                        first_seen_run_id, first_seen_at_utc,
+                        last_seen_run_id, last_seen_at_utc,
+                        status, consecutive_misses, missing_since_at_utc,
+                        closed_at_utc, reopen_count
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                              'open', 0, NULL, NULL, 0)""",
                     (
                         key, n["head"], n["text_raw"], n["start_raw"], n["start_utc"],
                         n["end_raw"], n["end_utc"], n["location_codes"], n["products"],
-                        n["event_stops"], n["tz_ambiguous"], run_id, observed_at, run_id, observed_at,
+                        n["event_stops"], n["tz_ambiguous"],
+                        run_id, observed_at, run_id, observed_at,
                     ),
                 )
                 new_count += 1
@@ -250,7 +256,8 @@ class Store:
                 was_closed = existing["status"] == "closed"
                 self.conn.execute(
                     """UPDATE messages SET
-                        head = ?, text_raw = ?, start_raw = ?, start_utc = ?, end_raw = ?, end_utc = ?,
+                        head = ?, text_raw = ?, start_raw = ?, start_utc = ?,
+                        end_raw = ?, end_utc = ?,
                         location_codes = ?, products = ?, event_stops = ?, tz_ambiguous = ?,
                         last_seen_run_id = ?, last_seen_at_utc = ?,
                         status = 'open', consecutive_misses = 0, missing_since_at_utc = NULL,
@@ -258,7 +265,8 @@ class Store:
                         reopen_count = reopen_count + ?
                        WHERE id = ?""",
                     (
-                        n["head"], n["text_raw"], n["start_raw"], n["start_utc"], n["end_raw"], n["end_utc"],
+                        n["head"], n["text_raw"], n["start_raw"], n["start_utc"],
+                        n["end_raw"], n["end_utc"],
                         n["location_codes"], n["products"], n["event_stops"], n["tz_ambiguous"],
                         run_id, observed_at,
                         1 if was_closed else 0,
@@ -281,7 +289,8 @@ class Store:
             )
             grace = 1
         open_rows = self.conn.execute(
-            "SELECT id, identity_key, consecutive_misses, missing_since_at_utc FROM messages WHERE status = 'open'"
+            "SELECT id, identity_key, consecutive_misses, missing_since_at_utc "
+            "FROM messages WHERE status = 'open'"
         ).fetchall()
         for row in open_rows:
             if row["identity_key"] in present:
@@ -297,7 +306,8 @@ class Store:
                 closed_count += 1
             else:
                 self.conn.execute(
-                    "UPDATE messages SET consecutive_misses = ?, missing_since_at_utc = ? WHERE id = ?",
+                    "UPDATE messages SET consecutive_misses = ?, missing_since_at_utc = ? "
+                    "WHERE id = ?",
                     (misses, missing_since, row["id"]),
                 )
 
@@ -312,18 +322,22 @@ class Store:
     # -- reporting -------------------------------------------------------
 
     def stats(self) -> dict:
-        total = self.conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
-        open_n = self.conn.execute("SELECT COUNT(*) FROM messages WHERE status = 'open'").fetchone()[0]
-        reopened_n = self.conn.execute("SELECT COUNT(*) FROM messages WHERE reopen_count > 0").fetchone()[0]
-        unidentifiable_n = self.conn.execute("SELECT COUNT(*) FROM unidentifiable_items").fetchone()[0]
-        runs_n = self.conn.execute("SELECT COUNT(*) FROM runs").fetchone()[0]
-        first_run = self.conn.execute("SELECT MIN(started_at_utc) FROM runs").fetchone()[0]
-        last_run = self.conn.execute("SELECT MAX(started_at_utc) FROM runs").fetchone()[0]
+        def one(sql):
+            return self.conn.execute(sql).fetchone()[0]
+
+        total = one("SELECT COUNT(*) FROM messages")
+        open_n = one("SELECT COUNT(*) FROM messages WHERE status = 'open'")
+        reopened_n = one("SELECT COUNT(*) FROM messages WHERE reopen_count > 0")
+        unidentifiable_n = one("SELECT COUNT(*) FROM unidentifiable_items")
+        runs_n = one("SELECT COUNT(*) FROM runs")
+        first_run = one("SELECT MIN(started_at_utc) FROM runs")
+        last_run = one("SELECT MAX(started_at_utc) FROM runs")
         by_outcome = self.conn.execute(
             "SELECT outcome, COUNT(*) FROM runs GROUP BY outcome ORDER BY outcome"
         ).fetchall()
         recent_runs = self.conn.execute(
-            "SELECT started_at_utc, outcome, item_count, schema_drift_count FROM runs ORDER BY id DESC LIMIT 10"
+            "SELECT started_at_utc, outcome, item_count, schema_drift_count "
+            "FROM runs ORDER BY id DESC LIMIT 10"
         ).fetchall()
         db_path = self.data_dir / DB_FILENAME
         return {

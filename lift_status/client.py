@@ -127,9 +127,13 @@ class MessagesClient:
             except Exception:  # pragma: no cover - body is best-effort context
                 pass
             if exc.code in (401, 403):
-                raise AuthError(f"{exc.code} rejected key {self.masked_key}: {body}", status=exc.code) from exc
+                raise AuthError(
+                    f"{exc.code} rejected key {self.masked_key}: {body}", status=exc.code
+                ) from exc
             if exc.code >= 500:
-                raise TransientError(f"{exc.code} from {self.url}: {body}", status=exc.code) from exc
+                raise TransientError(
+                    f"{exc.code} from {self.url}: {body}", status=exc.code
+                ) from exc
             raise ApiError(f"{exc.code} from {self.url}: {body}", status=exc.code) from exc
         except (urllib.error.URLError, socket.timeout, TimeoutError, OSError) as exc:
             raise TransientError(f"network failure for {self.url}: {exc}", status=None) from exc
@@ -139,7 +143,9 @@ class MessagesClient:
         except http.client.HTTPException as exc:
             raise TransientError(f"broken response from {self.url}: {exc!r}", status=None) from exc
         except UnicodeDecodeError as exc:
-            raise ApiError(f"undecodable (non-UTF-8) body from {self.url}: {exc}", status=None) from exc
+            raise ApiError(
+                f"undecodable (non-UTF-8) body from {self.url}: {exc}", status=None
+            ) from exc
 
     def get_messages_raw(self) -> tuple[int, str]:
         """Return (http_status, raw_body_text), retrying transient failures.

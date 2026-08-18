@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Irish Rail Lift Outages — unofficial</title>
+<meta name="description" content="Lift (elevator) and escalator outages at Irish Rail stations, station by station — which are out, since when, and for how long. Independent, rebuilt daily.">
+<meta property="og:title" content="Irish Rail Lift Outages">
+<meta property="og:description" content="Lift (elevator) and escalator outages at Irish Rail stations, station by station — which are out, since when, and for how long.">
+<meta property="og:type" content="website">
+<link rel="canonical" href="<!--CANONICAL-->">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7; --surface: #fcfcfb;
+    --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --border: rgba(11,11,11,0.10);
+    --good: #0ca30c; --warning: #fab219; --serious: #ec835a;
+    --critical: #d03b3b; --severe: #8f1d1d; --maint: #2a78d6;
+    --cell-empty: #e8e7e1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19;
+      --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --border: rgba(255,255,255,0.10);
+      --maint: #3987e5; --severe: #b32626;
+      --cell-empty: #2c2c2a;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  /* !important keeps `hidden` meaning hidden whatever display a future layout
+     rule sets — the UA's own [hidden] rule is a plain `display: none` that any
+     author `display` outranks. */
+  [hidden] { display: none !important; }
+  body {
+    background: var(--page); color: var(--ink);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 24px 16px 64px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  a { color: inherit; }
+  header h1 { font-size: 22px; font-weight: 650; }
+  header .sub { color: var(--ink-2); margin-top: 4px; font-size: 14px; }
+  header .sub2 { color: var(--muted); margin-top: 3px; font-size: 12.5px; }
+
+  .banner {
+    margin: 20px 0; padding: 14px 18px; border-radius: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .banner .dot { width: 12px; height: 12px; }
+  .banner strong { font-weight: 650; }
+  .banner .meta { color: var(--muted); font-size: 13px; margin-left: auto; }
+  .stale { color: var(--critical); font-weight: 600; }
+
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; display: inline-block; background: var(--cell-empty); }
+  .d-out { background: var(--critical); }
+  .d-ok { background: var(--good); }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 16px 0; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .tile .v { font-size: 24px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .tile .k { font-size: 12.5px; color: var(--ink-2); margin-top: 2px; }
+
+  .controls { display: flex; gap: 8px; align-items: center; margin: 22px 0 10px; flex-wrap: wrap; }
+  .months { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 3px; flex-wrap: wrap; }
+  .months button {
+    border: 0; background: none; color: var(--ink-2); font: inherit; font-size: 13.5px;
+    padding: 5px 12px; border-radius: 6px; cursor: pointer;
+  }
+  .months button.on { background: var(--grid); color: var(--ink); font-weight: 600; }
+
+  .search { margin-left: auto; position: relative; }
+  .search input {
+    font: inherit; font-size: 13.5px; color: var(--ink); width: 210px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px;
+  }
+  .results {
+    position: absolute; top: 100%; right: 0; margin-top: 4px; z-index: 10;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    min-width: 240px; max-height: 300px; overflow-y: auto; padding: 4px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.10);
+  }
+  .results button {
+    display: block; width: 100%; text-align: left; border: 0; background: none;
+    font: inherit; font-size: 13.5px; color: var(--ink); padding: 6px 9px;
+    border-radius: 6px; cursor: pointer;
+  }
+  .results button:hover, .results button:focus-visible { background: var(--grid); }
+  .results .rc { color: var(--muted); font-size: 12px; }
+  .results .none { padding: 8px 9px; font-size: 13px; color: var(--muted); }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 10px 0 14px; font-size: 12.5px; color: var(--ink-2); }
+  .legend > span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .basis { font-size: 12.5px; color: var(--muted); margin: 0 0 14px; }
+  .natheading { font-size: 15px; font-weight: 650; margin: 30px 0 0; }
+
+  .station { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+  .row { display: grid; grid-template-columns: 170px 1fr 220px 10px; gap: 14px; padding: 12px 16px; align-items: center; cursor: pointer; }
+  .row:hover { background: color-mix(in srgb, var(--grid) 35%, transparent); }
+  .cname { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14.5px; min-width: 0; }
+  .cname a { text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cname a:focus-visible { outline: none; }
+  .row:has(a:focus-visible) { outline: 2px solid var(--ink-2); outline-offset: -2px; }
+
+  .bar { display: flex; gap: 2px; height: 28px; }
+  .bar i { flex: 1; border-radius: 2px; background: var(--good); min-width: 3px; }
+  .bar i.b1 { background: var(--critical); }
+  .bar i.b2 { background: var(--serious); }
+  .bar i.b5 { background: var(--maint); }
+  .bar i.b8, .bar i.b9 { background: var(--cell-empty); }
+  .bar.tall { height: 40px; }
+  /* The bar's whole meaning used to live in title attributes, which a phone
+     never shows. Fixed height so filling it does not reflow the card. */
+  .daycap { margin-top: 8px; font-size: 12.5px; color: var(--ink-2); min-height: 1.45em; }
+  .station .daycap { margin: -6px 0 0; padding: 0 16px 10px; font-size: 12px; }
+
+  .stats { display: grid; grid-template-columns: 120px auto; justify-content: end; align-items: center; column-gap: 12px;
+           text-align: right; font-size: 13px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .stats .counts { display: grid; grid-template-columns: 26px auto; column-gap: 5px; line-height: 1.4; }
+  .stats .counts b { text-align: right; }
+  .stats .counts span { text-align: left; }
+  .stats .days { font-size: 14.5px; }
+  .stats b { color: var(--ink); font-weight: 650; }
+  .row .chev { color: var(--muted); font-size: 16px; }
+
+  /* station view */
+  .back { display: inline-block; margin-bottom: 14px; font-size: 13.5px; color: var(--ink-2); text-decoration: none; }
+  .chead { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+  .chead h2 { font-size: 20px; font-weight: 650; }
+  .chead .dot { width: 14px; height: 14px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+  .card h3 { font-size: 15px; font-weight: 650; margin-bottom: 10px; }
+
+  .case { border-top: 1px solid var(--border); padding: 13px 0; }
+  .case:first-of-type { border-top: 0; }
+  .card .bar + .daycap + .case { border-top: 0; margin-top: 4px; }
+  .case .top { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+  .case .where { font-weight: 620; font-size: 14.5px; }
+  .case .tag { font-size: 11.5px; font-weight: 600; padding: 2px 7px; border-radius: 99px; }
+  .tag-f { background: color-mix(in srgb, var(--critical) 16%, transparent); color: var(--critical); }
+  .tag-p { background: color-mix(in srgb, var(--maint) 16%, transparent); color: var(--maint); }
+  .case .when { color: var(--muted); font-size: 12.5px; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .case .sum { color: var(--ink-2); font-size: 13px; margin-top: 3px; }
+  .case .txt { color: var(--muted); font-size: 12.5px; margin-top: 4px; font-style: italic; }
+
+  .tl { list-style: none; margin: 8px 0 0; padding: 0 0 0 15px; border-left: 2px solid var(--grid); }
+  .tl li { position: relative; font-size: 13px; color: var(--ink-2); padding: 3px 0; }
+  .tl li::before { content: ""; position: absolute; left: -21px; top: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--grid); }
+  .tl time { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 7px; }
+
+  .empty { color: var(--muted); font-size: 13.5px; padding: 6px 0; }
+
+  footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
+  footer h3 { font-size: 13px; color: var(--ink-2); margin: 14px 0 5px; font-weight: 650; }
+  footer p { margin-bottom: 7px; }
+  footer code { font-size: 12px; }
+  footer a { color: var(--ink-2); }
+  footer details { margin: 6px 0; }
+  footer summary {
+    cursor: pointer; color: var(--ink-2); font-weight: 600; padding: 3px 0;
+    list-style: none;
+  }
+  footer summary::-webkit-details-marker { display: none; }
+  footer summary::before { content: "▸ "; }
+  footer details[open] summary::before { content: "▾ "; }
+  footer details p { margin: 5px 0 8px; }
+
+  @media (max-width: 640px) {
+    .row { grid-template-columns: 1fr auto; grid-template-areas: "name stats" "bar bar"; gap: 10px 12px; padding: 12px 14px; }
+    .cname { grid-area: name; }
+    .stats { grid-area: stats; }
+    .bar { grid-area: bar; }
+    .row .chev { display: none; }
+    .search { margin-left: 0; width: 100%; }
+    .search input { width: 100%; }
+    .results { left: 0; right: auto; width: 100%; }
+    /* The legend is reference material — you consult it once a bar confuses
+       you — so on a phone it goes below the bars it describes. */
+    #overview { display: flex; flex-direction: column; }
+    #overview > .banner { order: 1; margin-bottom: 0; }
+    #overview > .controls { order: 2; }
+    #overview > .basis { order: 3; }
+    #overview > #list { order: 4; }
+    #overview > .legend { order: 5; margin: 18px 0 0; }
+    #overview > .natheading { order: 6; }
+    #overview > .tiles { order: 7; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Irish Rail Lift Outages</h1>
+    <div class="sub">Lift (elevator) and escalator outages at Irish Rail stations, station by station.</div>
+    <div class="sub2">Unofficial. Not affiliated with Iarnród Éireann. <span id="stamp"></span></div>
+  </header>
+
+  <main>
+    <section id="overview">
+      <div class="banner">
+        <span class="dot" id="natdot"></span>
+        <strong id="natline">Loading…</strong>
+        <span class="meta" id="natmeta"></span>
+      </div>
+      <div class="controls">
+        <div class="months" id="months"></div>
+        <div class="search">
+          <input id="q" type="search" placeholder="Find a station" autocomplete="off" aria-label="Find a station">
+          <div class="results" id="results" hidden></div>
+        </div>
+      </div>
+      <p class="basis" id="basis"></p>
+      <div id="list"></div>
+      <div class="legend" id="legend"></div>
+      <h3 class="natheading" id="natheading">This month</h3>
+      <div class="tiles" id="tiles"></div>
+    </section>
+
+    <section id="stationview" hidden></section>
+  </main>
+
+  <footer>
+    <h3>What this measures</h3>
+    <p>This site reads Irish Rail's public service-message feed every 30 minutes — the
+    banners shown on irishrail.ie — and keeps every notice that says a lift or escalator is
+    out of order. Irish Rail publishes no history, so nothing before <span id="startdate"></span>
+    exists here, and days before it are shown as “no data” rather than as working lifts.</p>
+    <p><b>A notice going up is the only signal, and a notice coming down is the only other one.</b>
+    The feed has no “fixed” field: an outage ends here when its notice is no longer listed,
+    which usually means the lift is back but strictly means only that Irish Rail took the
+    notice down. Notices have been seen to appear and disappear in batches, months after
+    the start date they carry.</p>
+
+    <details><summary>How to read an outage</summary>
+    <p>Each outage shows when its notice was first listed and when it was no longer listed
+    — or “still listed at the last poll” for one that is up now — and the duration between
+    the two, to the nearest half hour. That is what the day bars colour. The notice also
+    carries a start date of Irish Rail's own, shown beside it as their claim: it is
+    routinely weeks or months before the notice was listed, over days this site was watching
+    and the notice was not there, so it colours nothing here.</p>
+    <p>“Planned works” is what the notice itself says — <em>temporarily unavailable due to
+    planned works</em> — against <em>currently out of service</em> for everything else.
+    Escalators are listed in the same feed with the same wording and are shown too, tagged
+    separately.</p>
+    <p>Irish Rail sometimes reissues a notice with new wording or a corrected start. When
+    the new one appears at the very poll the old one vanished, they are shown as one outage
+    with the reissue noted. A notice that comes back a poll or more later is a separate
+    outage — the gap is real, and it is what this site is measuring.</p>
+    </details>
+
+    <details><summary>What it cannot tell you</summary>
+    <p>How many lifts a station has, or whether the one that is out is the only route to a
+    platform: the notice names platforms in prose and nothing more. Whether a lift is back
+    in service before its notice is removed, or still out after. Anything shorter than half
+    an hour. And whether an outage that begins and ends between two polls happened at all.</p>
+    <p>Each notice carries an end date, but for nearly every one it is a placeholder near
+    the end of the year. It is shown as “Irish Rail's listed end” for what it is worth and
+    plays no part in anything measured.</p>
+    </details>
+
+    <p id="src"></p>
+  </footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+"use strict";
+var D = window.LIFT_DATA || null;
+// The first and last days of collection are hours long rather than 24, so their
+// bars are built from less time than the rest and read calmer than they were.
+var PARTIAL = (D && D.partial) || [];
+var HIST = window.LIFT_CASES = window.LIFT_CASES || {};
+var HSTATE = {};
+var curMonth = null, curStation = null;
+
+var KIND = { lift: "Lift", escalator: "Escalator" };
+var CELL = {
+  0: "nothing listed", 1: "lift out of service", 2: "escalator out of service",
+  5: "planned works", 8: "no data collected for this day", 9: "still to come"
+};
+var M3 = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+function monthLabel(ym) { return M3[+ym.slice(5, 7) - 1] + " " + ym.slice(0, 4); }
+function num(n) { return n.toLocaleString("en-IE"); }
+function plural(n, word) { return num(n) + " " + word + (n === 1 ? "" : "s"); }
+function fmtDays(n) {
+  if (n < 2) return "1 day";
+  if (n < 60) return n + " days";
+  return (n / 30.44).toFixed(1) + " months";
+}
+function fmtHours(h) {
+  if (h < 1) return Math.round(h * 60) + " min";
+  if (h < 48) return h.toFixed(h < 10 ? 1 : 0) + " h";
+  return fmtDays(Math.round(h / 24));
+}
+function when(ts) {
+  // "2026-08-16T20:21" -> "16 Aug 2026, 20:21". Starts can be a year old.
+  return +ts.slice(8, 10) + " " + M3[+ts.slice(5, 7) - 1] + " " + ts.slice(0, 4) + ", " + ts.slice(11, 16);
+}
+// Collection start as the same "YYYY-MM-DDTHH:MM" strings the records use, so
+// "already listed when collection began" is a string compare like the rest.
+var START_ISO = null;
+
+/* --- month/day bars ------------------------------------------------------ */
+function monthTabs(fn, current) {
+  return D.months.map(function (m) {
+    return '<button class="' + (m === current ? "on" : "") + '" onclick="' + fn + "('" + m + "')\">" +
+      monthLabel(m) + "</button>";
+  }).join("");
+}
+
+function dayCells(cells, ym) {
+  var out = "";
+  for (var i = 0; i < cells.length; i++) {
+    var b = +cells[i], date = ym + "-" + String(i + 1).padStart(2, "0");
+    var cap = date + ": " + CELL[b];
+    if (b < 8 && PARTIAL.indexOf(date) !== -1) cap += " — only part of this day was recorded";
+    out += '<i class="b' + b + '" title="' + esc(cap) + '" data-cap="' + esc(cap) + '"></i>';
+  }
+  return out;
+}
+
+function cellsFor(code, ym) {
+  var m = (D.stats[code] || {})[ym];
+  return m ? m[0] : D.blank[ym];
+}
+
+function dot(state, title) {
+  return '<span class="dot ' + (state === "out" ? "d-out" : state === "ok" ? "d-ok" : "") +
+    '" title="' + esc(title) + '"></span>';
+}
+
+function tile(v, k) {
+  return '<div class="tile"><div class="v">' + esc(v) + '</div><div class="k">' + esc(k) + "</div></div>";
+}
+
+/* --- overview ------------------------------------------------------------ */
+function renderOverview() {
+  document.getElementById("months").innerHTML = monthTabs("setMonth", curMonth);
+
+  var rows = [];
+  Object.keys(D.stations).forEach(function (code) {
+    var m = (D.stats[code] || {})[curMonth];
+    if (m) rows.push({ code: code, name: D.stations[code], m: m });
+  });
+  // Worst first: a status page's job is to put the bad news at the top. A
+  // station with a notice up right now leads, then by days listed.
+  rows.sort(function (a, b) {
+    return (b.m[4] - a.m[4]) || (b.m[3] - a.m[3]) || a.name.localeCompare(b.name);
+  });
+
+  document.getElementById("list").innerHTML = rows.length ? rows.map(function (r) {
+    var m = r.m;
+    return '<div class="station"><div class="row" onclick="go(\'' + esc(r.code) + '\')">' +
+      '<div class="cname">' + dot(m[4] ? "out" : "ok", m[4] ? "A notice is listed right now" : "Nothing listed right now") +
+        '<a href="s/' + D.slugs[r.code] + '.html" onclick="event.preventDefault()">' + esc(r.name) + "</a></div>" +
+      '<div class="bar">' + dayCells(m[0], curMonth) + "</div>" +
+      '<div class="stats"><div class="counts">' +
+        "<b>" + m[1] + "</b><span>out of service</span>" +
+        "<b>" + m[2] + "</b><span>planned works</span></div>" +
+        '<div class="days"><b>' + m[3] + "</b><br>day" + (m[3] === 1 ? "" : "s") + " listed</div>" +
+      '</div><span class="chev">›</span></div>' +
+      '<div class="daycap"></div></div>';
+  }).join("") : '<div class="station"><p class="empty" style="padding:12px 16px">No lift or escalator notices were listed in ' +
+    monthLabel(curMonth) + ".</p></div>";
+
+  var c = D.current;
+  document.getElementById("natdot").className = "dot " + (c.stations ? "d-out" : "d-ok");
+  document.getElementById("natline").textContent = c.stations
+    ? plural(c.stations, "station") + " with a lift or escalator out of service"
+    : "No lift or escalator notices listed";
+  document.getElementById("natmeta").innerHTML =
+    (c.stations ? plural(c.lifts, "lift") + ", " + plural(c.escalators, "escalator") + " · " : "") +
+    "as of " + esc(D.observed);
+
+  document.getElementById("basis").innerHTML =
+    "Stations with a lift or escalator notice listed in <b>" + monthLabel(curMonth) +
+    "</b>. Each cell is a day; a station with nothing listed that month is not shown — find it by name to see its history.";
+
+  var n = D.national[curMonth] || [0, 0, 0, 0, 0, 0];
+  document.getElementById("natheading").textContent = "Across the network in " + monthLabel(curMonth);
+  document.getElementById("tiles").innerHTML = [
+    tile(n[0], "stations affected"),
+    tile(n[2] + " / " + n[3], "out of service / planned works"),
+    tile(num(n[4]), "station-days with a notice"),
+    tile(n[5], "with a notice up at the last poll")
+  ].join("");
+
+  document.getElementById("legend").innerHTML =
+    [[0, "nothing listed"], [1, "lift out of service"], [2, "escalator out of service"],
+     [5, "planned works"], [8, "no data"]]
+    .map(function (l) {
+      return '<span><i class="b' + l[0] + '" style="background:var(' +
+        {0: "--good", 1: "--critical", 2: "--serious", 5: "--maint", 8: "--cell-empty"}[l[0]] +
+        ')"></i>' + esc(l[1]) + "</span>";
+    }).join("");
+}
+
+/* --- station ------------------------------------------------------------- */
+function renderStation() {
+  var el = document.getElementById("stationview"), code = curStation;
+  var name = D.stations[code];
+  var stats = D.stats[code] || {};
+  var months = D.months.slice().reverse();
+  var latest = stats[months[0]];
+  var outNow = !!(latest && latest[4]);
+  var loading = HSTATE[code] === "loading", failed = HSTATE[code] === "error";
+  var shard = HIST[code] || {};
+
+  var head =
+    '<a class="back" href="#" onclick="event.preventDefault();go(null)">← All stations</a>' +
+    '<div class="chead">' + dot(outNow ? "out" : "ok", outNow ? "A notice is listed right now" : "Nothing listed right now") +
+      "<h2>" + esc(name) + "</h2></div>" +
+    '<div class="sub2" style="color:var(--muted);font-size:12.5px;margin-bottom:14px">' +
+      "Irish Rail station code " + esc(code) + " · every month since collection began, newest first · " +
+      '<a href="s/' + D.slugs[code] + '.html">permanent link</a></div>';
+
+  var body = months.map(function (ym) {
+    var cases = shard[ym] || [];
+    var inner;
+    if (loading) inner = '<div class="empty">Loading…</div>';
+    else if (failed) inner = '<div class="empty">Could not load the outages for ' + esc(name) + ". Try reloading the page.</div>";
+    else if (!cases.length) inner = '<div class="empty">Nothing listed for ' + esc(name) + " in " + monthLabel(ym) + ".</div>";
+    else inner = cases.map(caseHtml).join("");
+    return '<div class="card"><h3>' + monthLabel(ym) + "</h3>" +
+      '<div class="bar tall">' + dayCells(cellsFor(code, ym), ym) + "</div>" +
+      '<div class="daycap"></div>' + inner + "</div>";
+  }).join("");
+
+  el.innerHTML = head + body;
+}
+
+function summaryBits(firstSeen, end, ongoing, start, listedEnd) {
+  // Two clocks, kept apart in the prose: when the notice was listed and taken
+  // down (observed here), and the start Irish Rail wrote on it (their claim).
+  // Mirrored line for line in render.summary_bits() for the static pages.
+  var bits = [firstSeen <= START_ISO ? "listed when collection began" : "first listed " + when(firstSeen)];
+  bits.push(ongoing ? "still listed at the last poll" : "no longer listed " + when(end));
+  if (start) {
+    var claim = "Irish Rail's notice dates it from " + when(start);
+    if (start < firstSeen.slice(0, 10)) {
+      var days = Math.floor((new Date(firstSeen + "Z") - new Date(start + "Z")) / 86400000);
+      claim += " — " + fmtDays(days) + " before it was listed";
+    }
+    bits.push(claim);
+  }
+  if (listedEnd) bits.push("listed end " + when(listedEnd));
+  return bits;
+}
+
+function caseHtml(k) {
+  // [id, kind, planned, firstSeen, end, ongoing, start, listedEnd, head, text, updates]
+  var kind = k[1], planned = k[2], firstSeen = k[3], end = k[4], ongoing = k[5], start = k[6], listedEnd = k[7], text = k[9], ups = k[10];
+  var dur = firstSeen && end ? (new Date(end + "Z") - new Date(firstSeen + "Z")) / 3600000 : null;
+  var bits = summaryBits(firstSeen, end, ongoing, start, listedEnd);
+  return '<div class="case" id="m' + k[0] + '"><div class="top">' +
+    '<span class="where">' + esc(KIND[kind] || kind) + "</span>" +
+    '<span class="tag ' + (planned ? "tag-p" : "tag-f") + '">' + (planned ? "Planned works" : "Out of service") + "</span>" +
+    '<span class="when">' + (dur == null ? "" : "listed " + fmtHours(dur) + (ongoing ? " so far" : "")) + "</span></div>" +
+    '<div class="sum">' + bits.map(esc).join(" · ") + "</div>" +
+    (text ? '<div class="txt">' + esc(text) + "</div>" : "") +
+    (ups && ups.length
+      ? '<ul class="tl">' + ups.map(function (u) {
+          return "<li><time>" + when(u[0]) + "</time>notice reissued: " + esc(u[2] || u[1]) + "</li>";
+        }).join("") + "</ul>"
+      : "") +
+    "</div>";
+}
+
+/* --- station shard loading ----------------------------------------------- */
+function loadStation(code, done) {
+  if (HIST[code] || HSTATE[code] === "loading") return done();
+  HSTATE[code] = "loading";
+  var s = document.createElement("script");
+  // Injected <script>, not fetch: the site has to work opened straight off
+  // disk, and fetch cannot read a file:// URL.
+  s.src = "h/" + encodeURIComponent(code) + ".js" +
+    (location.protocol === "file:" ? "" : "?v=" + encodeURIComponent(D.generated));
+  var timer = setTimeout(finish, 10000);
+  function finish() {
+    clearTimeout(timer);
+    // onload alone is not success: a file served but blocked, or truncated,
+    // loads without assigning anything.
+    HSTATE[code] = HIST[code] ? "ok" : "error";
+    done();
+  }
+  s.onload = finish;
+  s.onerror = finish;
+  document.head.appendChild(s);
+}
+
+/* --- routing ------------------------------------------------------------- */
+function go(code) {
+  location.hash = code ? "#station/" + encodeURIComponent(code) : "";
+  scrollTo(0, 0);
+}
+function setMonth(m) { curMonth = m; render(); }
+
+function route() {
+  var m = location.hash.match(/^#station\/(.+)$/);
+  curStation = m ? decodeURIComponent(m[1]) : null;
+  if (curStation && !D.stations[curStation]) curStation = null;
+  if (curStation) loadStation(curStation, render);
+  render();
+}
+
+function render() {
+  if (!D) return;
+  var station = !!curStation;
+  document.getElementById("overview").hidden = station;
+  document.getElementById("stationview").hidden = !station;
+  if (station) renderStation(); else renderOverview();
+}
+
+/* --- search -------------------------------------------------------------- */
+/* Every station ever seen ships in data.js - it is a short list - so the
+   search is a filter over it, and it finds a station that is quiet this month
+   and so absent from the list above. */
+function runSearch() {
+  var q = document.getElementById("q").value.trim().toLowerCase();
+  var box = document.getElementById("results");
+  if (q.length < 2) { box.hidden = true; return; }
+  var hits = [];
+  Object.keys(D.stations).forEach(function (code) {
+    var name = D.stations[code], at = name.toLowerCase().indexOf(q);
+    if (at !== -1) hits.push([name, code, at]);
+  });
+  hits.sort(function (a, b) { return a[2] - b[2] || a[0].localeCompare(b[0]); });
+  box.hidden = false;
+  box.innerHTML = hits.length
+    ? hits.slice(0, 40).map(function (e) {
+        var m = (D.stats[e[1]] || {})[curMonth];
+        return '<button onclick="pick(\'' + esc(e[1]) + '\')">' + esc(e[0]) +
+          (m ? "" : ' <span class="rc">nothing listed in ' + monthLabel(curMonth) + "</span>") + "</button>";
+      }).join("")
+    : '<div class="none">No station matching “' + esc(q) + '” has had a notice yet</div>';
+}
+function pick(code) {
+  document.getElementById("q").value = "";
+  document.getElementById("results").hidden = true;
+  go(code);
+}
+
+/* --- boot ---------------------------------------------------------------- */
+function bindDayCaption() {
+  // One delegated listener at the document, because the bars re-render on
+  // every route and month change.
+  var show = function (e) {
+    var cell = e.target.closest(".bar i[data-cap]");
+    if (!cell) return;
+    var host = cell.closest(".station, .card");
+    var cap = host && host.querySelector(".daycap");
+    if (cap) cap.textContent = cell.dataset.cap;
+  };
+  document.addEventListener("click", show);
+  document.addEventListener("pointerover", show);
+}
+
+function boot() {
+  if (!D) {
+    document.getElementById("natline").textContent =
+      "Could not load the data for this page. Try reloading.";
+    return;
+  }
+  curMonth = D.months[D.months.length - 1];
+  START_ISO = D.start_iso;
+  // Two different facts: when this page was built, and how far the data behind
+  // it reaches. They are normally a few hours apart; when they are not, the
+  // grey cells at the end of every bar are the collector having stopped.
+  document.getElementById("stamp").innerHTML = "Rebuilt " + esc(D.generated) +
+    ", data to " + (D.stale ? '<span class="stale">' : "<span>") + esc(D.observed) +
+    (D.stale ? " — collection has stopped" : "") + "</span>.";
+  document.getElementById("startdate").textContent = D.start;
+  document.getElementById("src").textContent =
+    "Unofficial, and not affiliated with Iarnród Éireann. Lifts are elevators, if you are reading from elsewhere.";
+  document.getElementById("q").addEventListener("input", runSearch);
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest(".search")) document.getElementById("results").hidden = true;
+  });
+  bindDayCaption();
+  addEventListener("hashchange", route);
+  route();
+}
+boot();
+</script>
+</body>
+</html>

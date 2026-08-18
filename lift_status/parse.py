@@ -163,6 +163,10 @@ def _text(value):
     return str(value)
 
 
+def _json_or_none(value):
+    return json.dumps(value) if value is not None else None
+
+
 def normalize_item(item: dict) -> dict:
     """Turn a raw message item into the column set stored in SQLite.
 
@@ -182,7 +186,7 @@ def normalize_item(item: dict) -> dict:
         "end_raw": _text(item.get("end")),
         "end_utc": end_utc,
         "location_codes": json.dumps(codes),
-        "products": json.dumps(item.get("products")) if item.get("products") is not None else None,
-        "event_stops": json.dumps(item.get("eventStops")) if item.get("eventStops") is not None else None,
+        "products": _json_or_none(item.get("products")),
+        "event_stops": _json_or_none(item.get("eventStops")),
         "tz_ambiguous": int(bool(start_amb or end_amb)),
     }
