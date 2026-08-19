@@ -1,0 +1,22 @@
+/* This site's own rules, inlined after the shared base.css (lift_site/ui) in
+   both index.html and the station pages. */
+:root { --row-cols: 170px 1fr 220px 10px; --stats-cols: 120px auto; }
+
+/* station names run long ("Dún Laoghaire Mallin"); the row keeps its columns */
+.cname a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* day cells: 0 nothing listed, 1 lift out, 2 escalator out, 5 planned, 8 no data, 9 to come */
+.bar i.b1 { background: var(--critical); }
+.bar i.b2 { background: var(--serious); }
+.bar i.b5 { background: var(--maint); }
+.bar i.b8, .bar i.b9 { background: var(--cell-empty); }
+
+.stats .days { font-size: 14.5px; }
+
+/* a month card: bar, its readout, then the cases with no rule between */
+.card .bar + .daycap + .case { border-top: 0; margin-top: 4px; }
+.case .txt { color: var(--muted); font-size: 12.5px; margin-top: 4px; font-style: italic; }
+.tl { margin-top: 8px; }
+
+/* station page: the line under the heading */
+.chead + .sub { color: var(--muted); font-size: 12.5px; margin-bottom: 16px; }
