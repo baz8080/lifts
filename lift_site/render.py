@@ -319,11 +319,8 @@ def _day_cells(cells, ym, partial):
         cap = f"{day}: {DAY_LABELS[ch]}"
         if ch not in "89" and day in partial:
             cap += PARTIAL_NOTE
-        # data-cap as well as title, and station.html has the same .daycap sink
-        # the app uses: a title tooltip is nothing at all on a phone, and these
-        # are the pages a search engine hands to one.
-        esc_cap = html.escape(cap)
-        out.append(f'<i class="b{ch}" title="{esc_cap}" data-cap="{esc_cap}"></i>')
+        # data-cap feeds station.html's .daycap readout; a title would repeat it
+        out.append(f'<i class="b{ch}" data-cap="{html.escape(cap)}"></i>')
     return "".join(out)
 
 

@@ -117,7 +117,13 @@
   /* The bar's whole meaning used to live in title attributes, which a phone
      never shows. Fixed height so filling it does not reflow the card. */
   .daycap { margin-top: 8px; font-size: 12.5px; color: var(--ink-2); min-height: 1.45em; }
-  .station .daycap { margin: -6px 0 0; padding: 0 16px 10px; font-size: 12px; }
+  /* inside .row, so the row's hover, click and focus ring cover it */
+  .row .daycap { grid-column: 1 / -1; margin: -4px 0 0; font-size: 12px; }
+  /* On touch a tap on a cell navigates, so hide the strip — but only while
+     empty: iPadOS reports hover:none even with a trackpad, and a hover there
+     still fills it. */
+  @media (hover: none) { .row .daycap:empty { display: none; } }
+  @media (hover: none) { .hoverhint { display: none; } }
 
   .stats { display: grid; grid-template-columns: 120px auto; justify-content: end; align-items: center; column-gap: 12px;
            text-align: right; font-size: 13px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -330,7 +336,8 @@ function dayCells(cells, ym) {
     var b = +cells[i], date = ym + "-" + String(i + 1).padStart(2, "0");
     var cap = date + ": " + CELL[b];
     if (b < 8 && PARTIAL.indexOf(date) !== -1) cap += " — only part of this day was recorded";
-    out += '<i class="b' + b + '" title="' + esc(cap) + '" data-cap="' + esc(cap) + '"></i>';
+    // no title: it would repeat the .daycap readout, late, and never on a phone
+    out += '<i class="b' + b + '" data-cap="' + esc(cap) + '"></i>';
   }
   return out;
 }
@@ -374,8 +381,8 @@ function renderOverview() {
         "<b>" + m[1] + "</b><span>out of service</span>" +
         "<b>" + m[2] + "</b><span>planned works</span></div>" +
         '<div class="days"><b>' + m[3] + "</b><br>day" + (m[3] === 1 ? "" : "s") + " listed</div>" +
-      '</div><span class="chev">›</span></div>' +
-      '<div class="daycap"></div></div>';
+      '</div><span class="chev">›</span>' +
+      '<div class="daycap"></div></div></div>';
   }).join("") : '<div class="station"><p class="empty" style="padding:12px 16px">No lift or escalator notices were listed in ' +
     monthLabel(curMonth) + ".</p></div>";
 
@@ -390,7 +397,10 @@ function renderOverview() {
 
   document.getElementById("basis").innerHTML =
     "Stations with a lift or escalator notice listed in <b>" + monthLabel(curMonth) +
-    "</b>. Each cell is a day; a station with nothing listed that month is not shown — find it by name to see its history.";
+    "</b>. Each cell is a day" +
+    // one hover cue above the list, not a placeholder in every strip
+    '<span class="hoverhint">; hover one for its detail</span>' +
+    ". A station with nothing listed that month is not shown — find it by name to see its history.";
 
   var n = D.national[curMonth] || [0, 0, 0, 0, 0, 0];
   document.getElementById("natheading").textContent = "Across the network in " + monthLabel(curMonth);
@@ -567,7 +577,7 @@ function bindDayCaption() {
   var show = function (e) {
     var cell = e.target.closest(".bar i[data-cap]");
     if (!cell) return;
-    var host = cell.closest(".station, .card");
+    var host = cell.closest(".row, .card");
     var cap = host && host.querySelector(".daycap");
     if (cap) cap.textContent = cell.dataset.cap;
   };
