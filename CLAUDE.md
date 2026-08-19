@@ -76,6 +76,7 @@ merged with `sort -u`.
 | Windows end at the collection horizon; zero-minute listings count in its month | `notes/site.md` § Windows end |
 | Displayed instants are Dublin wall-clock; build/horizon stamps are UTC | `notes/site.md` § Displayed instants |
 | Station page shows every month, newest first; overview lists only stations with a notice that month | this file, and the ESB PR discussion |
+| The design layer is shared with uisce and esb via `../statusui`, vendored under `lift_site/ui/` — edit upstream, then `scripts/sync-ui.sh`; never edit the copy. `lift_site/site.css` is this site's own | `notes/site.md` § The design layer is shared; statusui's README |
 
 Decisions go in `notes/`, dated, with the rejected alternatives and their
 numbers. Add a row here when one closes something off — this file carries

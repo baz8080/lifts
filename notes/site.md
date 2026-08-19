@@ -136,3 +136,19 @@ change, and did.
 - **The 131 unidentifiable items** are all delay notices with empty
   `locationCodes` and are irrelevant to this site; noted so nobody goes
   looking.
+
+## The design layer is shared with uisce and esb — 2026-08-19
+
+The three status sites are deliberately look-alike, and every UI fix had been ported three
+times by hand. The tokens, base rules, row/bar/card components and the browser helpers now
+live in `../statusui` (`baz8080/statusui`), vendored under `lift_site/ui/` and inlined into
+`index.html` and the station pages at build by `statusui.assemble()`. `lift_site/site.css` is
+what is this site's own: the cell colours, the wider name column, the notice-text style.
+Instants keep their year through `when(ts, true)` and listings their days-to-months scale
+through `fmtHours(h, fmtDays)`; both moved upstream with those as options.
+
+Vendored rather than installed, so `dependencies` stays empty and a clone still builds; drift
+is guarded by `tests/test_ui_vendored.py`, which compares the copy to `../statusui/ui` when
+that checkout exists and skips otherwise. **To change the shared UI:** edit in `statusui`,
+commit, `scripts/sync-ui.sh`, run the tests, commit. The full list of what is shared and what
+is per-site is in statusui's README.
