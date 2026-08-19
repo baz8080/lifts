@@ -29,6 +29,15 @@ so run the suite with it set before shipping anything that touches the site.
 
 Lifts are elevators outside Ireland; the site says so once for search engines.
 
+## The UI is shared — change it upstream
+
+`lift_site/ui/` is a **vendored copy** of [`../statusui`](https://github.com/baz8080/statusui)
+(`ui/UPSTREAM` names the commit): the tokens, base CSS, row/bar/card components and the JS
+helpers that uisce, esb and lifts all use, inlined into every page at build. Edit it there,
+then `scripts/sync-ui.sh` here — `tests/test_ui_vendored.py` fails if the copy is edited in
+place. This site's own rules are `lift_site/site.css`; the shared/per-site rule is in statusui's
+CLAUDE.md. The vendoring keeps `dependencies` empty and a clone building.
+
 ## The invariant
 
 **The raw JSONL logs are the source of truth. The database is disposable.**
@@ -76,6 +85,7 @@ merged with `sort -u`.
 | Windows end at the collection horizon; zero-minute listings count in its month | `notes/site.md` § Windows end |
 | Displayed instants are Dublin wall-clock; build/horizon stamps are UTC | `notes/site.md` § Displayed instants |
 | Station page shows every month, newest first; overview lists only stations with a notice that month | this file, and the ESB PR discussion |
+| The design layer is shared with uisce and esb via `../statusui`, vendored under `lift_site/ui/` — edit upstream, then `scripts/sync-ui.sh`; never edit the copy. `lift_site/site.css` is this site's own | `notes/site.md` § The design layer is shared; statusui's README |
 
 Decisions go in `notes/`, dated, with the rejected alternatives and their
 numbers. Add a row here when one closes something off — this file carries

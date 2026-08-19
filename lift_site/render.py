@@ -11,25 +11,21 @@ never put a per-outage record in `data.js`.
 from __future__ import annotations
 
 import html
-import json
-import math
-import unicodedata
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 
 from lift_status.parse import DUBLIN
 
 from . import model
+from .ui import statusui
 
 BASE_URL = "https://baz8080.github.io/lifts"
 
 TEMPLATES = Path(__file__).parent
 SITE_HTML = TEMPLATES / "site.html"
 STATION_HTML = TEMPLATES / "station.html"
-
-CANONICAL = "<!--CANONICAL-->"
-TITLE, DESC, BODY = "<!--TITLE-->", "<!--DESC-->", "<!--BODY-->"
+SITE_CSS = TEMPLATES / "site.css"
 
 # How far the data may lag the build before the page says so. The collector
 # pushes daily and the site rebuilds daily, so a gap under this is the normal
@@ -41,32 +37,13 @@ STALE_AFTER = timedelta(hours=24)
 # prints it, the build warns past it, and the render tests assert it.
 BUDGET_BYTES = 500 * 1024
 
-MONTH_NAMES = (
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
-)
-
 KIND_LABEL = {"lift": "Lift", "escalator": "Escalator"}
 
-
-def slug(name):
-    # Fadas folded to ASCII rather than dropped: "Dún Laoghaire" should read
-    # as dun-laoghaire in the address bar, not d-n-laoghaire.
-    folded = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
-    return "".join(c if c.isalnum() else "-" for c in folded.lower()).strip("-")
-
-
-def month_label(ym):
-    return f"{MONTH_NAMES[int(ym[5:7]) - 1]} {ym[:4]}"
-
-
-def _dumps(obj):
-    # Default separators spend a byte on every comma and colon in the payload.
-    return json.dumps(obj, separators=(",", ":"), ensure_ascii=False)
-
-
-def _stamp(dt):
-    return dt.strftime("%Y-%m-%d %H:%M UTC")
+slug = statusui.slug
+month_label = statusui.month_label
+_dumps = statusui.dumps
+_stamp = statusui.stamp
+_days = statusui.days
 
 
 def _short(dt):
@@ -211,32 +188,12 @@ def shard(outages, months, until):
 
 
 def _when(ts):
-    if not ts:
-        return ""
-    dt = datetime.fromisoformat(ts)
-    return f"{dt.day} {MONTH_NAMES[dt.month - 1][:3]} {dt.year}, {dt:%H:%M}"
-
-
-def _half_up(x):
-    # JS Math.round rounds a .5 up; Python's round() goes to even. Mirrored in
-    # site.html, so a 12.5 h listing has to read "13 h" on both, not 12 and 13.
-    return math.floor(x + 0.5)
+    # starts can be a year old, so every instant carries its year
+    return statusui.when(ts, year=True)
 
 
 def _hours(h):
-    if h < 1:
-        return f"{_half_up(h * 60)} min"
-    if h < 48:
-        return f"{h:.1f} h" if h < 10 else f"{_half_up(h)} h"
-    return _days(_half_up(h / 24))
-
-
-def _days(n):
-    if n < 2:
-        return "1 day"
-    if n < 60:
-        return f"{n} days"
-    return f"{n / 30.44:.1f} months"
+    return statusui.hours(h, _days)
 
 
 COLLECTION_START_SHORT = _short(model.COLLECTION_START)
@@ -298,10 +255,6 @@ def _updates_html(updates):
     return f'<ul class="tl">{items}</ul>'
 
 
-# Said on the two day cells built from part of a day. Plain words on purpose:
-# it is read by someone wondering why their station looks quiet.
-PARTIAL_NOTE = " — only part of this day was recorded"
-
 DAY_LABELS = {
     "0": "nothing listed",
     "1": "lift out of service",
@@ -313,15 +266,8 @@ DAY_LABELS = {
 
 
 def _day_cells(cells, ym, partial):
-    out = []
-    for i, ch in enumerate(cells):
-        day = f"{ym}-{i + 1:02d}"
-        cap = f"{day}: {DAY_LABELS[ch]}"
-        if ch not in "89" and day in partial:
-            cap += PARTIAL_NOTE
-        # data-cap feeds station.html's .daycap readout; a title would repeat it
-        out.append(f'<i class="b{ch}" data-cap="{html.escape(cap)}"></i>')
-    return "".join(out)
+    # nothing to qualify on a day with no data or no colour yet
+    return statusui.day_cells(cells, ym, partial, DAY_LABELS, qualify=lambda ch: ch not in "89")
 
 
 def station_page(code, data, by_month):
@@ -358,7 +304,7 @@ def station_page(code, data, by_month):
         cells = m[0] if m else data["blank"][ym]
         cases = by_month.get(ym, [])
         body.append(f'<div class="card"><h2>{month_label(ym)}</h2>')
-        body.append(f'<div class="bar">{_day_cells(cells, ym, data["partial"])}</div>')
+        body.append(f'<div class="bar tall">{_day_cells(cells, ym, data["partial"])}</div>')
         body.append('<div class="daycap"></div>')
         if cases:
             body.append("".join(_case_html(k) for k in cases))
@@ -377,24 +323,21 @@ def station_page(code, data, by_month):
     )
     body.append("</p></div>")
 
-    page = STATION_HTML.read_text(encoding="utf-8")
-    return (
-        page.replace(TITLE, html.escape(title))
-        .replace(DESC, html.escape(desc))
-        .replace(CANONICAL, f"{BASE_URL}/s/{data['slugs'][code]}.html")
-        .replace(BODY, "".join(body))
+    return _page(
+        STATION_HTML,
+        {
+            "TITLE": html.escape(title),
+            "DESC": html.escape(desc),
+            "CANONICAL": f"{BASE_URL}/s/{data['slugs'][code]}.html",
+            "BODY": "".join(body),
+        },
     )
 
 
-def _sitemap(paths, lastmod):
-    urls = "".join(
-        f"<url><loc>{BASE_URL}/{p}</loc><lastmod>{lastmod}</lastmod></url>" for p in paths
-    )
-    return (
-        '<?xml version="1.0" encoding="UTF-8"?>'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-        f"{urls}</urlset>"
-    )
+def _page(template, markers):
+    """A template with the shared UI and this site's stylesheet inlined, then its markers."""
+    markers = dict(markers, **{"SITE-CSS": SITE_CSS.read_text(encoding="utf-8")})
+    return statusui.assemble(template.read_text(encoding="utf-8"), markers)
 
 
 def write(site_dir, outages, now, until):
@@ -405,8 +348,7 @@ def write(site_dir, outages, now, until):
     data, by_station, months = build(outages, now, until)
 
     (site_dir / "index.html").write_text(
-        SITE_HTML.read_text(encoding="utf-8").replace(CANONICAL, f"{BASE_URL}/"),
-        encoding="utf-8",
+        _page(SITE_HTML, {"CANONICAL": f"{BASE_URL}/"}), encoding="utf-8"
     )
     (site_dir / "data.js").write_text(
         "window.LIFT_DATA = " + _dumps(data) + ";\n", encoding="utf-8"
@@ -428,35 +370,13 @@ def write(site_dir, outages, now, until):
 
     lastmod = now.strftime("%Y-%m-%d")
     paths = [""] + [f"s/{data['slugs'][c]}.html" for c in data["stations"]]
-    (site_dir / "sitemap.xml").write_text(_sitemap(paths, lastmod), encoding="utf-8")
-    (site_dir / "robots.txt").write_text(
-        f"User-agent: *\nAllow: /\nSitemap: {BASE_URL}/sitemap.xml\n", encoding="utf-8"
+    (site_dir / "sitemap.xml").write_text(
+        statusui.sitemap(BASE_URL, paths, lastmod), encoding="utf-8"
     )
+    (site_dir / "robots.txt").write_text(statusui.robots(BASE_URL), encoding="utf-8")
     return data
 
 
 def size_report(site_dir):
-    """What a reader downloads before they touch anything.
-
-    Printed on every build: the payload is the constraint this site has to keep
-    defending as the corpus grows, and a regression belongs in the build log.
-    """
-    site_dir = Path(site_dir)
-    initial = {p: (site_dir / p).stat().st_size for p in ("index.html", "data.js")}
-    shards = sorted((site_dir / "h").glob("*.js"), key=lambda p: -p.stat().st_size)
-    pages = list((site_dir / "s").glob("*.html"))
-    lines = [
-        f"  {'index.html':<16}{initial['index.html'] / 1024:8.1f} KB",
-        f"  {'data.js':<16}{initial['data.js'] / 1024:8.1f} KB",
-        f"  {'initial load':<16}{sum(initial.values()) / 1024:8.1f} KB"
-        f"   (budget {BUDGET_BYTES / 1024:.1f} KB)",
-        f"  {'station pages':<16}{sum(p.stat().st_size for p in pages) / 1024:8.1f} KB"
-        f"   ({len(pages)} files)",
-    ]
-    if shards:
-        lines.append(
-            f"  {'shards':<16}{sum(p.stat().st_size for p in shards) / 1024:8.1f} KB"
-            f"   ({len(shards)} files, largest {shards[0].name} at"
-            f" {shards[0].stat().st_size / 1024:.1f} KB)"
-        )
-    return sum(initial.values()), "\n".join(lines)
+    """What a reader downloads before they touch anything; printed on every build."""
+    return statusui.size_report(site_dir, BUDGET_BYTES, "s", "station pages")
