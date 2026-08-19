@@ -124,8 +124,16 @@
   /* The list caption is a hover affordance: on touch a tap on a cell bubbles to
      the row and navigates, so there is nothing for it to show — and at ~8px a
      cell is far under any usable touch target. Don't reserve the strip. The
-     station page's own bars keep their readout: nothing navigates there. */
-  @media (hover: none) { .row .daycap { display: none; } }
+     station page's own bars keep their readout: nothing navigates there.
+     Hidden only while *empty*: iPadOS reports hover:none (and pointer:coarse,
+     any-hover:none) even with a trackpad attached, yet hovers still fire, so a
+     strip that hides outright would take the caption away from exactly the
+     pointer that can use it. Once filled it shows, at the cost of a one-time
+     17px growth of that row on those devices. */
+  @media (hover: none) { .row .daycap:empty { display: none; } }
+  /* the one-line cue that the bars respond, above the list; nothing to cue on
+     touch, where a tap navigates */
+  @media (hover: none) { .hoverhint { display: none; } }
 
   .stats { display: grid; grid-template-columns: 120px auto; justify-content: end; align-items: center; column-gap: 12px;
            text-align: right; font-size: 13px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -400,7 +408,11 @@ function renderOverview() {
 
   document.getElementById("basis").innerHTML =
     "Stations with a lift or escalator notice listed in <b>" + monthLabel(curMonth) +
-    "</b>. Each cell is a day; a station with nothing listed that month is not shown — find it by name to see its history.";
+    "</b>. Each cell is a day" +
+    // the bars answer to a hover now that their tooltips are gone; say so
+    // here, once, rather than in a placeholder in every strip below
+    '<span class="hoverhint">; hover one for its detail</span>' +
+    ". A station with nothing listed that month is not shown — find it by name to see its history.";
 
   var n = D.national[curMonth] || [0, 0, 0, 0, 0, 0];
   document.getElementById("natheading").textContent = "Across the network in " + monthLabel(curMonth);
