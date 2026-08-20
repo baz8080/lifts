@@ -303,6 +303,7 @@ function render() {
   document.getElementById("overview").hidden = station;
   document.getElementById("stationview").hidden = !station;
   if (station) renderStation(); else renderOverview();
+  revealMonthTab(document.getElementById(station ? "stationview" : "overview").querySelector(".months"));
 }
 
 /* --- search -------------------------------------------------------------- */
