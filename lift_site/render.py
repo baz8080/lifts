@@ -15,10 +15,11 @@ from collections import defaultdict
 from datetime import timedelta
 from pathlib import Path
 
+import statusui
+
 from lift_status.parse import DUBLIN
 
 from . import model
-from .ui import statusui
 
 BASE_URL = "https://baz8080.github.io/lifts"
 
