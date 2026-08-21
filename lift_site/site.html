@@ -25,7 +25,6 @@
   <main>
     <section id="overview">
       <div class="banner">
-        <span class="dot" id="natdot"></span>
         <strong id="natline">Loading…</strong>
         <span class="meta" id="natmeta"></span>
       </div>
@@ -127,11 +126,6 @@ function cellsFor(code, ym) {
   return m ? m[0] : D.blank[ym];
 }
 
-function dot(state, title) {
-  return '<span class="dot ' + (state === "out" ? "d-out" : state === "ok" ? "d-ok" : "") +
-    '" title="' + esc(title) + '"></span>';
-}
-
 function tile(v, k) {
   return '<div class="tile"><div class="v">' + esc(v) + '</div><div class="k">' + esc(k) + "</div></div>";
 }
@@ -154,8 +148,7 @@ function renderOverview() {
   document.getElementById("list").innerHTML = rows.length ? rows.map(function (r) {
     var m = r.m;
     return '<div class="place"><div class="row" onclick="go(\'' + esc(r.code) + '\')">' +
-      '<div class="cname">' + dot(m[4] ? "out" : "ok", m[4] ? "A notice is listed right now" : "Nothing listed right now") +
-        '<a href="s/' + D.slugs[r.code] + '.html" onclick="event.preventDefault()">' + esc(r.name) + "</a></div>" +
+      '<div class="cname"><a href="s/' + D.slugs[r.code] + '.html" onclick="event.preventDefault()">' + esc(r.name) + "</a></div>" +
       '<div class="bar">' + bar(m[0], curMonth) + "</div>" +
       '<div class="stats"><div class="counts">' +
         "<b>" + m[1] + "</b><span>out of service</span>" +
@@ -167,7 +160,6 @@ function renderOverview() {
     monthLabel(curMonth) + ".</p></div>";
 
   var c = D.current;
-  document.getElementById("natdot").className = "dot " + (c.stations ? "d-out" : "d-ok");
   document.getElementById("natline").textContent = c.stations
     ? plural(c.stations, "station") + " with a lift or escalator out of service"
     : "No lift or escalator notices listed";
@@ -207,15 +199,12 @@ function renderStation() {
   var name = D.stations[code];
   var stats = D.stats[code] || {};
   var months = D.months.slice().reverse();
-  var latest = stats[months[0]];
-  var outNow = !!(latest && latest[4]);
   var loading = HSTATE[code] === "loading", failed = HSTATE[code] === "error";
   var shard = HIST[code] || {};
 
   var head =
     '<a class="back" href="#" onclick="event.preventDefault();go(null)">← All stations</a>' +
-    '<div class="chead">' + dot(outNow ? "out" : "ok", outNow ? "A notice is listed right now" : "Nothing listed right now") +
-      "<h2>" + esc(name) + "</h2></div>" +
+    '<div class="chead"><h2>' + esc(name) + "</h2></div>" +
     '<div class="sub2" style="color:var(--muted);font-size:12.5px;margin-bottom:14px">' +
       "Irish Rail station code " + esc(code) + " · every month since collection began, newest first · " +
       '<a href="s/' + D.slugs[code] + '.html">permanent link</a></div>';
