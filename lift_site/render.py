@@ -285,11 +285,9 @@ def station_page(code, data, by_month):
         f"Lift (elevator) and escalator outages at {name} station, from Irish Rail's "
         f"service-message feed, since {data['start']}."
     )
-    latest = stats.get(months[0])
-    out_now = bool(latest and latest[4])
     body = [
         '<a class="back" href="../index.html">← All stations</a>',
-        f'<div class="chead"><span class="dot {"d-out" if out_now else "d-ok"}"></span>',
+        '<div class="chead">',
         f"<h1>{html.escape(name)}</h1></div>",
         f'<div class="sub">Irish Rail station code {html.escape(code)}<br>'
         f'Data to {html.escape(data["observed"])}'
