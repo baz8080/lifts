@@ -5,13 +5,14 @@
 /* station names run long ("Dún Laoghaire Mallin"); the row keeps its columns */
 .cname a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* day cells: 0 nothing listed, 1 lift out, 2 escalator out, 5 planned, 8 no data, 9 to come */
-.bar i.b1 { background: var(--critical); }
-.bar i.b2 { background: var(--serious); }
-.bar i.b5 { background: var(--maint); }
-.bar i.b8, .bar i.b9 { background: var(--cell-empty); }
-
-.stats .days { font-size: 14.5px; }
+/* day cells: 0 nothing listed, 1 lift out, 2 escalator out, 5 planned, 8 no data, 9 to come.
+   The legend swatches share these rules so the key can never drift from the bars;
+   b0 needs its own line because only .bar i defaults to --good in base.css. */
+.bar i.b1, .legend i.b1 { background: var(--critical); }
+.bar i.b2, .legend i.b2 { background: var(--serious); }
+.bar i.b5, .legend i.b5 { background: var(--maint); }
+.bar i.b8, .bar i.b9, .legend i.b8 { background: var(--cell-empty); }
+.legend i.b0 { background: var(--good); }
 
 /* a month card: bar, its readout, then the cases with no rule between */
 .card .bar + .daycap + .case { border-top: 0; margin-top: 4px; }
