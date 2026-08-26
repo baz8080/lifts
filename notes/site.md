@@ -168,31 +168,3 @@ installed package. **To change the shared UI now:** edit in `../statusui`, test 
 then `../statusui/rollout.sh` bumps the pin in all three sites, runs each site's tests and
 opens the PRs. An unpushed statusui change can be tried here with
 `uv run --with-editable ../statusui python -m lift_site ...`.
-
-## The stale banner — 2026-08-26
-
-On the evening of 2026-08-25 this site and esb both said "collection has stopped" while
-their collectors were running normally. The statusui rollout merged to main on each repo
-that evening, and the site rebuilds on every push to main, not just on its morning cron —
-so each rebuild landed late in the daily push cycle and saw data legitimately close to a
-day old, past the then 24-hour `STALE_AFTER`. The banner then sat on the live pages until
-the next rebuild. The general lesson: a rebuild can land at *any* point in the push cycle,
-so the threshold must sit above the longest gap between pushes, not at it. The incident
-arithmetic is written up in esb's `notes/staleness.md`.
-
-The fix is the same in both repos. The backup timer now fires at local midnight **and
-noon** (`scripts/systemd/lift-status-backup.timer`, effective on the Pi the next time
-`scripts/install-native.sh` runs there), and a second site cron at 12:40Z picks the noon
-push up — past its worst case whether Dublin is on UTC or UTC+1. The second slot follows
-uisce's twice-daily DB build and exists for publication latency only: it roughly halves
-how far the published page runs behind the feed, and changes nothing about the data — the
-raw logs capture every poll either way.
-
-`STALE_AFTER` is now 16 hours, rescaled to the cadence. Consecutive pushes are at most
-~13.5 hours apart (30-minute jitter, plus the October clock change), and the horizon
-trails a push by up to another half-poll, so ~14 hours is the legitimate maximum a build
-can see. A dead collector shows 17.2+ hours at the first morning cron after a missed
-midnight push. Any threshold in (14, 17.2) separates the two; 16 sits between. A single
-missed *noon* slot shows ~14–15 hours at the 12:40Z build — indistinguishable from
-unlucky timing — and is deliberately not flagged: the noon slot is a latency
-optimization, and the midnight arithmetic catches a dead collector six hours later.
