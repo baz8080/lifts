@@ -203,8 +203,13 @@ function renderStation() {
     '<a class="back" href="#" onclick="event.preventDefault();go(null)">← All stations</a>' +
     '<div class="chead"><h2>' + esc(name) + "</h2></div>" +
     '<div class="sub">' +
-      "Irish Rail station code " + esc(code) + " · every month since collection began, newest first · " +
-      '<a href="s/' + D.slugs[code] + '.html">permanent link</a></div>' +
+      "Irish Rail station code " + esc(code) + " · every month since collection began, newest first<br>" +
+      // Address-flavoured, unlike esb's and uisce's, because this page carries
+      // the same months and cases this view does - naming it for its content
+      // would promise a reader something they are already looking at. The
+      // station is in the link text because a screen reader lists links
+      // stripped of their context.
+      '<a href="s/' + D.slugs[code] + '.html">Permanent link to ' + esc(name) + " station</a></div>" +
     '<div class="legend">' + D.legend + "</div>";
 
   var body = months.map(function (ym) {

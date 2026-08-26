@@ -19,5 +19,6 @@
 .case .txt { color: var(--muted); font-size: 12.5px; margin-top: 4px; font-style: italic; }
 .tl { margin-top: 8px; }
 
-/* station page: the line under the heading */
+/* station page: the line under the heading. Duplicated in esb and now promoted
+   to statusui's base.css; this copy goes when the pin moves. */
 .chead + .sub { color: var(--muted); font-size: 12.5px; margin-bottom: 16px; }
