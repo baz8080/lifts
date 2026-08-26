@@ -16,7 +16,6 @@ import http.client
 import json
 import os
 import random
-import socket
 import time
 import urllib.error
 import urllib.request
@@ -135,7 +134,7 @@ class MessagesClient:
                     f"{exc.code} from {self.url}: {body}", status=exc.code
                 ) from exc
             raise ApiError(f"{exc.code} from {self.url}: {body}", status=exc.code) from exc
-        except (urllib.error.URLError, socket.timeout, TimeoutError, OSError) as exc:
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
             raise TransientError(f"network failure for {self.url}: {exc}", status=None) from exc
         # IncompleteRead/BadStatusLine are HTTPException, and UnicodeDecodeError
         # from _decode is a ValueError - neither is an OSError, so without these

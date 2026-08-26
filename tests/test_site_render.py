@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from lift_site import model, render
 from tests.test_site_model import NOW, T0, SiteModelCase, escalator, lift
@@ -140,7 +140,7 @@ class TestWords(unittest.TestCase):
 class TestMonths(unittest.TestCase):
     def test_month_list_runs_from_collection_start_to_now(self):
         self.assertEqual(
-            model.month_list(model.COLLECTION_START, datetime(2026, 10, 2, tzinfo=timezone.utc)),
+            model.month_list(model.COLLECTION_START, datetime(2026, 10, 2, tzinfo=UTC)),
             ["2026-08", "2026-09", "2026-10"],
         )
 
@@ -148,7 +148,7 @@ class TestMonths(unittest.TestCase):
         # COLLECTION_START is 21:30, and the Pages build runs at 05:40. Carrying
         # that time of day forward hid the new month from the first build of
         # every month, and with it every notice first listed that morning.
-        build_clock = datetime(2026, 9, 1, 5, 40, tzinfo=timezone.utc)
+        build_clock = datetime(2026, 9, 1, 5, 40, tzinfo=UTC)
         self.assertEqual(
             model.month_list(model.COLLECTION_START, build_clock), ["2026-08", "2026-09"]
         )

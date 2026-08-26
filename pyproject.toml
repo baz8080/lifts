@@ -7,7 +7,7 @@
 name = "lifts"
 version = "1.0.0"
 description = "Long-term collector and status site for Irish Rail lift-outage notices"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = []
 
 [dependency-groups]

@@ -11,7 +11,7 @@ import itertools
 import os
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from lift_site import model, render
@@ -22,7 +22,7 @@ _run_counter = itertools.count()
 
 # A synthetic collection that starts where the real one did.
 T0 = model.COLLECTION_START
-NOW = datetime(2026, 8, 20, 12, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 8, 20, 12, 0, tzinfo=UTC)
 
 
 def iso(dt):
@@ -150,7 +150,7 @@ class TestListing(SiteModelCase):
         seen = T0 + timedelta(days=5)
         self.poll(seen, [lift(start="2026-05-05T00:00:00")])
         (o,) = self.load()
-        self.assertEqual(o.start, datetime(2026, 5, 4, 23, 0, tzinfo=timezone.utc))
+        self.assertEqual(o.start, datetime(2026, 5, 4, 23, 0, tzinfo=UTC))
         self.assertEqual(o.first_seen, seen)
 
     def test_a_notice_still_up_ends_at_the_horizon_not_the_clock(self):
@@ -198,7 +198,7 @@ class TestMergeEdits(SiteModelCase):
         self.poll(T0, [lift(start="2026-08-05T09:00:00")])
         self.poll(T0 + timedelta(minutes=30), [lift(start="2026-08-01T09:00:00", planned=True)])
         (o,) = self.load()
-        self.assertEqual(o.start, datetime(2026, 8, 1, 8, 0, tzinfo=timezone.utc))
+        self.assertEqual(o.start, datetime(2026, 8, 1, 8, 0, tzinfo=UTC))
         self.assertTrue(o.planned)
 
     def test_a_notice_that_comes_back_a_poll_later_is_a_separate_outage(self):
@@ -325,8 +325,8 @@ class TestStationMonth(SiteModelCase):
 
     def test_ongoing_is_only_true_in_the_horizons_month(self):
         self.poll(T0, [lift()])
-        self.poll(datetime(2026, 9, 2, tzinfo=timezone.utc), [lift()])
-        now = datetime(2026, 9, 3, tzinfo=timezone.utc)
+        self.poll(datetime(2026, 9, 2, tzinfo=UTC), [lift()])
+        now = datetime(2026, 9, 3, tzinfo=UTC)
         outages = self.load(now=now)
         self.assertFalse(self.cells(outages, "2026-08", now=now)["ongoing"])
         self.assertTrue(self.cells(outages, "2026-09", now=now)["ongoing"])
@@ -348,20 +348,20 @@ class TestStationMonth(SiteModelCase):
 class TestPartialDays(unittest.TestCase):
     def test_the_first_and_last_days_are_flagged(self):
         # Dublin days, like the bars: 23:01 UTC is already the 18th in Dublin.
-        until = datetime(2026, 8, 17, 23, 1, tzinfo=timezone.utc)
+        until = datetime(2026, 8, 17, 23, 1, tzinfo=UTC)
         self.assertEqual(model.partial_days(until), ["2026-08-08", "2026-08-18"])
 
     def test_a_horizon_on_midnight_flags_the_day_before(self):
         # Midnight *in Dublin*, which in August is 23:00 the day before in UTC.
-        until = datetime(2026, 8, 17, 23, 0, tzinfo=timezone.utc)
+        until = datetime(2026, 8, 17, 23, 0, tzinfo=UTC)
         self.assertEqual(model.partial_days(until), ["2026-08-08", "2026-08-17"])
 
 
 class TestShard(SiteModelCase):
     def test_an_outage_is_filed_under_every_month_it_was_listed_in(self):
         self.poll(T0, [lift()])
-        self.poll(datetime(2026, 9, 2, tzinfo=timezone.utc), [lift()])
-        outages = self.load(now=datetime(2026, 9, 3, tzinfo=timezone.utc))
+        self.poll(datetime(2026, 9, 2, tzinfo=UTC), [lift()])
+        outages = self.load(now=datetime(2026, 9, 3, tzinfo=UTC))
         by_month = render.shard(outages, ["2026-08", "2026-09"], self.until)
         self.assertEqual(sorted(by_month), ["2026-08", "2026-09"])
         self.assertIs(by_month["2026-08"][0], by_month["2026-09"][0])

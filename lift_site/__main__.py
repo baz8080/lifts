@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from lift_status.store import DB_FILENAME, DEFAULT_DATA_DIR
@@ -25,7 +25,7 @@ def _parse_now(value):
     if text.endswith(("Z", "z")):
         text = text[:-1] + "+00:00"
     dt = datetime.fromisoformat(text)
-    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
+    return dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt.astimezone(UTC)
 
 
 def main(argv=None) -> int:
@@ -54,7 +54,7 @@ def main(argv=None) -> int:
         )
         return 1
 
-    now = _parse_now(args.now) if args.now else datetime.now(timezone.utc)
+    now = _parse_now(args.now) if args.now else datetime.now(UTC)
 
     outages, until = model.load_outages(db_path, now)
     if not outages:
