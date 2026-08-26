@@ -168,3 +168,47 @@ installed package. **To change the shared UI now:** edit in `../statusui`, test 
 then `../statusui/rollout.sh` bumps the pin in all three sites, runs each site's tests and
 opens the PRs. An unpushed statusui change can be tried here with
 `uv run --with-editable ../statusui python -m lift_site ...`.
+
+## The design alignment pass — 2026-08-26
+
+The owner reviewed uisce and esb side by side, picked a winner per element, and asked for the
+same language here, so the three sites read as one product. What this site absorbed, and what
+it deliberately kept:
+
+- **Banner** takes the shared shape: `**August 2026 so far:** 3 out of service and 1 planned
+  works across 4 stations` — the bold long-month prefix, " so far" only while the viewed
+  month is still collecting (`observed_iso` month == viewed month). The old line was the
+  right-now station count; the right-now information moved to the latest month's tile (the
+  lifts / escalators split "with a notice up at the last poll"), which replaces the plain
+  ongoing-count tile there. The freshness chip (statusui `freshness()`, the age not the
+  timestamp, stale past 16 h) replaces both the banner's "as of …" and the header's
+  `stampLine`; the exact horizon survives as the chip's hover title and, in full, on the
+  static station pages' sub line. `observed_iso` and `stale_hours` joined the payload for it.
+  The stamps that remain visible are still UTC and say so — the wall-clock/UTC split holds.
+- **The national heading** is the shared "The national picture in August 2026" (was "Across
+  the network in Aug 2026"); the "stations affected" and "out of service / planned works"
+  tiles went, because the banner now carries both.
+- **The legend** moved above the list, swatches went from inline styles to the same
+  `.legend i.bN` site.css rules that colour the bars (so the key cannot drift), and it now
+  also appears at the top of the station view and the static station pages, which had none.
+- **Search** is statusui's shared `bindSearch`, fed an index built at boot (each station
+  keyed under its own name — that is what keeps the match a substring match; `searchHits`
+  grew a dedupe upstream for exactly this shape). The per-hit "nothing listed in Aug 2026"
+  note survives via the new `note()` hook. Lost, accepted: the empty state is now the shared
+  "Nothing matching “q”" rather than "No station matching “q” has had a notice yet".
+- **Rows**: the day-count stat renamed `.days` → the shared `.cml` (site.css rule deleted;
+  base carries it). The wider `--row-cols`/`--stats-cols` stay — station names and the
+  "out of service" labels are longer than the siblings', and the knobs exist for exactly
+  that. The fixed worst-first sort stays: it is the settled decision above, and it is also
+  esb's pattern.
+- **Day captions** go through `fmtDay` ("Sun 9 Aug: lift out of service"), matching the
+  static pages, which always did.
+- **Footer**: "What this measures" became a disclosure like its siblings, keeping the
+  bold no-fixed-field caveat always visible above the disclosures; the final line is the
+  shared "Source code · not affiliated with Iarnród Éireann." on both page types. "Lifts are
+  elevators" is still said once per page type, now inside "What this measures".
+
+Not taken, on purpose: no grade, no percentage, no intensity ramp (the settled "a notice is
+listed or it is not"); no alphabetical-only list (26 counties scroll, a growing station list
+led by live outages is the site's point); and none of the measured-interval wording moved —
+"no longer listed", never "fixed".

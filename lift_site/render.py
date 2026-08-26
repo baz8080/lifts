@@ -125,6 +125,11 @@ def build(outages, now, until):
         # page dates itself by the clock and a reader cannot tell a quiet week
         # from a collector that stopped.
         "observed": _stamp(until),
+        # The same instant for freshness(), which dates the page against the
+        # reader's clock rather than the build's. STALE_AFTER travels with it,
+        # so a page served from cache can still go stale.
+        "observed_iso": f"{until:%Y-%m-%dT%H:%M:00Z}",
+        "stale_hours": round(STALE_AFTER.total_seconds() / 3600),
         "stale": now - until > STALE_AFTER,
         "partial": model.partial_days(until),
         "start": model.COLLECTION_START.strftime("%-d %B %Y"),
@@ -270,6 +275,23 @@ def _day_cells(cells, ym, partial):
     return statusui.day_cells(cells, ym, partial, DAY_LABELS, qualify=lambda ch: ch not in "89")
 
 
+# What each day-cell colour means. The swatches take their colours from the
+# same site.css rules that colour the cells, so the key cannot drift from the
+# bars; mirrored in site.html's legendHtml().
+LEGEND_ITEMS = (
+    ("b0", "nothing listed"),
+    ("b1", "lift out of service"),
+    ("b2", "escalator out of service"),
+    ("b5", "planned works"),
+    ("b8", "no data"),
+)
+
+
+def _legend_html():
+    spans = "".join(f'<span><i class="{cls}"></i>{label}</span>' for cls, label in LEGEND_ITEMS)
+    return f'<div class="legend">{spans}</div>'
+
+
 def station_page(code, data, by_month):
     """A station's whole history on one page, newest month first.
 
@@ -296,6 +318,7 @@ def station_page(code, data, by_month):
             else ""
         )
         + "</div>",
+        _legend_html(),
     ]
     for ym in months:
         m = stats.get(ym)

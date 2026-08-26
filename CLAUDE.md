@@ -89,6 +89,7 @@ merged with `sort -u`.
 | Displayed instants are Dublin wall-clock; build/horizon stamps are UTC | `notes/site.md` § Displayed instants |
 | Station page shows every month, newest first; overview lists only stations with a notice that month | this file, and the ESB PR discussion |
 | The Pi pushes twice daily (midnight and noon local) and the site builds after each slot; the stale banner trips at 16h — above the widest legitimate push gap (~14h), below a missed midnight push (17h+) | `STALE_AFTER` in `lift_site/render.py` |
+| Banner, national heading, legend placement, search widget and footer follow the shared design language (aligned 2026-08-26); the horizon left the header stamp for the freshness chip's hover title and the static pages' sub line | `notes/site.md` § The design alignment pass |
 | The design layer is shared with uisce and esb via `../statusui`, a uv git dependency pinned in `uv.lock` — edit upstream, then `../statusui/rollout.sh` bumps all three sites. Vendored copies were tried first and drifted within a day. `lift_site/site.css` is this site's own | `notes/site.md` § The vendored copy became a pinned dependency; statusui's README |
 
 Decisions go in `notes/`, dated, with the rejected alternatives and their

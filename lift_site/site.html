@@ -19,26 +19,26 @@
   <header>
     <h1>Irish Rail Lift Outages</h1>
     <div class="sub">Lift (elevator) and escalator outages at Irish Rail stations, station by station.</div>
-    <div class="sub2">Unofficial. Not affiliated with Iarnród Éireann. <span id="stamp"></span></div>
+    <div class="sub2">Unofficial. Not affiliated with Iarnród Éireann.</div>
   </header>
 
   <main>
     <section id="overview">
       <div class="banner">
-        <strong id="natline">Loading…</strong>
+        <span id="natline">Loading…</span>
         <span class="meta" id="natmeta"></span>
       </div>
       <div class="controls">
         <div class="months" id="months"></div>
         <div class="search">
-          <input id="q" type="search" placeholder="Find a station" autocomplete="off" aria-label="Find a station">
+          <input id="q" type="search" placeholder="Search a station" autocomplete="off" aria-label="Search a station">
           <div class="results" id="results" hidden></div>
         </div>
       </div>
       <p class="basis" id="basis"></p>
-      <div id="list"></div>
       <div class="legend" id="legend"></div>
-      <h3 class="natheading" id="natheading">This month</h3>
+      <div id="list"></div>
+      <h3 class="natheading" id="natHeading"></h3>
       <div class="tiles" id="tiles"></div>
     </section>
 
@@ -46,32 +46,33 @@
   </main>
 
   <footer>
-    <h3>What this measures</h3>
+    <p><b>A notice going up is the only signal, and a notice coming down is the only other
+    one.</b> The feed has no “fixed” field: an outage ends here when its notice is no longer
+    listed, which usually means the lift is back but strictly means only that Irish Rail
+    took the notice down.</p>
+
+    <details><summary>What this measures</summary>
     <p>This site reads Irish Rail's public service-message feed every 30 minutes — the
     banners shown on irishrail.ie — and keeps every notice that says a lift or escalator is
     out of order. Irish Rail publishes no history, so nothing before <span id="startdate"></span>
-    exists here, and days before it are shown as “no data” rather than as working lifts.</p>
-    <p><b>A notice going up is the only signal, and a notice coming down is the only other one.</b>
-    The feed has no “fixed” field: an outage ends here when its notice is no longer listed,
-    which usually means the lift is back but strictly means only that Irish Rail took the
-    notice down. Notices have been seen to appear and disappear in batches, months after
-    the start date they carry.</p>
+    exists here, and days before it are shown as “no data” rather than as working lifts.
+    Notices have been seen to appear and disappear in batches, months after the start date
+    they carry. Lifts are elevators, if you are reading from elsewhere.</p>
+    </details>
 
     <details><summary>How to read an outage</summary>
     <p>Each outage shows when its notice was first listed and when it was no longer listed
     — or “still listed at the last poll” for one that is up now — and the duration between
     the two, to the nearest half hour. That is what the day bars colour. The notice also
     carries a start date of Irish Rail's own, shown beside it as their claim: it is
-    routinely weeks or months before the notice was listed, over days this site was watching
-    and the notice was not there, so it colours nothing here.</p>
+    routinely weeks or months before the notice was listed, so it colours nothing here.</p>
     <p>“Planned works” is what the notice itself says — <em>temporarily unavailable due to
     planned works</em> — against <em>currently out of service</em> for everything else.
     Escalators are listed in the same feed with the same wording and are shown too, tagged
     separately.</p>
-    <p>Irish Rail sometimes reissues a notice with new wording or a corrected start. When
-    the new one appears at the very poll the old one vanished, they are shown as one outage
-    with the reissue noted. A notice that comes back a poll or more later is a separate
-    outage — the gap is real, and it is what this site is measuring.</p>
+    <p>A reissued notice that appears at the very poll the old one vanished is shown as one
+    outage with the reissue noted. A notice that comes back a poll or more later is a
+    separate outage — the gap is real, and it is what this site is measuring.</p>
     </details>
 
     <details><summary>What it cannot tell you</summary>
@@ -84,7 +85,7 @@
     plays no part in anything measured.</p>
     </details>
 
-    <p id="src"></p>
+    <p id="gen"><a href="https://github.com/baz8080/lifts">Source code</a> · not affiliated with Iarnród Éireann.</p>
   </footer>
 </div>
 
@@ -118,8 +119,18 @@ var START_ISO = null;
 
 /* --- day bars ------------------------------------------------------------ */
 // one cell for the shared dayCells: [class, caption, may carry the part-day note]
-function describeCell(ch, date) { return ["b" + ch, date + ": " + CELL[+ch], +ch < 8]; }
+function describeCell(ch, date) { return ["b" + ch, fmtDay(date) + ": " + CELL[+ch], +ch < 8]; }
 function bar(cells, ym) { return dayCells(cells, ym, describeCell, PARTIAL); }
+
+// What each day-cell colour means; the swatches take their colours from the
+// same site.css rules that colour the cells. Mirrored in render.py.
+function legendHtml() {
+  return [["b0", "nothing listed"], ["b1", "lift out of service"], ["b2", "escalator out of service"],
+          ["b5", "planned works"], ["b8", "no data"]]
+    .map(function (l) {
+      return '<span><i class="' + l[0] + '"></i>' + l[1] + "</span>";
+    }).join("");
+}
 
 function cellsFor(code, ym) {
   var m = (D.stats[code] || {})[ym];
@@ -153,44 +164,40 @@ function renderOverview() {
       '<div class="stats"><div class="counts">' +
         "<b>" + m[1] + "</b><span>out of service</span>" +
         "<b>" + m[2] + "</b><span>planned works</span></div>" +
-        '<div class="days"><b>' + m[3] + "</b><br>day" + (m[3] === 1 ? "" : "s") + " listed</div>" +
+        '<div class="cml"><b>' + m[3] + "</b><br>day" + (m[3] === 1 ? "" : "s") + " listed</div>" +
       '</div><span class="chev">›</span>' +
       '<div class="daycap"></div></div></div>';
   }).join("") : '<div class="place"><p class="empty" style="padding:12px 16px">No lift or escalator notices were listed in ' +
-    monthLabel(curMonth) + ".</p></div>";
-
-  var c = D.current;
-  document.getElementById("natline").textContent = c.stations
-    ? plural(c.stations, "station") + " with a lift or escalator out of service"
-    : "No lift or escalator notices listed";
-  document.getElementById("natmeta").innerHTML =
-    (c.stations ? plural(c.lifts, "lift") + ", " + plural(c.escalators, "escalator") + " · " : "") +
-    "as of " + esc(D.observed);
-
-  document.getElementById("basis").innerHTML =
-    "Stations with a lift or escalator notice listed in <b>" + monthLabel(curMonth) +
-    "</b>. Each cell is a day" +
-    // one hover cue above the list, not a placeholder in every strip
-    '<span class="hoverhint">; hover one for its detail</span>' +
-    ". A station with nothing listed that month is not shown — find it by name to see its history.";
+    monthLabelLong(curMonth) + ".</p></div>";
 
   var n = D.national[curMonth] || [0, 0, 0, 0, 0, 0];
-  document.getElementById("natheading").textContent = "Across the network in " + monthLabel(curMonth);
+  // "so far" only while the viewed month is still collecting
+  var partial = D.observed_iso.slice(0, 7) === curMonth;
+  document.getElementById("natline").innerHTML =
+    "<strong>" + monthLabelLong(curMonth) + (partial ? " so far" : "") + ":</strong> " +
+    (n[1]
+      ? n[2] + " out of service and " + n[3] + " planned works across " + plural(n[0], "station")
+      : "no lift or escalator notices listed");
+
+  document.getElementById("basis").innerHTML =
+    "Stations with a lift or escalator notice listed in <b>" + monthLabelLong(curMonth) +
+    "</b>. A station with nothing listed that month is not shown — find it by name to see its history." +
+    // one hover cue above the list, not a placeholder in every strip
+    ' <span class="hoverhint">Hover a day in a bar for its detail.</span>';
+
+  document.getElementById("natHeading").textContent =
+    "The national picture in " + monthLabelLong(curMonth);
+  var c = D.current;
   document.getElementById("tiles").innerHTML = [
-    tile(n[0], "stations affected"),
-    tile(n[2] + " / " + n[3], "out of service / planned works"),
     tile(num(n[4]), "station-days with a notice"),
-    tile(n[5], "with a notice up at the last poll")
+    // the latest month's "up at the last poll" is the live count, so it can
+    // afford the lift/escalator split; a past month's is just a number
+    curMonth === D.months[D.months.length - 1]
+      ? tile(c.lifts + " / " + c.escalators, "lifts / escalators with a notice up at the last poll")
+      : tile(n[5], "with a notice up at the last poll")
   ].join("");
 
-  document.getElementById("legend").innerHTML =
-    [[0, "nothing listed"], [1, "lift out of service"], [2, "escalator out of service"],
-     [5, "planned works"], [8, "no data"]]
-    .map(function (l) {
-      return '<span><i class="b' + l[0] + '" style="background:var(' +
-        {0: "--good", 1: "--critical", 2: "--serious", 5: "--maint", 8: "--cell-empty"}[l[0]] +
-        ')"></i>' + esc(l[1]) + "</span>";
-    }).join("");
+  document.getElementById("legend").innerHTML = legendHtml();
 }
 
 /* --- station ------------------------------------------------------------- */
@@ -205,9 +212,10 @@ function renderStation() {
   var head =
     '<a class="back" href="#" onclick="event.preventDefault();go(null)">← All stations</a>' +
     '<div class="chead"><h2>' + esc(name) + "</h2></div>" +
-    '<div class="sub2" style="color:var(--muted);font-size:12.5px;margin-bottom:14px">' +
+    '<div class="sub">' +
       "Irish Rail station code " + esc(code) + " · every month since collection began, newest first · " +
-      '<a href="s/' + D.slugs[code] + '.html">permanent link</a></div>';
+      '<a href="s/' + D.slugs[code] + '.html">permanent link</a></div>' +
+    '<div class="legend">' + legendHtml() + "</div>";
 
   var body = months.map(function (ym) {
     var cases = shard[ym] || [];
@@ -297,31 +305,32 @@ function render() {
 
 /* --- search -------------------------------------------------------------- */
 /* Every station ever seen ships in data.js - it is a short list - so the
-   search is a filter over it, and it finds a station that is quiet this month
-   and so absent from the list above. */
-function runSearch() {
-  var q = document.getElementById("q").value.trim().toLowerCase();
-  var box = document.getElementById("results");
-  if (q.length < 2) { box.hidden = true; return; }
-  var hits = [];
+   shared search runs over an index built at boot instead of fetching one:
+   each station keyed under its own name, which is what makes the match a
+   substring match, and it finds a station that is quiet this month and so
+   absent from the list above. */
+var NAMES = {};
+
+function bindStationSearch() {
+  var idx = {};
   Object.keys(D.stations).forEach(function (code) {
-    var name = D.stations[code], at = name.toLowerCase().indexOf(q);
-    if (at !== -1) hits.push([name, code, at]);
+    NAMES[D.stations[code]] = code;
+    idx[D.stations[code]] = [D.stations[code]];
   });
-  hits.sort(function (a, b) { return a[2] - b[2] || a[0].localeCompare(b[0]); });
-  box.hidden = false;
-  box.innerHTML = hits.length
-    ? hits.slice(0, 40).map(function (e) {
-        var m = (D.stats[e[1]] || {})[curMonth];
-        return '<button onclick="pick(\'' + esc(e[1]) + '\')">' + esc(e[0]) +
-          (m ? "" : ' <span class="rc">nothing listed in ' + monthLabel(curMonth) + "</span>") + "</button>";
-      }).join("")
-    : '<div class="none">No station matching “' + esc(q) + '” has had a notice yet</div>';
-}
-function pick(code) {
-  document.getElementById("q").value = "";
-  document.getElementById("results").hidden = true;
-  go(code);
+  bindSearch({
+    input: document.getElementById("q"),
+    results: document.getElementById("results"),
+    counties: Object.keys(NAMES).sort(),
+    src: "",
+    loaded: function () { return idx; },
+    pick: function (name) { go(NAMES[name]); },
+    // the status where the siblings show a county: picking a quiet station
+    // still works, this just says what the reader will find
+    note: function (name) {
+      return (D.stats[NAMES[name]] || {})[curMonth]
+        ? "" : "nothing listed in " + monthLabel(curMonth);
+    }
+  });
 }
 
 /* --- boot ---------------------------------------------------------------- */
@@ -333,14 +342,13 @@ function boot() {
   }
   curMonth = D.months[D.months.length - 1];
   START_ISO = D.start_iso;
-  document.getElementById("stamp").innerHTML = stampLine(D);
+  var natmeta = document.getElementById("natmeta");
+  natmeta.innerHTML = freshness(D.observed_iso, D.stale_hours, "collection has stopped");
+  // the exact horizon, for whoever hovers the age chip; the header stamp it
+  // replaces carried it in full
+  natmeta.title = "Data to " + D.observed;
   document.getElementById("startdate").textContent = D.start;
-  document.getElementById("src").textContent =
-    "Unofficial, and not affiliated with Iarnród Éireann. Lifts are elevators, if you are reading from elsewhere.";
-  document.getElementById("q").addEventListener("input", runSearch);
-  document.addEventListener("click", function (e) {
-    if (!e.target.closest(".search")) document.getElementById("results").hidden = true;
-  });
+  bindStationSearch();
   bindDayCaption();
   bindMonthReveal();
   addEventListener("hashchange", route);
