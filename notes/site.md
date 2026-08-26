@@ -214,7 +214,7 @@ led by live outages is the site's point); and none of the measured-interval word
 
 ## The permalink affordance moved out of the footer — 2026-08-26
 
-Every drill-down on all three sites now offers the static page it has a permanent URL for, in the same place: its own line directly under the heading, above the month tabs where a site has them. The rule that styles that line, `.chead + .sub`, is promoted to statusui's `base.css`: lifts and esb had been carrying it byte for byte in their own `site.css` and uisce is now the third consumer, which is exactly the "two sites want it and none wants it different" test. The three local copies stay until the pin moves — a site's `uv.lock` can only track statusui's `main`, so deleting them in the same change would leave the line unstyled on the deployed sites until rollout. They go in the pin-bump commit.
+Every drill-down on all three sites now offers the static page it has a permanent URL for, in the same place: its own line directly under the heading, above the month tabs where a site has them. The rule that styles that line, `.chead + .sub`, is promoted to statusui's `base.css`: lifts and esb had been carrying it byte for byte in their own `site.css` and uisce is now the third consumer, which is exactly the "two sites want it and none wants it different" test. The three local copies went with the pin bump that followed.
 
 This site already had the link — it was the model for the other two — but it trailed the descriptive sentence after a `·`, which made it the least prominent of the three once esb and uisce gained theirs. It now has its own line.
 
