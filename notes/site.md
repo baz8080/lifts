@@ -205,8 +205,7 @@ it deliberately kept:
   static pages, which always did.
 - **Footer**: "What this measures" became a disclosure like its siblings, keeping the
   bold no-fixed-field caveat always visible above the disclosures; the final line is the
-  shared "Source code · not affiliated with Iarnród Éireann." on both page types. "Lifts are
-  elevators" is still said once per page type, now inside "What this measures".
+  shared "Source code · not affiliated with Iarnród Éireann." on both page types.
 
 Not taken, on purpose: no grade, no percentage, no intensity ramp (the settled "a notice is
 listed or it is not"); no alphabetical-only list (26 counties scroll, a growing station list
