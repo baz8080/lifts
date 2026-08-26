@@ -129,9 +129,6 @@ def build(outages, now, until):
         # reader's clock rather than the build's. STALE_AFTER travels with it,
         # so a page served from cache can still go stale.
         "observed_iso": f"{until:%Y-%m-%dT%H:%M:00Z}",
-        # The horizon's month by the same Dublin calendar as `months`: during
-        # IST the UTC stamp's month reads one behind for the last hour of the
-        # month, and the banner would call a minutes-old month settled.
         "observed_month": f"{until.astimezone(DUBLIN):%Y-%m}",
         "stale_hours": round(STALE_AFTER.total_seconds() / 3600),
         "stale": now - until > STALE_AFTER,
