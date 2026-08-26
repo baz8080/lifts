@@ -29,10 +29,13 @@ STATION_HTML = TEMPLATES / "station.html"
 SITE_CSS = TEMPLATES / "site.css"
 
 # How far the data may lag the build before the page says so. The collector
-# pushes daily and the site rebuilds daily, so a gap under this is the normal
-# handover; past it, something has stopped and the reader should be told rather
-# than left reading the day bars as a quiet week.
-STALE_AFTER = timedelta(hours=24)
+# pushes at local midnight and noon with up to 30 minutes of jitter, so
+# consecutive pushes can be 13.5 hours apart across a DST change, and the site
+# rebuilds on every push to main as well as on its crons — a merge landing just
+# before a push can build against data legitimately ~14 hours old. A collector
+# that has actually died is first seen by the morning cron at 17+ hours. 16
+# sits between the two; the numbers are in notes/site.md § The stale banner.
+STALE_AFTER = timedelta(hours=16)
 
 # What a reader downloads before touching anything. Named once: the build
 # prints it, the build warns past it, and the render tests assert it.
