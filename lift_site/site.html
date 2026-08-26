@@ -122,16 +122,6 @@ var START_ISO = null;
 function describeCell(ch, date) { return ["b" + ch, fmtDay(date) + ": " + CELL[+ch], +ch < 8]; }
 function bar(cells, ym) { return dayCells(cells, ym, describeCell, PARTIAL); }
 
-// What each day-cell colour means; the swatches take their colours from the
-// same site.css rules that colour the cells. Mirrored in render.py.
-function legendHtml() {
-  return [["b0", "nothing listed"], ["b1", "lift out of service"], ["b2", "escalator out of service"],
-          ["b5", "planned works"], ["b8", "no data"]]
-    .map(function (l) {
-      return '<span><i class="' + l[0] + '"></i>' + l[1] + "</span>";
-    }).join("");
-}
-
 function cellsFor(code, ym) {
   var m = (D.stats[code] || {})[ym];
   return m ? m[0] : D.blank[ym];
@@ -172,7 +162,7 @@ function renderOverview() {
 
   var n = D.national[curMonth] || [0, 0, 0, 0, 0, 0];
   // "so far" only while the viewed month is still collecting
-  var partial = D.observed_iso.slice(0, 7) === curMonth;
+  var partial = D.observed_month === curMonth;
   document.getElementById("natline").innerHTML =
     "<strong>" + monthLabelLong(curMonth) + (partial ? " so far" : "") + ":</strong> " +
     (n[1]
@@ -197,7 +187,7 @@ function renderOverview() {
       : tile(n[5], "with a notice up at the last poll")
   ].join("");
 
-  document.getElementById("legend").innerHTML = legendHtml();
+  document.getElementById("legend").innerHTML = D.legend;
 }
 
 /* --- station ------------------------------------------------------------- */
@@ -215,7 +205,7 @@ function renderStation() {
     '<div class="sub">' +
       "Irish Rail station code " + esc(code) + " · every month since collection began, newest first · " +
       '<a href="s/' + D.slugs[code] + '.html">permanent link</a></div>' +
-    '<div class="legend">' + legendHtml() + "</div>";
+    '<div class="legend">' + D.legend + "</div>";
 
   var body = months.map(function (ym) {
     var cases = shard[ym] || [];
@@ -314,8 +304,12 @@ var NAMES = {};
 function bindStationSearch() {
   var idx = {};
   Object.keys(D.stations).forEach(function (code) {
-    NAMES[D.stations[code]] = code;
-    idx[D.stations[code]] = [D.stations[code]];
+    var name = D.stations[code];
+    // two stations sharing a name would clobber each other here; qualify the
+    // second with its code, as station_slugs does for the page filenames
+    if (NAMES.hasOwnProperty(name)) name += " (" + code + ")";
+    NAMES[name] = code;
+    idx[name] = [name];
   });
   bindSearch({
     input: document.getElementById("q"),
