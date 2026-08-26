@@ -211,3 +211,26 @@ Not taken, on purpose: no grade, no percentage, no intensity ramp (the settled "
 listed or it is not"); no alphabetical-only list (26 counties scroll, a growing station list
 led by live outages is the site's point); and none of the measured-interval wording moved —
 "no longer listed", never "fixed".
+
+## The permalink affordance moved out of the footer — 2026-08-26
+
+Every drill-down on all three sites now offers the static page it has a permanent URL for, in the same place: its own line directly under the heading, above the month tabs where a site has them. The rule that styles that line, `.chead + .sub`, is promoted to statusui's `base.css`: lifts and esb had been carrying it byte for byte in their own `site.css` and uisce is now the third consumer, which is exactly the "two sites want it and none wants it different" test. The three local copies went with the pin bump that followed.
+
+This site already had the link — it was the model for the other two — but it trailed the descriptive sentence after a `·`, which made it the least prominent of the three once esb and uisce gained theirs. It now has its own line.
+
+**The wording is deliberately per site, and it is the interesting part.** A link's label makes a promise. Name it for the content on the other side and a reader who is already looking at that content asks "am I not looking at this already?" — so the label has to match the *content relationship*, not a house style:
+
+That yields two categories, not three:
+
+| | The view shows | The page shows | Label |
+|---|---|---|---|
+| esb, uisce | one month at a time | every month | "Every month for County X on one page" |
+| lifts | every month, newest first | the same months and cases (`render.station_page`) | "Permanent link to Athy station" |
+
+esb and uisce stand in the same relation to their views, so they say the same sentence. uisce first shipped "Every notice ever recorded in Co. Carlow" and that was wrong — its page caps the notice list at 60 and prints "older notices not shown here", so the label was contradicted by the page it landed on. Corrected the same day.
+
+Naming *this* site's for its content would be a false promise in the other direction: there is no more content on the other side, only a durable address. Rejected on those grounds, not on taste.
+
+"Permalink" as a word was considered and kept only here, where nothing better fits. It is blogging-era vocabulary that a general audience mostly does not hold; the failure mode is a missed click, which is cheaper than the broken promise a wrong content label would make on a site whose whole pitch is that its numbers are trustworthy. The station name is in the link text because a screen reader lists links stripped of their context.
+
+Guarded by `tests/test_permalink_affordance.py`.

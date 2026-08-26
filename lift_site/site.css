@@ -18,6 +18,3 @@
 .card .bar + .daycap + .case { border-top: 0; margin-top: 4px; }
 .case .txt { color: var(--muted); font-size: 12.5px; margin-top: 4px; font-style: italic; }
 .tl { margin-top: 8px; }
-
-/* station page: the line under the heading */
-.chead + .sub { color: var(--muted); font-size: 12.5px; margin-bottom: 16px; }
