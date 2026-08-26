@@ -125,9 +125,6 @@ def build(outages, now, until):
         # page dates itself by the clock and a reader cannot tell a quiet week
         # from a collector that stopped.
         "observed": _stamp(until),
-        # The same instant for freshness(), which dates the page against the
-        # reader's clock rather than the build's. STALE_AFTER travels with it,
-        # so a page served from cache can still go stale.
         "observed_iso": f"{until:%Y-%m-%dT%H:%M:00Z}",
         "observed_month": f"{until.astimezone(DUBLIN):%Y-%m}",
         "stale_hours": round(STALE_AFTER.total_seconds() / 3600),
