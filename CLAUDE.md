@@ -29,7 +29,7 @@ checked out at `../lifts-data`. Set `LIFT_STATUS_DATA_DIR` to it (after a
 `rebuild`), or pass `--data-dir`. `tests/test_site_real.py` skips without it,
 so run the suite with it set before shipping anything that touches the site.
 
-Lifts are elevators outside Ireland; the site says so once for search engines.
+Lifts are elevators outside Ireland; the page metadata says so for search engines.
 
 ## The UI is shared — change it upstream
 
