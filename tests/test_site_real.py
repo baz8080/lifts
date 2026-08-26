@@ -15,7 +15,7 @@ import os
 import sqlite3
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from lift_site import model, render
@@ -29,7 +29,7 @@ DB_PATH = Path(DATA_DIR) / DB_FILENAME if DATA_DIR else None
 class TestRealCorpus(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.now = datetime.now(timezone.utc)
+        cls.now = datetime.now(UTC)
         cls.outages, cls.until = model.load_outages(DB_PATH, cls.now)
         cls.conn = sqlite3.connect(str(DB_PATH))
         cls.conn.row_factory = sqlite3.Row

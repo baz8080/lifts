@@ -1,5 +1,4 @@
 import io
-import socket
 import unittest
 import urllib.error
 from unittest import mock
@@ -64,7 +63,7 @@ class TestMessagesClient(unittest.TestCase):
 
     def test_network_failure_raises_transient_error_with_no_status(self):
         client = MessagesClient(retries=1, sleep=lambda s: None)
-        with mock.patch("urllib.request.urlopen", side_effect=socket.timeout("timed out")):
+        with mock.patch("urllib.request.urlopen", side_effect=TimeoutError("timed out")):
             with self.assertRaises(TransientError) as cm:
                 client.get_messages_raw()
         self.assertIsNone(cm.exception.status)

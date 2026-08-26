@@ -24,7 +24,7 @@ import json
 import re
 import sqlite3
 from collections import defaultdict
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from typing import NamedTuple
 
 from lift_status.parse import DUBLIN
@@ -32,7 +32,7 @@ from lift_status.parse import DUBLIN
 # The first poll landed at 2026-08-08T21:30:55Z. The feed only ever shows the
 # notices currently up, so nothing before this instant exists anywhere and days
 # before it are rendered as "no data", never as "in service".
-COLLECTION_START = datetime(2026, 8, 8, 21, 30, 55, tzinfo=timezone.utc)
+COLLECTION_START = datetime(2026, 8, 8, 21, 30, 55, tzinfo=UTC)
 
 # What a step-free-access notice looks like in `head`, as observed live:
 # "Rush and Lusk - Lift out of order", "Skerries - Lifts out of order",
@@ -67,7 +67,7 @@ DAY_FUTURE = 9
 def parse_utc(value):
     if not value:
         return None
-    return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
 
 
 def _local(dt):

@@ -13,7 +13,7 @@ import json
 import os
 import sqlite3
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 DB_FILENAME = "lift_status.db"
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS unidentifiable_items (
 
 
 def utc_now_iso() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 class Store:
