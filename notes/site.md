@@ -220,13 +220,16 @@ This site already had the link — it was the model for the other two — but it
 
 **The wording is deliberately per site, and it is the interesting part.** A link's label makes a promise. Name it for the content on the other side and a reader who is already looking at that content asks "am I not looking at this already?" — so the label has to match the *content relationship*, not a house style:
 
+That yields two categories, not three:
+
 | | The view shows | The page shows | Label |
 |---|---|---|---|
-| lifts | every month, newest first | the same months and cases (`render.station_page`) | address-flavoured: "Permanent link to Athy station" |
-| esb | one month at a time | every month plus the archive | "Every month for County Cork on one page" |
-| uisce | one month's bars, tiles and town table | the full notice history, month table and area list | "Every notice ever recorded in Co. Carlow" |
+| esb, uisce | one month at a time | every month | "Every month for County X on one page" |
+| lifts | every month, newest first | the same months and cases (`render.station_page`) | "Permanent link to Athy station" |
 
-Naming this one for its content would be a false promise, because there is no more content on the other side — only a durable address. Rejected on those grounds, not on taste.
+esb and uisce stand in the same relation to their views, so they say the same sentence. uisce first shipped "Every notice ever recorded in Co. Carlow" and that was wrong — its page caps the notice list at 60 and prints "older notices not shown here", so the label was contradicted by the page it landed on. Corrected the same day.
+
+Naming *this* site's for its content would be a false promise in the other direction: there is no more content on the other side, only a durable address. Rejected on those grounds, not on taste.
 
 "Permalink" as a word was considered and kept only here, where nothing better fits. It is blogging-era vocabulary that a general audience mostly does not hold; the failure mode is a missed click, which is cheaper than the broken promise a wrong content label would make on a site whose whole pitch is that its numbers are trustworthy. The station name is in the link text because a screen reader lists links stripped of their context.
 
