@@ -359,8 +359,10 @@ LEGEND_SPANS = "".join(
 
 # The grade key. The swatch classes are the chip's own, so the key takes the
 # chip colours from statusui rather than restating them.
+# "A" is not "nothing listed": a planned-works notice inside its grace is on
+# the bar and off the total, so the key says what the number means.
 GRADE_LABELS = (
-    ("A", "no days listed"),
+    ("A", "100% available"),
     ("B", "95%+ available"),
     ("C", "90%+ available"),
     ("D", "75%+ available"),
