@@ -131,10 +131,10 @@ function bars(cells, esc, ym, tall) {
   var cls = tall ? "bar tall" : "bar";
   var lift = '<div class="' + cls + '">' + bar(cells, ym, "lift") + "</div>";
   if (!esc) return lift;
-  var strips = lift + '<div class="' + cls + '">' + bar(esc, ym, "escalator") + "</div>";
-  if (!tall) return '<div class="bars">' + strips + "</div>";
+  var stairs = '<div class="' + cls + '">' + bar(esc, ym, "escalator") + "</div>";
+  if (!tall) return '<div class="bars">' + lift + stairs + "</div>";
   return '<div class="bars labelled"><span>Lifts</span>' + lift +
-    '<span>Escalators</span><div class="' + cls + '">' + bar(esc, ym, "escalator") + "</div></div>";
+    "<span>Escalators</span>" + stairs + "</div>";
 }
 
 /* --- the grade ------------------------------------------------------------ */

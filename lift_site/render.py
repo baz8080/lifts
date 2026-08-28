@@ -344,7 +344,7 @@ def _legend_html():
     return f'<div class="legend">{LEGEND_SPANS}</div><div class="legend">{GRADE_SPANS}</div>'
 
 
-def month_grade(m, blank_cells):
+def _month_grade(m, blank_cells):
     """A month's availability and grade, from its row or from the quiet bar.
 
     A month with no row had nothing listed, which is 100% of the days that were
@@ -374,7 +374,7 @@ def station_page(code, data, by_month):
     body = [
         '<a class="back" href="../index.html">← All stations</a>',
         '<div class="chead">',
-        _chip(month_grade(stats.get(latest), data["blank"][latest])[1]),
+        _chip(_month_grade(stats.get(latest), data["blank"][latest])[1]),
         f"<h1>{html.escape(name)}</h1></div>",
         f'<div class="sub">Irish Rail station code {html.escape(code)}<br>'
         f'Data to {html.escape(data["observed"])}'
@@ -389,7 +389,7 @@ def station_page(code, data, by_month):
     for ym in months:
         m = stats.get(ym)
         cells = m[0] if m else data["blank"][ym]
-        avail, letter = month_grade(m, data["blank"][ym])
+        avail, letter = _month_grade(m, data["blank"][ym])
         cases = by_month.get(ym, [])
         body.append(
             f'<div class="card"><h2>{_chip(letter)}{month_label(ym)}'

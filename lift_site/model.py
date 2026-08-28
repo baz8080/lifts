@@ -407,10 +407,7 @@ def grade(avail):
     """The band an availability falls in, or None when there is nothing to grade."""
     if avail is None:
         return None
-    for floor, letter in GRADE_BANDS:
-        if avail >= floor:
-            return letter
-    return GRADE_BANDS[-1][1]
+    return next(letter for floor, letter in GRADE_BANDS if avail >= floor)
 
 
 def _cells(marks, month_lo, now, until):
