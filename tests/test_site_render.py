@@ -94,6 +94,32 @@ class TestWrite(SiteModelCase):
         self.assertIn("no longer listed", page)
         self.assertNotIn("listed end", page)
 
+    def test_the_static_page_says_what_a_bar_and_a_chip_mean(self):
+        """A month of empty `<i>`s and a bare letter convey nothing to a screen
+        reader. Each bar is one image with one sentence; the chip says what it
+        grades, and the heading's says which month, because the page has all of
+        them."""
+        page = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
+        self.assertIn('role="img" aria-label="Lifts in August 2026: listed on 2 of', page)
+        self.assertIn('aria-label="Grade F for August 2026"', page)
+        self.assertIn("graded on August 2026", page)
+        conn = (self.site / "s" / "dublin-connolly.html").read_text(encoding="utf-8")
+        self.assertIn("Escalators in August 2026: listed on", conn)
+        # Connolly's lifts were never listed, and the bar has to say so rather
+        # than borrow the escalator's news
+        self.assertIn("Lifts in August 2026: nothing listed on", conn)
+
+    def test_a_station_page_can_be_shared(self):
+        page = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
+        self.assertIn('<meta property="og:title" content="Lift outages at Athy station">', page)
+        self.assertIn(f'<meta property="og:url" content="{render.BASE_URL}/s/athy.html">', page)
+        self.assertIn('<meta property="og:description" content="Lift (elevator)', page)
+
+    def test_the_feed_is_named_the_way_the_footer_names_it(self):
+        page = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
+        self.assertIn("service message feed", page)
+        self.assertNotIn("service-message feed", page)
+
     def test_the_static_page_shows_both_clocks(self):
         page = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
         self.assertIn("listed when collection began", page)
@@ -141,6 +167,32 @@ class TestSlugs(unittest.TestCase):
             ),
             {"A": "rush-and-lusk", "B": "dun-laoghaire", "C": "rush-and-lusk-c"},
         )
+
+
+class TestBarLabel(unittest.TestCase):
+    """The sentence a bar reads out. Mirrored line for line by site.html's
+    barLabel(), which is why the wording lives in one function here."""
+
+    def test_it_counts_the_days_watched_and_the_days_listed(self):
+        self.assertEqual(
+            render._bar_label("8888888115000000000000000009999", "2026-08", "lift"),
+            "Lifts in August 2026: listed on 3 of 20 days watched",
+        )
+
+    def test_a_quiet_month_says_so_rather_than_saying_nothing(self):
+        self.assertEqual(
+            render._bar_label("0" * 31, "2026-08", "escalator"),
+            "Escalators in August 2026: nothing listed on 31 days watched",
+        )
+
+    def test_a_month_nobody_watched_is_not_a_month_with_nothing_listed(self):
+        self.assertEqual(
+            render._bar_label("8" * 31, "2026-08", "lift"),
+            "Lifts in August 2026: no data collected",
+        )
+
+    def test_one_day_is_not_one_days(self):
+        self.assertIn("on 1 day watched", render._bar_label("0" + "8" * 30, "2026-08", "lift"))
 
 
 class TestLegend(unittest.TestCase):

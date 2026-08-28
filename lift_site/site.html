@@ -124,14 +124,31 @@ function bar(cells, ym, kind) {
     return ["b" + ch, fmtDay(date) + ": " + what, +ch < 8];
   }, PARTIAL);
 }
+// What a bar says to a screen reader: one image and one sentence, because there
+// is no reading of 31 day-cells worth listening to. Mirrors render._bar_label.
+function barLabel(cells, ym, kind) {
+  var watched = 0, listed = 0;
+  for (var i = 0; i < cells.length; i++) {
+    if ("89".indexOf(cells[i]) === -1) watched++;
+    if ("15".indexOf(cells[i]) !== -1) listed++;
+  }
+  var what = KIND[kind] + "s in " + monthLabelLong(ym);
+  if (!watched) return what + ": no data collected";
+  if (!listed) return what + ": nothing listed on " + plural(watched, "day") + " watched";
+  return what + ": listed on " + listed + " of " + plural(watched, "day") + " watched";
+}
+function barStrip(cells, ym, kind, cls) {
+  return '<div class="' + cls + '" role="img" aria-label="' + esc(barLabel(cells, ym, kind)) +
+    '">' + bar(cells, ym, kind) + "</div>";
+}
 // One bar, or a pair in a month the station had an escalator notice. Labelled
 // only where the bars are tall: a label column on an overview row would shorten
 // that one station's bar and knock its days out of line with every other row.
 function bars(cells, esc, ym, tall) {
   var cls = tall ? "bar tall" : "bar";
-  var lift = '<div class="' + cls + '">' + bar(cells, ym, "lift") + "</div>";
+  var lift = barStrip(cells, ym, "lift", cls);
   if (!esc) return lift;
-  var stairs = '<div class="' + cls + '">' + bar(esc, ym, "escalator") + "</div>";
+  var stairs = barStrip(esc, ym, "escalator", cls);
   if (!tall) return '<div class="bars">' + lift + stairs + "</div>";
   return '<div class="bars labelled"><span>Lifts</span>' + lift +
     "<span>Escalators</span>" + stairs + "</div>";
@@ -145,8 +162,14 @@ function gradeFor(avail) {
   for (var i = 0; i < D.bands.length; i++) if (avail >= D.bands[i][0]) return D.bands[i][1];
   return null;
 }
-function gradeChip(g) {
-  return '<span class="gradechip g-' + (g || "none") + '">' + (g || "-") + "</span>";
+// The letter alone is a letter; the role and the label are what make it a grade
+// out loud. Mirrors render._chip.
+function gradeChip(g, label) {
+  return '<span class="gradechip g-' + (g || "none") + '" role="img" aria-label="' +
+    esc(label) + '" title="' + esc(label) + '">' + (g || "-") + "</span>";
+}
+function gradeLabel(g, where) {
+  return (g ? "Grade " + g : "No grade") + " for " + where;
 }
 // A month with no row had nothing listed: 100% of the days that were watched,
 // and no grade at all in a month that was not watched.
@@ -182,7 +205,7 @@ function renderOverview() {
   document.getElementById("list").innerHTML = rows.length ? rows.map(function (r) {
     var m = r.m;
     return '<div class="place"><div class="row" onclick="go(\'' + esc(r.code) + '\')">' +
-      '<div class="cname">' + gradeChip(gradeFor(m[4])) +
+      '<div class="cname">' + gradeChip(gradeFor(m[4]), gradeLabel(gradeFor(m[4]), r.name)) +
         '<a href="s/' + D.slugs[r.code] + '.html" onclick="event.preventDefault()">' + esc(r.name) + "</a></div>" +
       bars(m[0], m[5], curMonth) +
       '<div class="stats"><div class="counts">' +
@@ -235,13 +258,18 @@ function renderStation() {
   var months = D.months.slice().reverse();
   var loading = HSTATE[code] === "loading", failed = HSTATE[code] === "error";
   var shard = HIST[code] || {};
+  // the view carries every month, so the chip beside the name has to say which
+  // month it is the grade for
+  var latest = D.months[D.months.length - 1];
+  var latestLabel = monthLabelLong(latest), latestGrade = monthGrade(stats[latest], latest)[1];
 
   var head =
     '<a class="back" href="#" onclick="event.preventDefault();go(null)">← All stations</a>' +
-    '<div class="chead">' + gradeChip(monthGrade(stats[D.months[D.months.length - 1]],
-      D.months[D.months.length - 1])[1]) + "<h2>" + esc(name) + "</h2></div>" +
+    '<div class="chead">' + gradeChip(latestGrade, gradeLabel(latestGrade, latestLabel)) +
+      "<h2>" + esc(name) + "</h2></div>" +
     '<div class="sub">' +
-      "Irish Rail station code " + esc(code) + " · every month since collection began, newest first<br>" +
+      "Irish Rail station code " + esc(code) + " · graded on " + latestLabel +
+      " · every month since collection began, newest first<br>" +
       // Address-flavoured, unlike esb's and uisce's, because this page carries
       // the same months and cases this view does - naming it for its content
       // would promise a reader something they are already looking at. The
@@ -258,7 +286,8 @@ function renderStation() {
     else if (failed) inner = '<div class="empty">Could not load the outages for ' + esc(name) + ". Try reloading the page.</div>";
     else if (!cases.length) inner = '<div class="empty">Nothing listed for ' + esc(name) + " in " + monthLabelLong(ym) + ".</div>";
     else inner = cases.map(caseHtml).join("");
-    return '<div class="card"><h3>' + gradeChip(g[1]) + monthLabelLong(ym) +
+    return '<div class="card"><h3>' + gradeChip(g[1], g[1] ? "Grade " + g[1] : "No grade") +
+      monthLabelLong(ym) +
       (g[0] == null ? "" : '<span class="av">' + g[0] + "% of days available</span>") + "</h3>" +
       bars(m ? m[0] : D.blank[ym], m && m[5], ym, true) +
       '<div class="daycap"></div>' + inner + "</div>";
