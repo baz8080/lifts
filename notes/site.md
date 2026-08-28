@@ -7,7 +7,7 @@ an escalator. Everything below should be re-checked once there is a season of
 data; the point of writing it down is so that re-check compares against
 something.
 
-## Settled — 2026-08-18
+## Settled - 2026-08-18
 
 ### Rows are stations, keyed by location code
 
@@ -69,6 +69,9 @@ ids 42→45→46).
 "temporarily unavailable due to planned works" tags an outage Planned works;
 anything else is Out of service. 5 of the 17 are planned. Nothing is excluded
 from any count on that basis - there is no grade to keep them out of.
+**Amended 2026-08-28**: there is a grade now, and a planned-works notice is
+kept out of it for its first week only. See "Planned works are excused for a
+week" below. Nothing is excluded from any *count* on that basis still.
 
 ### No grade
 
@@ -76,6 +79,10 @@ The sibling site grades counties on the operator's own published standard.
 There is no equivalent for lifts, and the feed carries no magnitude - a notice
 is listed or it is not - so a cell says only that and the overview sorts by
 "listed right now" then days listed.
+
+**Reversed 2026-08-28.** See "The grade is availability" below: the first
+reason still holds and is now said out loud on the page, and the second was
+answered by counting days rather than looking for a magnitude in the feed.
 
 ### `end` is shown, not used
 
@@ -102,14 +109,14 @@ every timestamp on an outage is shown in Europe/Dublin; the build and horizon
 stamps stay UTC and say so.
 
 The day cells, the month filing and `partial_days` are bucketed in Dublin too
-— **2026-08-18**, after they were not. Bucketing by UTC date while printing
+- **2026-08-18**, after they were not. Bucketing by UTC date while printing
 Dublin wall-clock split them for four hours a day in summer: a notice first
 seen at the 23:15 UTC poll on 31 August lit the 31 August cell while its own
 summary read "first listed 1 Sep 2026, 00:15", and at a month boundary it was
 filed under August and absent from September. Two conventions for one date is
 a bug in either direction; the site says Dublin everywhere a reader can see.
-The cost is that a month is no longer a whole number of days — March is 23
-hours short and October 25 long — so the cell count comes from
+The cost is that a month is no longer a whole number of days - March is 23
+hours short and October 25 long - so the cell count comes from
 `calendar.monthrange`, never from subtracting the bounds.
 
 Durations are computed from the offset-aware instants and shipped in the case
@@ -122,7 +129,7 @@ change, and did.
 - **A reopened notice publishes its gap as listed.** `LIFT_STATUS_GRACE_MISSES`
   is 1, and a notice that vanishes and comes back *unchanged* reopens the same
   row: `closed_at_utc` is nulled and `first_seen_at_utc` kept, so the site
-  paints the whole absence as listed — days that were polled every 30 minutes
+  paints the whole absence as listed - days that were polled every 30 minutes
   and showed nothing. Any gap length qualifies, not just a one-poll flap.
   The site cannot fix this alone: once the row is reopened the gap is nowhere
   in `messages`, and `identity_key` is UNIQUE so the re-listing cannot become
@@ -137,7 +144,7 @@ change, and did.
   `locationCodes` and are irrelevant to this site; noted so nobody goes
   looking.
 
-## The design layer is shared with uisce and esb — 2026-08-19
+## The design layer is shared with uisce and esb - 2026-08-19
 
 The three status sites are deliberately look-alike, and every UI fix had been ported three
 times by hand. The tokens, base rules, row/bar/card components and the browser helpers now
@@ -153,14 +160,14 @@ that checkout exists and skips otherwise. **To change the shared UI:** edit in `
 commit, `scripts/sync-ui.sh`, run the tests, commit. The full list of what is shared and what
 is per-site is in statusui's README.
 
-## The vendored copy became a pinned dependency — 2026-08-20
+## The vendored copy became a pinned dependency - 2026-08-20
 
 One day was enough to show the vendored mechanism's cost: a shared fix meant a sync, test,
-commit and PR in each of three repos, and the sites still drifted — this site and esb were
+commit and PR in each of three repos, and the sites still drifted - this site and esb were
 synced to statusui `f248ac3` while uisce sat five UI commits behind, with nothing failing to
 say so (the byte-compare only fires against the checkout you happen to have). `statusui` is
 now a real package, declared in the `site` dependency group with a `[tool.uv.sources]` git
-source and pinned to a commit in `uv.lock` — `dependencies` stays literally empty, so the Pi
+source and pinned to a commit in `uv.lock` - `dependencies` stays literally empty, so the Pi
 collector's stdlib-only file-copy install is untouched, and `default-groups` keeps a plain
 `uv run` building. The vendored tree, `scripts/sync-ui.sh` and the byte-compare went; the
 no-redeclared-globals guard stayed as `tests/test_ui_globals.py`, reading `ui.js` from the
@@ -169,14 +176,14 @@ then `../statusui/rollout.sh` bumps the pin in all three sites, runs each site's
 opens the PRs. An unpushed statusui change can be tried here with
 `uv run --with-editable ../statusui python -m lift_site ...`.
 
-## The design alignment pass — 2026-08-26
+## The design alignment pass - 2026-08-26
 
 The owner reviewed uisce and esb side by side, picked a winner per element, and asked for the
 same language here, so the three sites read as one product. What this site absorbed, and what
 it deliberately kept:
 
 - **Banner** takes the shared shape: `**August 2026 so far:** 3 out of service and 1 planned
-  works across 4 stations` — the bold long-month prefix, " so far" only while the viewed
+  works across 4 stations` - the bold long-month prefix, " so far" only while the viewed
   month is still collecting (`observed_iso` month == viewed month). The old line was the
   right-now station count; the right-now information moved to the latest month's tile (the
   lifts / escalators split "with a notice up at the last poll"), which replaces the plain
@@ -184,7 +191,7 @@ it deliberately kept:
   timestamp, stale past 16 h) replaces both the banner's "as of …" and the header's
   `stampLine`; the exact horizon survives as the chip's hover title and, in full, on the
   static station pages' sub line. `observed_iso` and `stale_hours` joined the payload for it.
-  The stamps that remain visible are still UTC and say so — the wall-clock/UTC split holds.
+  The stamps that remain visible are still UTC and say so - the wall-clock/UTC split holds.
 - **The national heading** is the shared "The national picture in August 2026" (was "Across
   the network in Aug 2026"); the "stations affected" and "out of service / planned works"
   tiles went, because the banner now carries both.
@@ -192,12 +199,12 @@ it deliberately kept:
   `.legend i.bN` site.css rules that colour the bars (so the key cannot drift), and it now
   also appears at the top of the station view and the static station pages, which had none.
 - **Search** is statusui's shared `bindSearch`, fed an index built at boot (each station
-  keyed under its own name — that is what keeps the match a substring match; `searchHits`
+  keyed under its own name - that is what keeps the match a substring match; `searchHits`
   grew a dedupe upstream for exactly this shape). The per-hit "nothing listed in Aug 2026"
   note survives via the new `note()` hook. Lost, accepted: the empty state is now the shared
   "Nothing matching “q”" rather than "No station matching “q” has had a notice yet".
 - **Rows**: the day-count stat renamed `.days` → the shared `.cml` (site.css rule deleted;
-  base carries it). The wider `--row-cols`/`--stats-cols` stay — station names and the
+  base carries it). The wider `--row-cols`/`--stats-cols` stay - station names and the
   "out of service" labels are longer than the siblings', and the knobs exist for exactly
   that. The fixed worst-first sort stays: it is the settled decision above, and it is also
   esb's pattern.
@@ -207,18 +214,19 @@ it deliberately kept:
   bold no-fixed-field caveat always visible above the disclosures; the final line is the
   shared "Source code · not affiliated with Iarnród Éireann." on both page types.
 
-Not taken, on purpose: no grade, no percentage, no intensity ramp (the settled "a notice is
+Not taken, on purpose (**the first of these was reversed on 2026-08-28**): no
+grade, no percentage, no intensity ramp (the settled "a notice is
 listed or it is not"); no alphabetical-only list (26 counties scroll, a growing station list
-led by live outages is the site's point); and none of the measured-interval wording moved —
+led by live outages is the site's point); and none of the measured-interval wording moved -
 "no longer listed", never "fixed".
 
-## The permalink affordance moved out of the footer — 2026-08-26
+## The permalink affordance moved out of the footer - 2026-08-26
 
 Every drill-down on all three sites now offers the static page it has a permanent URL for, in the same place: its own line directly under the heading, above the month tabs where a site has them. The rule that styles that line, `.chead + .sub`, is promoted to statusui's `base.css`: lifts and esb had been carrying it byte for byte in their own `site.css` and uisce is now the third consumer, which is exactly the "two sites want it and none wants it different" test. The three local copies went with the pin bump that followed.
 
-This site already had the link — it was the model for the other two — but it trailed the descriptive sentence after a `·`, which made it the least prominent of the three once esb and uisce gained theirs. It now has its own line.
+This site already had the link - it was the model for the other two - but it trailed the descriptive sentence after a `·`, which made it the least prominent of the three once esb and uisce gained theirs. It now has its own line.
 
-**The wording is deliberately per site, and it is the interesting part.** A link's label makes a promise. Name it for the content on the other side and a reader who is already looking at that content asks "am I not looking at this already?" — so the label has to match the *content relationship*, not a house style:
+**The wording is deliberately per site, and it is the interesting part.** A link's label makes a promise. Name it for the content on the other side and a reader who is already looking at that content asks "am I not looking at this already?" - so the label has to match the *content relationship*, not a house style:
 
 That yields two categories, not three:
 
@@ -227,10 +235,122 @@ That yields two categories, not three:
 | esb, uisce | one month at a time | every month | "Every month for County X on one page" |
 | lifts | every month, newest first | the same months and cases (`render.station_page`) | "Permanent link to Athy station" |
 
-esb and uisce stand in the same relation to their views, so they say the same sentence. uisce first shipped "Every notice ever recorded in Co. Carlow" and that was wrong — its page caps the notice list at 60 and prints "older notices not shown here", so the label was contradicted by the page it landed on. Corrected the same day.
+esb and uisce stand in the same relation to their views, so they say the same sentence. uisce first shipped "Every notice ever recorded in Co. Carlow" and that was wrong - its page caps the notice list at 60 and prints "older notices not shown here", so the label was contradicted by the page it landed on. Corrected the same day.
 
 Naming *this* site's for its content would be a false promise in the other direction: there is no more content on the other side, only a durable address. Rejected on those grounds, not on taste.
 
 "Permalink" as a word was considered and kept only here, where nothing better fits. It is blogging-era vocabulary that a general audience mostly does not hold; the failure mode is a missed click, which is cheaper than the broken promise a wrong content label would make on a site whose whole pitch is that its numbers are trustworthy. The station name is in the link text because a screen reader lists links stripped of their context.
 
 Guarded by `tests/test_permalink_affordance.py`.
+
+## The grade is availability, and the bars split by kind - 2026-08-28
+
+The corpus is now 20 days (8-28 August 2026, 940 runs, 937 ok), 23 outages
+across 20 stations, of which 5 are planned works and 2 are escalators.
+
+### The grade is availability
+
+"5 days listed" was a raw count: it says nothing about whether that is bad,
+and a 31-day month and a 20-day partial one are not comparable by it. The
+number on a row is now the share of the days watched on which no lift notice
+was listed at that station, and the chip is a band of it - statusui's
+`.gradechip`, the same component esb and uisce carry.
+
+**There is no Irish or EU target to grade against, and the page says so.** The
+PRM TSI (Regulation (EU) 1300/2014) sets lift and escalator design rules and
+an operational duty on the station manager to hold a written policy ensuring
+access "at all operational times" - no percentage, no reporting duty. Irish
+Rail's Passengers' Charter promises only "every effort ... available as
+advertised", and the NTA-funded "Big Lift" programme (52 stations, 2020-2024)
+publishes no availability figure. The regulators that publish numbers are
+elsewhere: ORR/Network Rail (8,696 lift faults in a year, 6.6 per lift, over
+20 hours average repair) and TfL historically (93.7% lift availability, 98.8%
+excluding planned works). So the scale is this site's own, said plainly in the
+footer rather than dressed up as a standard.
+
+The bands are calibrated in days a reader can count, not borrowed from an
+annual-availability figure: A is nothing listed, B 95%+, C 90%+, D 75%+, F
+below that. Over a 31-day month that is one day listed for B, two or three for
+C, up to a week for D. Bands tuned for TfL's 98% were tried on paper first and
+put every station in the bottom band: at day granularity one listed day in a
+month is already 96.8%.
+
+Rejected: hours-listed availability, which is more precise but would print
+99.9% beside a bar with a red day in it - the bar is days, so the grade is
+days. Rejected: bands on the days-listed count, which keeps the raw number's
+incomparability between a full month and a partial one. Availability is
+floored, never rounded, so 100% cannot round up from a day that counted. It
+is not "nothing was listed", though, and the grade key does not say so: works
+inside their grace are on the bar and off the total, and Pearse grades A over
+six planned-works cells.
+
+### Planned works are excused for a week
+
+Planned-works notices were masking the thing the site measures: 5 of 23, and
+they sit for months. Works listed **7 days or less in total cost nothing**;
+past that, every day they are listed counts, the first week included. A week
+is a plausible maintenance window, and Irish Rail's own end dates are
+placeholders, so the listing is the only measure of how long works ran.
+
+On this corpus: Pearse's lift notice (5 days) and Greystones' (2 days) are
+excused; Limerick Junction's (10 days) and Midleton's (19 days and still up)
+are not. The grace is a property of the notice, not of the month, so a
+fortnight of works spanning a month end counts in both halves.
+
+**In total** is doing work in that sentence, and two reviews moved it. It was
+first written per segment, which excused a month of works reissued every few
+days - the fold `merge_edits` exists to perform. It was then written over the
+outage's whole listing, which let a fault that replaced the works reach back
+and charge for the maintenance week already forgiven. The test case is six
+days of works then four of fault: the fault's four days count and the works'
+seven do not, which is 60% and an F. Under the whole-listing rule all eleven
+counted, which is 0% and also an F - the same letter, a different number, and
+the difference grows with the works. So it is the planned segments, added up,
+and nothing else: what the works cost, measured on the works.
+
+### One bar per kind
+
+Pearse is the case: its escalator has been listed since 13 August while its
+lifts came back the same day, and one composite bar painted the station for a
+working lift. A bar now carries one kind - the lift bar is the row's bar, and
+a station gets a second strip only in a month it had an escalator notice. The
+day-cell code for escalators (`2`) is gone: the code says fault or planned
+works, and which kind is the bar it sits in. This supersedes "a day cell
+prefers a lift notice over an escalator one" under Escalators above; the
+preference no longer has anything to decide.
+
+The escalator is out of the grade for the same reason it has its own bar: the
+lift is the step-free route. A station whose escalator is listed still leads
+the overview, because "a notice up right now" is the first sort key.
+
+Rejected: labelling the two strips on an overview row. The label column
+shortened that one station's bar and knocked its days out of line with every
+other row's. The labels stay on the drill-down, where the bars are tall.
+
+Two layout bugs came out of it, both on phones. statusui's 640px reflow places
+`.bar` by grid area, which inside the new `.bars` wrapper put both strips on
+one implicit line and painted the escalator over the lift; the wrapper takes
+the area now and releases the strips. And under 480px the stats held their
+195px beside the name, leaving "Clondalkin Fonthill" 57px and an ellipsis - so
+below that width the stats take a line of their own and `--stats-cols` stops
+reserving a fixed column. That second one predates this pass; the row was just
+as squeezed when the figure read "5 days listed".
+
+### Irish Rail's end date goes when the notice does
+
+`end` is still shown, not used, but only while the notice is still listed. On
+a notice that has come down, "listed end 30 Dec 2026" reads as if the works
+were still running - which is exactly how Pearse's closed lift notice read.
+The notice coming down is the completion signal; a placeholder that outlived
+its notice is noise. Amends "`end` is shown, not used" above.
+
+### The national picture reads as availability
+
+"station-days with a notice" was a number without a scale. The tiles are now
+the aggregate availability of the stations listed that month - and only those,
+because the feed names a station when something is wrong with it and the site
+has no roll of the stations that have a lift at all, so any wider denominator
+would be invented. The composite "4 / 1 lifts / escalators" tile is split in
+two. Getting a real denominator needs a station inventory scraped from
+irishrail.ie, which is a second source with its own staleness and its own
+name-to-code join; not done here.

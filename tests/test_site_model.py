@@ -261,7 +261,10 @@ class TestStationMonth(SiteModelCase):
         self.assertEqual(s["cells"][7:10], "111")
         self.assertEqual(s["cells"][10:20], "8" * 10)
         self.assertEqual(s["cells"][20:], "9" * 11)
-        self.assertEqual((s["faults"], s["planned"], s["days_out"]), (1, 0, 3))
+        self.assertEqual((s["faults"], s["planned"]), (1, 0))
+        # three of the three days watched were listed
+        self.assertEqual((s["observed"], s["against"], s["avail"]), (3, 3, 0))
+        self.assertIsNone(s["esc_cells"])
         self.assertFalse(s["ongoing"])
 
     def test_days_before_collection_are_no_data_not_working_lifts(self):
@@ -275,20 +278,52 @@ class TestStationMonth(SiteModelCase):
         self.load()
         s = self.cells([])
         self.assertEqual(s["cells"], "8888888" + "00" + "8" * 11 + "9" * 11)
-        self.assertEqual(s["days_out"], 0)
+        self.assertEqual((s["observed"], s["against"], s["avail"], s["grade"]), (2, 0, 100, "A"))
 
-    def test_a_fault_beats_planned_works_and_a_lift_beats_an_escalator(self):
+    def test_a_fault_beats_planned_works_and_an_escalator_gets_its_own_bar(self):
         fault = lift(text="The lift is currently out of service.", start="2026-08-02T00:00:00")
         self.poll(T0, [lift(planned=True), escalator(), fault])
         self.poll(T0 + timedelta(hours=2), [lift(planned=True), escalator(), fault])
         outages = self.load()
         s = self.cells(outages)
         self.assertEqual(s["cells"][7], "1")
-        # Only the escalator and the planned lift: escalator colours the day.
+        # The escalator never paints the lift bar: it has one of its own.
+        self.assertEqual(s["esc_cells"][7], "1")
         s = self.cells([o for o in outages if o.kind == "escalator" or o.planned])
-        self.assertEqual(s["cells"][7], "2")
+        self.assertEqual((s["cells"][7], s["esc_cells"][7]), ("5", "1"))
         s = self.cells([o for o in outages if o.planned])
         self.assertEqual(s["cells"][7], "5")
+        self.assertIsNone(s["esc_cells"])
+
+    def test_an_escalator_notice_is_not_in_the_lift_grade(self):
+        # Pearse in August 2026: the escalator listed for a fortnight while the
+        # lifts ran. The grade is the lifts', and the second bar says the rest.
+        self.poll(T0, [escalator(station="Dublin Pearse", code="PERSE")])
+        self.poll(T0 + timedelta(days=2), [escalator(station="Dublin Pearse", code="PERSE")])
+        s = self.cells(self.load())
+        self.assertEqual((s["avail"], s["grade"]), (100, "A"))
+        self.assertEqual(s["esc_cells"][7:10], "111")
+
+    def test_planned_works_are_excused_for_a_week_and_not_a_day_longer(self):
+        short = model.PLANNED_GRACE - timedelta(hours=1)
+        self.poll(T0, [lift(planned=True)])
+        self.poll(T0 + short, [lift(planned=True)])
+        self.poll(T0 + short + timedelta(minutes=30), [])
+        s = self.cells(self.load())
+        self.assertEqual(s["cells"][7:15], "5" * 8)
+        self.assertEqual((s["against"], s["avail"], s["grade"]), (0, 100, "A"))
+
+        self.setUp()
+        long = model.PLANNED_GRACE + timedelta(hours=1)
+        self.poll(T0, [lift(planned=True)])
+        self.poll(T0 + long, [lift(planned=True)])
+        self.poll(T0 + long + timedelta(minutes=30), [])
+        s = self.cells(self.load())
+        # an hour past the grace and every day of it counts, the first week
+        # included; the closing poll falls after Dublin midnight, so nine days
+        # carry the notice rather than the short run's eight
+        self.assertEqual(s["cells"][7:16], "5" * 9)
+        self.assertEqual((s["against"], s["avail"], s["grade"]), (9, 0, "F"))
 
     def test_a_notice_seen_only_at_the_last_poll_still_counts_that_day(self):
         # first_seen, end and the horizon coincide: a zero-minute listing.
@@ -301,7 +336,7 @@ class TestStationMonth(SiteModelCase):
         self.assertEqual(s["faults"], 1)
         self.assertEqual(s["cells"][7], "1")
         self.assertTrue(s["ongoing"])
-        self.assertEqual(model.national_month(outages, "2026-08", self.until)["station_days"], 1)
+        self.assertEqual(model.national_month(outages, "2026-08", NOW, self.until)["avail"], 0)
         self.assertEqual(len(render.shard(outages, ["2026-08"], self.until)["2026-08"]), 1)
 
     def test_a_reissue_does_not_repaint_the_days_before_it(self):
@@ -323,6 +358,62 @@ class TestStationMonth(SiteModelCase):
         # is the fault alone. Before the fix all five days read as faults.
         self.assertEqual(s["cells"][9:11], "11")
 
+    def test_a_day_past_the_build_clock_counts_against_nothing(self):
+        """The bar stops at `now`; the window stops at the horizon. The Pi
+        writes the run times and the builder reads its own clock, so an hour of
+        skew puts the horizon ahead of `now` - and a day listed there was being
+        counted against a total that excluded it, which took availability below
+        zero and crashed the band lookup."""
+        self.poll(T0, [lift()])
+        self.poll(T0 + timedelta(days=3), [lift()])
+        outages = self.load()
+        # the horizon is two days past the build clock, so two listed days are
+        # drawn as still to come and are not among the days that were watched
+        s = self.cells(outages, now=T0 + timedelta(days=1))
+        self.assertEqual(s["cells"][9:11], "99")
+        self.assertLessEqual(s["against"], s["observed"])
+        self.assertEqual((s["observed"], s["against"]), (2, 2))
+        self.assertEqual((s["avail"], s["grade"]), (0, "F"))
+
+    def test_planned_works_reissued_within_the_grace_still_run_past_it(self):
+        """The grace is the notice's, not each folded segment's. Irish Rail
+        reissue - that is what merge_edits exists for - and works reissued every
+        few days are still works that ran for a fortnight."""
+        planned = lift(planned=True)
+        self.poll(T0, [planned])
+        swap = T0 + timedelta(days=5)
+        self.poll(swap, [planned])
+        # a reissue at the very poll the old notice vanished: one outage, two
+        # segments, neither of them longer than the grace on its own
+        self.poll(swap + timedelta(minutes=30), [lift(planned=True, start="2026-08-13T09:00:00")])
+        self.poll(swap + timedelta(days=5), [lift(planned=True, start="2026-08-13T09:00:00")])
+        (o,) = outages = self.load()
+        self.assertEqual(len(o.segments), 2)
+        for seg_start, seg_end, _ in o.segments:
+            self.assertLess(seg_end - seg_start, model.PLANNED_GRACE)
+        s = self.cells(outages)
+        self.assertEqual(s["avail"], 0)
+        self.assertEqual(s["grade"], "F")
+
+    def test_a_fault_after_the_works_does_not_retract_their_grace(self):
+        """The grace is the works', measured over the planned segments alone.
+        A fault that replaces them and runs on is the fault's doing, and the
+        days it costs are its own - it cannot reach back and charge for a week
+        of maintenance that had already been forgiven."""
+        planned = lift(planned=True)
+        self.poll(T0, [planned])
+        swap = T0 + timedelta(days=6)
+        self.poll(swap, [planned])
+        fault = lift(text="The lift is currently out of service.", start="2026-08-14T09:00:00")
+        self.poll(swap + timedelta(minutes=30), [fault])
+        self.poll(swap + timedelta(days=3), [fault])
+        (o,) = outages = self.load()
+        self.assertEqual(len(o.segments), 2)
+        s = self.cells(outages)
+        # the four fault days count; the seven of works do not
+        self.assertEqual(s["against"], 4)
+        self.assertEqual((s["avail"], s["grade"]), (60, "F"))
+
     def test_ongoing_is_only_true_in_the_horizons_month(self):
         self.poll(T0, [lift()])
         self.poll(datetime(2026, 9, 2, tzinfo=UTC), [lift()])
@@ -331,17 +422,19 @@ class TestStationMonth(SiteModelCase):
         self.assertFalse(self.cells(outages, "2026-08", now=now)["ongoing"])
         self.assertTrue(self.cells(outages, "2026-09", now=now)["ongoing"])
 
-    def test_the_month_headline_counts_stations_and_station_days(self):
+    def test_the_month_headline_counts_stations_and_their_availability(self):
         self.poll(T0, [lift(), escalator(), lift(code="BRAY", station="Bray")])
         self.poll(T0 + timedelta(days=1, hours=1), [lift()])
         outages = self.load()
-        n = model.national_month(outages, "2026-08", self.until)
+        n = model.national_month(outages, "2026-08", NOW, self.until)
         self.assertEqual(n["stations"], 3)
         self.assertEqual(n["outages"], 3)
         self.assertEqual((n["faults"], n["planned"]), (3, 0))
-        # Athy: 8th and 9th. Connolly and Bray: 8th and 9th too - closed at
-        # the poll on the 9th, having been listed into it.
-        self.assertEqual(n["station_days"], 6)
+        # Two days watched at each of the three stations. Athy is listed for
+        # both; Bray for both, closed at the poll on the 9th having been listed
+        # into it; Connolly's is an escalator, which no grade counts. So four
+        # of the six station-days are unavailable.
+        self.assertEqual(n["avail"], 33)
         self.assertEqual(n["ongoing"], 1)
 
 
@@ -355,6 +448,21 @@ class TestPartialDays(unittest.TestCase):
         # Midnight *in Dublin*, which in August is 23:00 the day before in UTC.
         until = datetime(2026, 8, 17, 23, 0, tzinfo=UTC)
         self.assertEqual(model.partial_days(until), ["2026-08-08", "2026-08-17"])
+
+
+class TestMonthList(unittest.TestCase):
+    def test_a_build_clock_before_the_first_poll_still_has_a_month(self):
+        # --now takes any date a hand types, and every caller indexes the list
+        self.assertEqual(
+            model.month_list(model.COLLECTION_START, datetime(2026, 7, 15, tzinfo=UTC)),
+            ["2026-08"],
+        )
+
+    def test_it_runs_from_the_start_month_to_the_end_month(self):
+        self.assertEqual(
+            model.month_list(model.COLLECTION_START, datetime(2026, 10, 2, tzinfo=UTC)),
+            ["2026-08", "2026-09", "2026-10"],
+        )
 
 
 class TestShard(SiteModelCase):
@@ -375,6 +483,33 @@ class TestShard(SiteModelCase):
         self.assertEqual(k[3], "2026-08-08T22:30")  # Dublin wall-clock
         self.assertEqual(k[6], "2026-05-05T00:00")  # as Irish Rail wrote it
         self.assertEqual(k[5], 1)
+        self.assertEqual(k[7], "2026-12-31T23:59")  # still up: their end still means something
+
+    def test_the_listed_end_goes_when_the_notice_does(self):
+        # Irish Rail's end dates are placeholders near the end of the year. On
+        # a notice that has come down, "listed end 30 Dec" reads as if the
+        # works were still running; the notice coming down is the signal.
+        self.poll(T0, [lift()])
+        self.poll(T0 + timedelta(hours=1), [])
+        (o,) = self.load()
+        self.assertIsNone(render.case_record(o)[7])
+
+
+class TestGrade(unittest.TestCase):
+    def test_the_bands_meet_where_they_say_they_do(self):
+        self.assertEqual(
+            [model.grade(a) for a in (100, 99, 95, 94, 90, 89, 75, 74, 0)],
+            ["A", "B", "B", "C", "C", "D", "D", "F", "F"],
+        )
+
+    def test_a_month_nobody_watched_has_no_availability_and_no_grade(self):
+        self.assertIsNone(model.availability(0, 0))
+        self.assertIsNone(model.grade(None))
+
+    def test_availability_is_floored_so_only_a_quiet_month_reads_a_hundred(self):
+        self.assertEqual(model.availability(365, 1), 99)
+        self.assertEqual(model.availability(31, 1), 96)
+        self.assertEqual(model.availability(31, 0), 100)
 
 
 if __name__ == "__main__":

@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Irish Rail Lift Outages — unofficial</title>
-<meta name="description" content="Lift (elevator) and escalator outages at Irish Rail stations, station by station — which are out, since when, and for how long. Independent, rebuilt daily.">
+<title>Irish Rail Lift Outages - unofficial</title>
+<meta name="description" content="Lift (elevator) and escalator outages at Irish Rail stations, station by station - which are out, since when, and for how long. Independent, rebuilt daily.">
 <meta property="og:title" content="Irish Rail Lift Outages">
-<meta property="og:description" content="Lift (elevator) and escalator outages at Irish Rail stations, station by station — which are out, since when, and for how long.">
+<meta property="og:description" content="Lift (elevator) and escalator outages at Irish Rail stations, station by station - which are out, since when, and for how long.">
 <meta property="og:type" content="website">
 <link rel="canonical" href="<!--CANONICAL-->">
 <style>
@@ -37,6 +37,7 @@
       </div>
       <p class="basis" id="basis"></p>
       <div class="legend" id="legend"></div>
+      <div class="legend" id="gradekey"></div>
       <div id="list"></div>
       <h3 class="natheading" id="natHeading"></h3>
       <div class="tiles" id="tiles"></div>
@@ -48,41 +49,38 @@
   <footer>
     <p><b>A notice going up is the only signal, and a notice coming down is the only other
     one.</b> The feed has no “fixed” field: an outage ends here when its notice is no longer
-    listed, which usually means the lift is back but strictly means only that Irish Rail
-    took the notice down.</p>
+    listed, which usually means the lift is back.</p>
 
     <details><summary>What this measures</summary>
-    <p>This site reads Irish Rail's public service-message feed every 30 minutes — the
-    banners shown on irishrail.ie — and keeps every notice that says a lift or escalator is
-    out of order. Irish Rail publishes no history, so nothing before <span id="startdate"></span>
-    exists here, and days before it are shown as “no data” rather than as working lifts.
-    Notices have been seen to appear and disappear in batches, months after the start date
-    they carry.</p>
+    <p>This site reads Irish Rail's public service message feed every 30 minutes and keeps
+    every notice that says a lift or escalator is out of order. Irish Rail publishes no
+    history, so nothing before <span id="startdate"></span> exists here, and days before it
+    are shown as “no data”.</p>
     </details>
 
     <details><summary>How to read an outage</summary>
-    <p>Each outage shows when its notice was first listed and when it was no longer listed
-    — or “still listed at the last poll” for one that is up now — and the duration between
-    the two, to the nearest half hour. That is what the day bars colour. The notice also
-    carries a start date of Irish Rail's own, shown beside it as their claim: it is
-    routinely weeks or months before the notice was listed, so it colours nothing here.</p>
-    <p>“Planned works” is what the notice itself says — <em>temporarily unavailable due to
-    planned works</em> — against <em>currently out of service</em> for everything else.
-    Escalators are listed in the same feed with the same wording and are shown too, tagged
-    separately.</p>
-    <p>A reissued notice that appears at the very poll the old one vanished is shown as one
-    outage with the reissue noted. A notice that comes back a poll or more later is a
-    separate outage — the gap is real, and it is what this site is measuring.</p>
+    <p>Each outage shows when its notice went up, when it came down, and how long it stood.
+    That is what the day bars colour. Irish Rail also write a start date on the notice,
+    usually weeks or months before it appeared; that is shown as their claim and measured
+    as nothing.</p>
+    <p>“Planned works” is the notice's own wording. Escalator notices come through the same
+    feed and get their own bar.</p>
     </details>
 
-    <details><summary>What it cannot tell you</summary>
-    <p>How many lifts a station has, or whether the one that is out is the only route to a
-    platform: the notice names platforms in prose and nothing more. Whether a lift is back
-    in service before its notice is removed, or still out after. Anything shorter than half
-    an hour. And whether an outage that begins and ends between two polls happened at all.</p>
-    <p>Each notice carries an end date, but for nearly every one it is a placeholder near
-    the end of the year. It is shown as “Irish Rail's listed end” for what it is worth and
-    plays no part in anything measured.</p>
+    <details><summary>How the grade works</summary>
+    <p>Availability is the share of the days watched on which no lift notice was listed at
+    that station, and the grade is a band of it. Planned works are excused for their first
+    week and count against a station after that. Escalators are not in the grade and have
+    their own bar: the lift is the step-free route.</p>
+    <p>The scale is this site's own. There is no Irish or EU target for lift availability to
+    grade against.</p>
+    </details>
+
+    <details><summary>What the feed leaves out</summary>
+    <p>A notice names a lift in prose - “the lift at platform 2” - so there is no count of the
+    lifts at a station, and no way to tell whether another step-free route is open. The feed
+    is read every 30 minutes, so a notice that goes up and comes down between two reads is
+    not here at all.</p>
     </details>
 
     <p id="gen"><a href="https://github.com/baz8080/lifts">Source code</a> · not affiliated with Iarnród Éireann.</p>
@@ -105,8 +103,8 @@ var curMonth = null, curStation = null;
 
 var KIND = { lift: "Lift", escalator: "Escalator" };
 var CELL = {
-  0: "nothing listed", 1: "lift out of service", 2: "escalator out of service",
-  5: "planned works", 8: "no data collected for this day", 9: "still to come"
+  0: "nothing listed", 5: "planned works",
+  8: "no data collected for this day", 9: "still to come"
 };
 // Starts can be a year old, so every instant carries its year; the station
 // cards say "August 2026" to match s/<slug>.html, and only the month tabs stay
@@ -118,15 +116,50 @@ function listed(h) { return fmtHours(h, fmtDays); }
 var START_ISO = null;
 
 /* --- day bars ------------------------------------------------------------ */
-// one cell for the shared dayCells: [class, caption, may carry the part-day note]
-function describeCell(ch, date) { return ["b" + ch, fmtDay(date) + ": " + CELL[+ch], +ch < 8]; }
-function bar(cells, ym) { return dayCells(cells, ym, describeCell, PARTIAL); }
-
-function cellsFor(code, ym) {
-  var m = (D.stats[code] || {})[ym];
-  return m ? m[0] : D.blank[ym];
+// A bar carries one kind, so the caption takes the kind from the bar it is in
+// rather than from the colour. [class, caption, may carry the part-day note]
+function bar(cells, ym, kind) {
+  return dayCells(cells, ym, function (ch, date) {
+    var what = +ch === 1 ? kind + " out of service" : CELL[+ch];
+    return ["b" + ch, fmtDay(date) + ": " + what, +ch < 8];
+  }, PARTIAL);
+}
+// One bar, or a pair in a month the station had an escalator notice. Labelled
+// only where the bars are tall: a label column on an overview row would shorten
+// that one station's bar and knock its days out of line with every other row.
+function bars(cells, esc, ym, tall) {
+  var cls = tall ? "bar tall" : "bar";
+  var lift = '<div class="' + cls + '">' + bar(cells, ym, "lift") + "</div>";
+  if (!esc) return lift;
+  var stairs = '<div class="' + cls + '">' + bar(esc, ym, "escalator") + "</div>";
+  if (!tall) return '<div class="bars">' + lift + stairs + "</div>";
+  return '<div class="bars labelled"><span>Lifts</span>' + lift +
+    "<span>Escalators</span>" + stairs + "</div>";
 }
 
+/* --- the grade ------------------------------------------------------------ */
+// The bands ship in data.js, from the one table in the model, so the chip on a
+// row and the chip on that station's static page can never disagree.
+function gradeFor(avail) {
+  if (avail == null) return null;
+  for (var i = 0; i < D.bands.length; i++) if (avail >= D.bands[i][0]) return D.bands[i][1];
+  return null;
+}
+function gradeChip(g) {
+  return '<span class="gradechip g-' + (g || "none") + '">' + (g || "-") + "</span>";
+}
+// A month with no row had nothing listed: 100% of the days that were watched,
+// and no grade at all in a month that was not watched.
+function monthGrade(m, ym) {
+  if (m) return [m[4], gradeFor(m[4])];
+  var cells = D.blank[ym], observed = 0;
+  for (var i = 0; i < cells.length; i++) if ("89".indexOf(cells[i]) === -1) observed++;
+  var avail = observed ? 100 : null;
+  return [avail, gradeFor(avail)];
+}
+
+// the shared plural() puts the number in front; a tile's caption sits under it
+function one(n, word) { return word + (n === 1 ? "" : "s"); }
 function tile(v, k) {
   return '<div class="tile"><div class="v">' + esc(v) + '</div><div class="k">' + esc(k) + "</div></div>";
 }
@@ -141,20 +174,21 @@ function renderOverview() {
     if (m) rows.push({ code: code, name: D.stations[code], m: m });
   });
   // Worst first: a status page's job is to put the bad news at the top. A
-  // station with a notice up right now leads, then by days listed.
+  // station with a notice up right now leads, then the least available.
   rows.sort(function (a, b) {
-    return (b.m[4] - a.m[4]) || (b.m[3] - a.m[3]) || a.name.localeCompare(b.name);
+    return (b.m[3] - a.m[3]) || (a.m[4] - b.m[4]) || a.name.localeCompare(b.name);
   });
 
   document.getElementById("list").innerHTML = rows.length ? rows.map(function (r) {
     var m = r.m;
     return '<div class="place"><div class="row" onclick="go(\'' + esc(r.code) + '\')">' +
-      '<div class="cname"><a href="s/' + D.slugs[r.code] + '.html" onclick="event.preventDefault()">' + esc(r.name) + "</a></div>" +
-      '<div class="bar">' + bar(m[0], curMonth) + "</div>" +
+      '<div class="cname">' + gradeChip(gradeFor(m[4])) +
+        '<a href="s/' + D.slugs[r.code] + '.html" onclick="event.preventDefault()">' + esc(r.name) + "</a></div>" +
+      bars(m[0], m[5], curMonth) +
       '<div class="stats"><div class="counts">' +
         "<b>" + m[1] + "</b><span>out of service</span>" +
         "<b>" + m[2] + "</b><span>planned works</span></div>" +
-        '<div class="cml"><b>' + m[3] + "</b><br>day" + (m[3] === 1 ? "" : "s") + " listed</div>" +
+        '<div class="cml"><b>' + (m[4] == null ? "-" : m[4] + "%") + "</b><br>available</div>" +
       '</div><span class="chev">›</span>' +
       '<div class="daycap"></div></div></div>';
   }).join("") : '<div class="place"><p class="empty" style="padding:12px 16px">No lift or escalator notices were listed in ' +
@@ -171,23 +205,26 @@ function renderOverview() {
 
   document.getElementById("basis").innerHTML =
     "Stations with a lift or escalator notice listed in <b>" + monthLabelLong(curMonth) +
-    "</b>. A station with nothing listed that month is not shown — find it by name to see its history." +
+    "</b>. A station with nothing listed that month is not shown - find it by name to see its history." +
     // one hover cue above the list, not a placeholder in every strip
     ' <span class="hoverhint">Hover a day in a bar for its detail.</span>';
 
   document.getElementById("natHeading").textContent =
     "The national picture in " + monthLabelLong(curMonth);
   var c = D.current;
+  var live = curMonth === D.months[D.months.length - 1];
   document.getElementById("tiles").innerHTML = [
-    tile(num(n[4]), "station-days with a notice"),
-    // the latest month's "up at the last poll" is the live count, so it can
-    // afford the lift/escalator split; a past month's is just a number
-    curMonth === D.months[D.months.length - 1]
-      ? tile(c.lifts + " / " + c.escalators, "lifts / escalators with a notice up at the last poll")
-      : tile(n[5], "with a notice up at the last poll")
+    tile(n[4] == null ? "-" : n[4] + "%", "of days available at the stations listed"),
+    // the latest month's counts are the live ones, so they read as the state of
+    // the network now; a past month's are what it ended the month with
+    live ? tile(c.lifts, one(c.lifts, "lift") + " with a notice up at the last poll")
+         : tile(n[0], one(n[0], "station") + " with a notice"),
+    live ? tile(c.escalators, one(c.escalators, "escalator") + " with a notice up at the last poll")
+         : tile(n[5], one(n[5], "station") + " still listed when the month ended")
   ].join("");
 
   document.getElementById("legend").innerHTML = D.legend;
+  document.getElementById("gradekey").innerHTML = D.grades;
 }
 
 /* --- station ------------------------------------------------------------- */
@@ -201,7 +238,8 @@ function renderStation() {
 
   var head =
     '<a class="back" href="#" onclick="event.preventDefault();go(null)">← All stations</a>' +
-    '<div class="chead"><h2>' + esc(name) + "</h2></div>" +
+    '<div class="chead">' + gradeChip(monthGrade(stats[D.months[D.months.length - 1]],
+      D.months[D.months.length - 1])[1]) + "<h2>" + esc(name) + "</h2></div>" +
     '<div class="sub">' +
       "Irish Rail station code " + esc(code) + " · every month since collection began, newest first<br>" +
       // Address-flavoured, unlike esb's and uisce's, because this page carries
@@ -210,17 +248,19 @@ function renderStation() {
       // station is in the link text because a screen reader lists links
       // stripped of their context.
       '<a href="s/' + D.slugs[code] + '.html">Permanent link to ' + esc(name) + " station</a></div>" +
-    '<div class="legend">' + D.legend + "</div>";
+    '<div class="legend">' + D.legend + '</div><div class="legend">' + D.grades + "</div>";
 
   var body = months.map(function (ym) {
     var cases = shard[ym] || [];
+    var m = stats[ym], g = monthGrade(m, ym);
     var inner;
     if (loading) inner = '<div class="empty">Loading…</div>';
     else if (failed) inner = '<div class="empty">Could not load the outages for ' + esc(name) + ". Try reloading the page.</div>";
     else if (!cases.length) inner = '<div class="empty">Nothing listed for ' + esc(name) + " in " + monthLabelLong(ym) + ".</div>";
     else inner = cases.map(caseHtml).join("");
-    return '<div class="card"><h3>' + monthLabelLong(ym) + "</h3>" +
-      '<div class="bar tall">' + bar(cellsFor(code, ym), ym) + "</div>" +
+    return '<div class="card"><h3>' + gradeChip(g[1]) + monthLabelLong(ym) +
+      (g[0] == null ? "" : '<span class="av">' + g[0] + "% of days available</span>") + "</h3>" +
+      bars(m ? m[0] : D.blank[ym], m && m[5], ym, true) +
       '<div class="daycap"></div>' + inner + "</div>";
   }).join("");
 
@@ -238,7 +278,7 @@ function summaryBits(firstSeen, end, ongoing, start, listedEnd, leadDays) {
   bits.push(ongoing ? "still listed at the last poll" : "no longer listed " + whenY(end));
   if (start) {
     var claim = "Irish Rail's notice dates it from " + whenY(start);
-    if (leadDays) claim += " — " + fmtDays(leadDays) + " before it was listed";
+    if (leadDays) claim += " - " + fmtDays(leadDays) + " before it was listed";
     bits.push(claim);
   }
   if (listedEnd) bits.push("listed end " + whenY(listedEnd));

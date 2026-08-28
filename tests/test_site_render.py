@@ -42,6 +42,20 @@ class TestWrite(SiteModelCase):
         # Only station-months with a listing carry a bar; quiet ones use blank.
         self.assertIn("2026-08", d["stats"]["ATHY"])
         self.assertEqual(len(d["blank"]["2026-08"]), 31)
+        # [cells, faults, planned, ongoing, avail] and nothing else at a
+        # station with no escalator notice: every byte is in the initial load.
+        self.assertEqual(len(d["stats"]["ATHY"]["2026-08"]), 5)
+        self.assertEqual(d["bands"], [[100, "A"], [95, "B"], [90, "C"], [75, "D"], [0, "F"]])
+
+    def test_only_a_station_with_an_escalator_notice_carries_a_second_bar(self):
+        d = _data(self.site)
+        esc = d["stats"]["CNLLY"]["2026-08"]
+        self.assertEqual(len(esc), 6)
+        self.assertEqual(len(esc[5]), 31)
+        # Connolly's notice is the escalator's, so the lift bar stays clear
+        # and the station grades on its lifts.
+        self.assertEqual(set(esc[0]) - set("89"), {"0"})
+        self.assertEqual(esc[4], 100)
 
     def test_a_shard_carries_every_outage_at_the_station_and_no_other(self):
         text = (self.site / "h" / "ATHY.js").read_text(encoding="utf-8")
@@ -54,6 +68,8 @@ class TestWrite(SiteModelCase):
     def test_the_static_page_carries_the_station_its_months_and_its_cases(self):
         page = (self.site / "s" / "rush-and-lusk.html").read_text(encoding="utf-8")
         self.assertIn("<h1>Rush and Lusk</h1>", page)
+        self.assertIn('<span class="gradechip g-', page)
+        self.assertIn("% of days available", page)
         self.assertIn("August 2026", page)
         self.assertIn('class="case"', page)
         self.assertIn("no longer listed", page)
@@ -61,6 +77,22 @@ class TestWrite(SiteModelCase):
         # The nav links every other station and not itself.
         self.assertIn('href="athy.html"', page)
         self.assertNotIn('href="rush-and-lusk.html"', page)
+
+    def test_the_static_page_labels_the_two_bars_only_where_there_are_two(self):
+        page = (self.site / "s" / "dublin-connolly.html").read_text(encoding="utf-8")
+        self.assertIn("<span>Lifts</span>", page)
+        self.assertIn("<span>Escalators</span>", page)
+        self.assertIn("escalator out of service", page)
+        athy = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
+        self.assertNotIn("<span>Escalators</span>", athy)
+
+    def test_the_static_page_drops_the_listed_end_once_the_notice_is_down(self):
+        # Bray's notice is still up at the last poll; Athy's came down with the
+        # same placeholder end date on it.
+        self.assertIn("listed end", (self.site / "s" / "bray.html").read_text(encoding="utf-8"))
+        page = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
+        self.assertIn("no longer listed", page)
+        self.assertNotIn("listed end", page)
 
     def test_the_static_page_shows_both_clocks(self):
         page = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
@@ -83,6 +115,26 @@ class TestWrite(SiteModelCase):
         page = (self.site / "index.html").read_text(encoding="utf-8")
         self.assertIn(f'<link rel="canonical" href="{render.BASE_URL}/">', page)
         self.assertNotIn("<!--CANONICAL-->", page)
+
+
+class TestSkewedClocks(SiteModelCase):
+    def test_the_horizons_month_is_on_the_page_even_if_the_clock_lags(self):
+        """The months come from the build clock and the horizon from the
+        collector's. A horizon in a month the list lacks would drop that
+        month's outages from the shards, the stats and the headline."""
+        self.poll(T0, [lift()])
+        outages = self.load()
+        # the collector's clock five days ahead of the builder's, over a month
+        # end: months run from the collection month, so the one that can go
+        # missing is the horizon's, not the build clock's
+        now = datetime(2026, 8, 28, 12, 0, tzinfo=UTC)
+        until = datetime(2026, 9, 2, 12, 0, tzinfo=UTC)
+        data, _, months = render.build(outages, now, until)
+        self.assertEqual(months, ["2026-08", "2026-09"])
+        self.assertEqual(data["observed_month"], "2026-09")
+        self.assertIn("2026-09", data["blank"])
+        self.assertIn("2026-09", data["national"])
+        self.assertEqual(model.month_list(model.COLLECTION_START, now), ["2026-08"])
 
 
 class TestStaleness(SiteModelCase):
@@ -111,6 +163,28 @@ class TestSlugs(unittest.TestCase):
         )
 
 
+class TestLegend(unittest.TestCase):
+    def test_the_grade_key_says_what_the_model_grades(self):
+        self.assertEqual(
+            [letter for letter, _ in render.GRADE_LABELS],
+            [letter for _, letter in model.GRADE_BANDS],
+        )
+        for letter, _ in render.GRADE_LABELS:
+            self.assertIn(f'<i class="g-{letter}">', render.GRADE_SPANS)
+
+    def test_the_grade_key_does_not_promise_an_empty_bar(self):
+        """A is 100% of the days that counted. A planned-works notice inside its
+        grace is on the bar and off the total, so "no days listed" was a claim
+        the page contradicts - Pearse grades A over six planned cells."""
+        self.assertNotIn("no days listed", render.GRADE_SPANS)
+        self.assertIn("100% available", render.GRADE_SPANS)
+
+    def test_the_day_key_no_longer_names_a_kind(self):
+        # The kind is the bar, not the colour, so no swatch may claim one.
+        self.assertNotIn("lift", render.LEGEND_SPANS)
+        self.assertNotIn("escalator", render.LEGEND_SPANS)
+
+
 class TestWords(unittest.TestCase):
     def test_durations_read_at_the_right_scale(self):
         self.assertEqual(render._hours(0.5), "30 min")
@@ -125,7 +199,7 @@ class TestWords(unittest.TestCase):
         )
         self.assertEqual(bits[0], "first listed 13 Aug 2026, 11:30")
         self.assertEqual(bits[1], "no longer listed 14 Aug 2026, 10:02")
-        self.assertIn("dates it from 5 May 2026, 00:00 — 3.3 months before it was listed", bits[2])
+        self.assertIn("dates it from 5 May 2026, 00:00 - 3.3 months before it was listed", bits[2])
         self.assertEqual(bits[3], "listed end 31 Dec 2026, 23:59")
 
     def test_a_start_on_the_listing_day_is_not_before_it(self):
