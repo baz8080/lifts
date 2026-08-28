@@ -67,6 +67,10 @@ merged with `sort -u`.
 - **There is no completion signal.** An outage ends when its notice is first
   absent from a successful poll. Notices appear and vanish in batches; say
   "no longer listed", never "fixed".
+- **The feed only names a station when something is wrong with it.** There is
+  no roll of the stations that have a lift, so availability is aggregated over
+  the stations listed in the month and the page says so; a wider denominator
+  would be invented.
 - **Every lift notice names one location code**; `eventStops[0].sStop` is the
   full station name. 131 delay notices had empty `locationCodes` and sit in
   `unidentifiable_items` - irrelevant to the site.
@@ -80,11 +84,13 @@ merged with `sort -u`.
 |---|---|
 | The listing interval is measured; Irish Rail's start is shown, not measured | `notes/site.md` § The measured interval |
 | Stations keyed by location code, named from the newest notice | `notes/site.md` § Rows are stations |
-| Escalators included and tagged, never excluded | `notes/site.md` § Escalators |
+| Escalators included and tagged, never excluded (their own bar since 2026-08-28) | `notes/site.md` § Escalators, § One bar per kind |
 | Same-poll reissues merge; a gap of a poll or more is a new outage | `notes/site.md` § Notices reissued |
 | Planned works is what the notice text says | `notes/site.md` § Planned works |
-| No grade; overview sorts by listed-now, then days listed | `notes/site.md` § No grade |
-| `end` printed as "listed end", plays no part in any measure | `notes/site.md` § `end` is shown |
+| Stations are graded on lift availability - days watched with no lift notice - on this site's own scale, there being no Irish or EU target; overview sorts by listed-now, then availability | `notes/site.md` § The grade is availability |
+| Planned works are excused for their first week and count in full past it | `notes/site.md` § Planned works are excused for a week |
+| A bar carries one kind; an escalator notice gets its own strip and stays out of the lift grade | `notes/site.md` § One bar per kind |
+| `end` printed as "listed end" while the notice is up, dropped once it comes down; plays no part in any measure | `notes/site.md` § `end` is shown, § Irish Rail's end date goes when the notice does |
 | Windows end at the collection horizon; zero-minute listings count in its month | `notes/site.md` § Windows end |
 | Displayed instants are Dublin wall-clock; build/horizon stamps are UTC | `notes/site.md` § Displayed instants |
 | Station page shows every month, newest first; overview lists only stations with a notice that month | this file, and the ESB PR discussion |

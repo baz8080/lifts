@@ -69,6 +69,9 @@ ids 42→45→46).
 "temporarily unavailable due to planned works" tags an outage Planned works;
 anything else is Out of service. 5 of the 17 are planned. Nothing is excluded
 from any count on that basis - there is no grade to keep them out of.
+**Amended 2026-08-28**: there is a grade now, and a planned-works notice is
+kept out of it for its first week only. See "Planned works are excused for a
+week" below. Nothing is excluded from any *count* on that basis still.
 
 ### No grade
 
@@ -76,6 +79,10 @@ The sibling site grades counties on the operator's own published standard.
 There is no equivalent for lifts, and the feed carries no magnitude - a notice
 is listed or it is not - so a cell says only that and the overview sorts by
 "listed right now" then days listed.
+
+**Reversed 2026-08-28.** See "The grade is availability" below: the first
+reason still holds and is now said out loud on the page, and the second was
+answered by counting days rather than looking for a magnitude in the feed.
 
 ### `end` is shown, not used
 
@@ -207,7 +214,8 @@ it deliberately kept:
   bold no-fixed-field caveat always visible above the disclosures; the final line is the
   shared "Source code · not affiliated with Iarnród Éireann." on both page types.
 
-Not taken, on purpose: no grade, no percentage, no intensity ramp (the settled "a notice is
+Not taken, on purpose (**the first of these was reversed on 2026-08-28**): no
+grade, no percentage, no intensity ramp (the settled "a notice is
 listed or it is not"); no alphabetical-only list (26 counties scroll, a growing station list
 led by live outages is the site's point); and none of the measured-interval wording moved -
 "no longer listed", never "fixed".
@@ -234,3 +242,92 @@ Naming *this* site's for its content would be a false promise in the other direc
 "Permalink" as a word was considered and kept only here, where nothing better fits. It is blogging-era vocabulary that a general audience mostly does not hold; the failure mode is a missed click, which is cheaper than the broken promise a wrong content label would make on a site whose whole pitch is that its numbers are trustworthy. The station name is in the link text because a screen reader lists links stripped of their context.
 
 Guarded by `tests/test_permalink_affordance.py`.
+
+## The grade is availability, and the bars split by kind - 2026-08-28
+
+The corpus is now 20 days (8-28 August 2026, 940 runs, 937 ok), 23 outages
+across 20 stations, of which 5 are planned works and 2 are escalators.
+
+### The grade is availability
+
+"5 days listed" was a raw count: it says nothing about whether that is bad,
+and a 31-day month and a 20-day partial one are not comparable by it. The
+number on a row is now the share of the days watched on which no lift notice
+was listed at that station, and the chip is a band of it - statusui's
+`.gradechip`, the same component esb and uisce carry.
+
+**There is no Irish or EU target to grade against, and the page says so.** The
+PRM TSI (Regulation (EU) 1300/2014) sets lift and escalator design rules and
+an operational duty on the station manager to hold a written policy ensuring
+access "at all operational times" - no percentage, no reporting duty. Irish
+Rail's Passengers' Charter promises only "every effort ... available as
+advertised", and the NTA-funded "Big Lift" programme (52 stations, 2020-2024)
+publishes no availability figure. The regulators that publish numbers are
+elsewhere: ORR/Network Rail (8,696 lift faults in a year, 6.6 per lift, over
+20 hours average repair) and TfL historically (93.7% lift availability, 98.8%
+excluding planned works). So the scale is this site's own, said plainly in the
+footer rather than dressed up as a standard.
+
+The bands are calibrated in days a reader can count, not borrowed from an
+annual-availability figure: A is nothing listed, B 95%+, C 90%+, D 75%+, F
+below that. Over a 31-day month that is one day listed for B, two or three for
+C, up to a week for D. Bands tuned for TfL's 98% were tried on paper first and
+put every station in the bottom band: at day granularity one listed day in a
+month is already 96.8%.
+
+Rejected: hours-listed availability, which is more precise but would print
+99.9% beside a bar with a red day in it - the bar is days, so the grade is
+days. Rejected: bands on the days-listed count, which keeps the raw number's
+incomparability between a full month and a partial one. Availability is
+floored, never rounded, so 100% can only mean nothing was listed.
+
+### Planned works are excused for a week
+
+Planned-works notices were masking the thing the site measures: 5 of 23, and
+they sit for months. A planned-works notice listed **7 days or less costs
+nothing**; past that, every day it is listed counts, the first week included.
+A week is a plausible maintenance window, and Irish Rail's own end dates are
+placeholders, so the listing is the only measure of how long works ran.
+
+On this corpus: Pearse's lift notice (5 days) and Greystones' (2 days) are
+excused; Limerick Junction's (10 days) and Midleton's (19 days and still up)
+are not. The grace is a property of the notice, not of the month, so a
+fortnight of works spanning a month end counts in both halves.
+
+### One bar per kind
+
+Pearse is the case: its escalator has been listed since 13 August while its
+lifts came back the same day, and one composite bar painted the station for a
+working lift. A bar now carries one kind - the lift bar is the row's bar, and
+a station gets a second strip only in a month it had an escalator notice. The
+day-cell code for escalators (`2`) is gone: the code says fault or planned
+works, and which kind is the bar it sits in. This supersedes "a day cell
+prefers a lift notice over an escalator one" under Escalators above; the
+preference no longer has anything to decide.
+
+The escalator is out of the grade for the same reason it has its own bar: the
+lift is the step-free route. A station whose escalator is listed still leads
+the overview, because "a notice up right now" is the first sort key.
+
+Rejected: labelling the two strips on an overview row. The label column
+shortened that one station's bar and knocked its days out of line with every
+other row's. The labels stay on the drill-down, where the bars are tall.
+
+### Irish Rail's end date goes when the notice does
+
+`end` is still shown, not used, but only while the notice is still listed. On
+a notice that has come down, "listed end 30 Dec 2026" reads as if the works
+were still running - which is exactly how Pearse's closed lift notice read.
+The notice coming down is the completion signal; a placeholder that outlived
+its notice is noise. Amends "`end` is shown, not used" above.
+
+### The national picture reads as availability
+
+"station-days with a notice" was a number without a scale. The tiles are now
+the aggregate availability of the stations listed that month - and only those,
+because the feed names a station when something is wrong with it and the site
+has no roll of the stations that have a lift at all, so any wider denominator
+would be invented. The composite "4 / 1 lifts / escalators" tile is split in
+two. Getting a real denominator needs a station inventory scraped from
+irishrail.ie, which is a second source with its own staleness and its own
+name-to-code join; not done here.

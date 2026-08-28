@@ -84,13 +84,26 @@ python3 -m lift_site --data-dir /var/lib/lift-status     # writes out/site/
 
 It reads `lift_status.db`, so run `rebuild` first if the database is stale.
 The overview lists the stations with a notice in the selected month; a
-station's page shows every month since collection began. There is no grade -
-the feed says only whether a notice is listed - and everything measured is the
-interval a notice was *listed* for. The start date Irish Rail writes on a
-notice is shown as their claim but colours nothing, because it routinely
+station's page shows every month since collection began. Everything measured
+is the interval a notice was *listed* for. The start date Irish Rail writes on
+a notice is shown as their claim but colours nothing, because it routinely
 predates the listing by months over days the feed was watched and the notice
-was not there. "No longer listed" is the word used, never "fixed": there is
-no completion signal in the feed.
+was not there - notices have been seen to appear and disappear in batches,
+months after the start date they carry. "No longer listed" is the word used,
+never "fixed": there is no completion signal in the feed.
+
+A station is graded on **lift availability**: the share of the days watched on
+which no lift notice was listed there. The scale is this site's own - the PRM
+TSI sets design rules and a duty to hold a written access policy, not a
+number, and Irish Rail publishes no availability target - so the bands are
+calibrated in days: A is nothing listed, B 95%+, C 90%+, D 75%+, F below that.
+Planned works are excused for their first week and count in full past it.
+Escalator notices get their own bar and stay out of the grade, because the
+lift is the step-free route.
+
+A reissued notice that appears at the very poll the old one vanished is one
+outage with the reissue noted; a notice that comes back a poll or more later
+is a separate outage, because the gap is what the site is measuring.
 
 `notes/site.md` has the decisions and the numbers behind them.
 `.github/workflows/pages.yml` rebuilds the database from
