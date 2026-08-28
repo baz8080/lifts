@@ -279,20 +279,32 @@ Rejected: hours-listed availability, which is more precise but would print
 99.9% beside a bar with a red day in it - the bar is days, so the grade is
 days. Rejected: bands on the days-listed count, which keeps the raw number's
 incomparability between a full month and a partial one. Availability is
-floored, never rounded, so 100% can only mean nothing was listed.
+floored, never rounded, so 100% cannot round up from a day that counted. It
+is not "nothing was listed", though, and the grade key does not say so: works
+inside their grace are on the bar and off the total, and Pearse grades A over
+six planned-works cells.
 
 ### Planned works are excused for a week
 
 Planned-works notices were masking the thing the site measures: 5 of 23, and
-they sit for months. A planned-works notice listed **7 days or less costs
-nothing**; past that, every day it is listed counts, the first week included.
-A week is a plausible maintenance window, and Irish Rail's own end dates are
+they sit for months. Works listed **7 days or less in total cost nothing**;
+past that, every day they are listed counts, the first week included. A week
+is a plausible maintenance window, and Irish Rail's own end dates are
 placeholders, so the listing is the only measure of how long works ran.
 
 On this corpus: Pearse's lift notice (5 days) and Greystones' (2 days) are
 excused; Limerick Junction's (10 days) and Midleton's (19 days and still up)
 are not. The grace is a property of the notice, not of the month, so a
 fortnight of works spanning a month end counts in both halves.
+
+**In total** is doing work in that sentence, and two reviews moved it. It was
+first written per segment, which excused a month of works reissued every few
+days - the fold `merge_edits` exists to perform. It was then written over the
+outage's whole listing, which let a fault that replaced the works reach back
+and charge for the maintenance week already forgiven: six days of works then
+three of fault graded F where the works alone graded D. So it is the planned
+segments, added up, and nothing else: what the works cost, measured on the
+works.
 
 ### One bar per kind
 
