@@ -108,8 +108,11 @@ def month_list(start, end):
     # From the month `start` falls in, by Dublin months. The time of day is
     # dropped deliberately: keeping COLLECTION_START's 21:30 would hide a month
     # from every build that ran earlier in the day than that on the 1st.
+    # The month collection began in is always one of them, even for a build
+    # clock earlier than the first poll: every caller indexes this list, and no
+    # months at all is not a shorter answer, it is an IndexError.
     months, cur = [], _month_start(start)
-    while cur <= end:
+    while cur <= end or not months:
         months.append(f"{cur.year:04d}-{cur.month:02d}")
         cur = _month_start(cur + timedelta(days=32))
     return months
