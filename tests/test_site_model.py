@@ -358,6 +358,40 @@ class TestStationMonth(SiteModelCase):
         # is the fault alone. Before the fix all five days read as faults.
         self.assertEqual(s["cells"][9:11], "11")
 
+    def test_a_day_past_the_build_clock_counts_against_nothing(self):
+        """The bar stops at `now`; the window stops at the horizon. The Pi
+        writes the run times and the builder reads its own clock, so an hour of
+        skew puts the horizon ahead of `now` - and a day listed there was being
+        counted against a total that excluded it, which took availability below
+        zero and crashed the band lookup."""
+        self.poll(T0, [lift()])
+        self.poll(T0 + timedelta(days=3), [lift()])
+        outages = self.load()
+        s = self.cells(outages, now=self.until - timedelta(hours=13))
+        self.assertLessEqual(s["against"], s["observed"])
+        self.assertEqual(s["avail"], 0)
+        self.assertEqual(s["grade"], "F")
+
+    def test_planned_works_reissued_within_the_grace_still_run_past_it(self):
+        """The grace is the notice's, not each folded segment's. Irish Rail
+        reissue - that is what merge_edits exists for - and works reissued every
+        few days are still works that ran for a fortnight."""
+        planned = lift(planned=True)
+        self.poll(T0, [planned])
+        swap = T0 + timedelta(days=5)
+        self.poll(swap, [planned])
+        # a reissue at the very poll the old notice vanished: one outage, two
+        # segments, neither of them longer than the grace on its own
+        self.poll(swap + timedelta(minutes=30), [lift(planned=True, start="2026-08-13T09:00:00")])
+        self.poll(swap + timedelta(days=5), [lift(planned=True, start="2026-08-13T09:00:00")])
+        (o,) = outages = self.load()
+        self.assertEqual(len(o.segments), 2)
+        for seg_start, seg_end, _ in o.segments:
+            self.assertLess(seg_end - seg_start, model.PLANNED_GRACE)
+        s = self.cells(outages)
+        self.assertEqual(s["avail"], 0)
+        self.assertEqual(s["grade"], "F")
+
     def test_ongoing_is_only_true_in_the_horizons_month(self):
         self.poll(T0, [lift()])
         self.poll(datetime(2026, 9, 2, tzinfo=UTC), [lift()])
