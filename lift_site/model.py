@@ -384,17 +384,22 @@ def _span_days(start, end, lo, hi, ongoing):
 def day_marks(o, lo, hi):
     """(date, planned, counts) per day the notice was listed inside [lo, hi).
 
-    `counts` is False only for a planned-works notice whose whole listing ran
-    inside `PLANNED_GRACE` - the whole of it, reissues folded in, not the
-    segment the day falls in: works reissued every few days are still works
-    that ran for a month, and `merge_edits` exists because Irish Rail reissue.
-    It is a property of the notice rather than of the month, too: a fortnight
-    of works spanning a month end counts in both halves.
+    `counts` is False only for planned works that ran inside `PLANNED_GRACE`
+    in total - every planned segment of the outage added up, because works
+    reissued every few days are still works that ran for a month and
+    `merge_edits` exists because Irish Rail reissue. Only the planned segments:
+    a fault that replaces the works and runs for a fortnight is the fault's
+    fault, and must not retract the grace the works had earned. It is a
+    property of the notice rather than of the month, too, so a fortnight of
+    works spanning a month end counts in both halves.
     """
-    listed = o.end - o.first_seen
+    works = sum(
+        (seg_end - seg_start for seg_start, seg_end, seg_planned in o.segments if seg_planned),
+        timedelta(),
+    )
     last = len(o.segments) - 1
     for i, (seg_start, seg_end, seg_planned) in enumerate(o.segments):
-        counts = not seg_planned or listed > PLANNED_GRACE
+        counts = not seg_planned or works > PLANNED_GRACE
         for day in _span_days(seg_start, seg_end, lo, hi, o.ongoing and i == last):
             yield day, seg_planned, counts
 

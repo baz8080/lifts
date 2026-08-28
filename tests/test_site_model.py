@@ -367,10 +367,13 @@ class TestStationMonth(SiteModelCase):
         self.poll(T0, [lift()])
         self.poll(T0 + timedelta(days=3), [lift()])
         outages = self.load()
-        s = self.cells(outages, now=self.until - timedelta(hours=13))
+        # the horizon is two days past the build clock, so two listed days are
+        # drawn as still to come and are not among the days that were watched
+        s = self.cells(outages, now=T0 + timedelta(days=1))
+        self.assertEqual(s["cells"][9:11], "99")
         self.assertLessEqual(s["against"], s["observed"])
-        self.assertEqual(s["avail"], 0)
-        self.assertEqual(s["grade"], "F")
+        self.assertEqual((s["observed"], s["against"]), (2, 2))
+        self.assertEqual((s["avail"], s["grade"]), (0, "F"))
 
     def test_planned_works_reissued_within_the_grace_still_run_past_it(self):
         """The grace is the notice's, not each folded segment's. Irish Rail
@@ -391,6 +394,25 @@ class TestStationMonth(SiteModelCase):
         s = self.cells(outages)
         self.assertEqual(s["avail"], 0)
         self.assertEqual(s["grade"], "F")
+
+    def test_a_fault_after_the_works_does_not_retract_their_grace(self):
+        """The grace is the works', measured over the planned segments alone.
+        A fault that replaces them and runs on is the fault's doing, and the
+        days it costs are its own - it cannot reach back and charge for a week
+        of maintenance that had already been forgiven."""
+        planned = lift(planned=True)
+        self.poll(T0, [planned])
+        swap = T0 + timedelta(days=6)
+        self.poll(swap, [planned])
+        fault = lift(text="The lift is currently out of service.", start="2026-08-14T09:00:00")
+        self.poll(swap + timedelta(minutes=30), [fault])
+        self.poll(swap + timedelta(days=3), [fault])
+        (o,) = outages = self.load()
+        self.assertEqual(len(o.segments), 2)
+        s = self.cells(outages)
+        # the four fault days count; the seven of works do not
+        self.assertEqual(s["against"], 4)
+        self.assertEqual((s["avail"], s["grade"]), (60, "F"))
 
     def test_ongoing_is_only_true_in_the_horizons_month(self):
         self.poll(T0, [lift()])
