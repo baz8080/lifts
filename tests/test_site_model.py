@@ -428,6 +428,21 @@ class TestPartialDays(unittest.TestCase):
         self.assertEqual(model.partial_days(until), ["2026-08-08", "2026-08-17"])
 
 
+class TestMonthList(unittest.TestCase):
+    def test_a_build_clock_before_the_first_poll_still_has_a_month(self):
+        # --now takes any date a hand types, and every caller indexes the list
+        self.assertEqual(
+            model.month_list(model.COLLECTION_START, datetime(2026, 7, 15, tzinfo=UTC)),
+            ["2026-08"],
+        )
+
+    def test_it_runs_from_the_start_month_to_the_end_month(self):
+        self.assertEqual(
+            model.month_list(model.COLLECTION_START, datetime(2026, 10, 2, tzinfo=UTC)),
+            ["2026-08", "2026-09", "2026-10"],
+        )
+
+
 class TestShard(SiteModelCase):
     def test_an_outage_is_filed_under_every_month_it_was_listed_in(self):
         self.poll(T0, [lift()])
