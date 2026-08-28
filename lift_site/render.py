@@ -460,7 +460,12 @@ def station_page(code, data, by_month, listed_now=()):
     )
     # The month the data reaches, not the month the calendar reaches: if
     # collection stopped in August, August is the last month with a grade in it.
+    # It can be a month the page does not carry, though - the months come from
+    # the build clock and the horizon does not - and then the newest month the
+    # page has is the only one it can honestly point at.
     latest = data["observed_month"]
+    if latest not in data["blank"]:
+        latest = data["months"][-1]
     letter = _month_grade(stats.get(latest), data["blank"][latest])[1]
     # The page carries every month, so a chip beside the name has to say which
     # month it is the grade for - in the sub line and in its own label.

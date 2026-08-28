@@ -310,7 +310,7 @@ function renderStation() {
   var shard = HIST[code] || {};
   // the view carries every month, so the chip beside the name has to say which
   // month it is the grade for
-  var latest = D.observed_month;
+  var latest = D.blank[D.observed_month] ? D.observed_month : D.months[D.months.length - 1];
   var latestLabel = monthLabelLong(latest), latestGrade = monthGrade(stats[latest], latest)[1];
 
   var head =
