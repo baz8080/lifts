@@ -407,8 +407,10 @@ def day_marks(o, lo, hi):
 def availability(observed, against):
     """Days available as a whole percent, or None for a month nobody watched.
 
-    Floored, not rounded: 100% has to mean nothing was listed, or the grade
-    contradicts the bar beside it.
+    Floored, not rounded, so 100% cannot round up from a day that counted. It
+    does not mean nothing was listed: works inside their grace are on the bar
+    and off the total, which is why the legend says "100% available" rather
+    than "no days listed".
     """
     if not observed:
         return None
