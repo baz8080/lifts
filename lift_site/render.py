@@ -76,7 +76,10 @@ def build(outages, now, until):
     `now` fixes only what is still in the future; `until` is where the collected
     data stops, and every measured window ends there.
     """
-    months = model.month_list(model.COLLECTION_START, now)
+    # To the later of the two clocks: the horizon comes from the collector and
+    # `now` from the builder, and a horizon in a month this list lacks would
+    # drop that month's outages from the shards, the stats and the headline.
+    months = model.month_list(model.COLLECTION_START, max(now, until))
     stations = model.station_index(outages)
     slugs = station_slugs(stations)
 
