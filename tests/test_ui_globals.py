@@ -1,7 +1,12 @@
-"""No page script may redeclare a global from statusui's ui.js.
+"""No page script may redeclare a global from statusui's shared bundle.
 
-The shared file is inlined ahead of each page's own script, so a redeclaration
+The bundle is inlined ahead of each page's own script, so a redeclaration
 silently shadows the shared helper on that page alone.
+
+The names come from `statusui.js_globals()`, never from reading `ui.js`: the
+bundle is two files since the caption listener moved to `caption.js`, and a
+test that reads one of them passes by seeing fewer names - which is a guard
+failing open, silently, exactly when it stops covering something.
 """
 
 import re
@@ -12,15 +17,19 @@ import statusui
 
 HERE = Path(__file__).resolve().parent.parent
 
+# A page takes the whole bundle or, if all it calls is the caption listener,
+# that alone. Everything after whichever marker it carries is the page's own.
+MARKERS = ("<!--UI-JS-->", "<!--UI-JS-CAPTION-->")
+
 
 class TestUiGlobals(unittest.TestCase):
     def test_site_script_redeclares_no_shared_global(self):
-        decl = r"^(?:function|var)\s+(\w+)"
-        shared_js = (Path(statusui.__file__).parent / "ui.js").read_text()
-        shared = set(re.findall(decl, shared_js, re.M))
+        shared = statusui.js_globals()
+        self.assertIn("bindDayCaption", shared, "the bundle's second file is missing")
         for page in ("site.html", "station.html"):
             text = (HERE / "lift_site" / page).read_text()
-            # everything after the shared script is the site's own
-            own = text.split("<!--UI-JS-->", 1)[1]
-            mine = set(re.findall(decl, own, re.M))
+            marker = next((m for m in MARKERS if m in text), None)
+            self.assertIsNotNone(marker, f"{page} inlines no shared script")
+            own = text.split(marker, 1)[1]
+            mine = set(re.findall(r"^(?:function|var)\s+(\w+)", own, re.M))
             self.assertFalse(mine & shared, f"{page} redeclares {sorted(mine & shared)}")
