@@ -125,7 +125,7 @@ class TestWords(unittest.TestCase):
         )
         self.assertEqual(bits[0], "first listed 13 Aug 2026, 11:30")
         self.assertEqual(bits[1], "no longer listed 14 Aug 2026, 10:02")
-        self.assertIn("dates it from 5 May 2026, 00:00 — 3.3 months before it was listed", bits[2])
+        self.assertIn("dates it from 5 May 2026, 00:00 - 3.3 months before it was listed", bits[2])
         self.assertEqual(bits[3], "listed end 31 Dec 2026, 23:59")
 
     def test_a_start_on_the_listing_day_is_not_before_it(self):

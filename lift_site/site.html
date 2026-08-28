@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Irish Rail Lift Outages — unofficial</title>
-<meta name="description" content="Lift (elevator) and escalator outages at Irish Rail stations, station by station — which are out, since when, and for how long. Independent, rebuilt daily.">
+<title>Irish Rail Lift Outages - unofficial</title>
+<meta name="description" content="Lift (elevator) and escalator outages at Irish Rail stations, station by station - which are out, since when, and for how long. Independent, rebuilt daily.">
 <meta property="og:title" content="Irish Rail Lift Outages">
-<meta property="og:description" content="Lift (elevator) and escalator outages at Irish Rail stations, station by station — which are out, since when, and for how long.">
+<meta property="og:description" content="Lift (elevator) and escalator outages at Irish Rail stations, station by station - which are out, since when, and for how long.">
 <meta property="og:type" content="website">
 <link rel="canonical" href="<!--CANONICAL-->">
 <style>
@@ -52,8 +52,8 @@
     took the notice down.</p>
 
     <details><summary>What this measures</summary>
-    <p>This site reads Irish Rail's public service-message feed every 30 minutes — the
-    banners shown on irishrail.ie — and keeps every notice that says a lift or escalator is
+    <p>This site reads Irish Rail's public service-message feed every 30 minutes - the
+    banners shown on irishrail.ie - and keeps every notice that says a lift or escalator is
     out of order. Irish Rail publishes no history, so nothing before <span id="startdate"></span>
     exists here, and days before it are shown as “no data” rather than as working lifts.
     Notices have been seen to appear and disappear in batches, months after the start date
@@ -62,17 +62,17 @@
 
     <details><summary>How to read an outage</summary>
     <p>Each outage shows when its notice was first listed and when it was no longer listed
-    — or “still listed at the last poll” for one that is up now — and the duration between
+    - or “still listed at the last poll” for one that is up now - and the duration between
     the two, to the nearest half hour. That is what the day bars colour. The notice also
     carries a start date of Irish Rail's own, shown beside it as their claim: it is
     routinely weeks or months before the notice was listed, so it colours nothing here.</p>
-    <p>“Planned works” is what the notice itself says — <em>temporarily unavailable due to
-    planned works</em> — against <em>currently out of service</em> for everything else.
+    <p>“Planned works” is what the notice itself says - <em>temporarily unavailable due to
+    planned works</em> - against <em>currently out of service</em> for everything else.
     Escalators are listed in the same feed with the same wording and are shown too, tagged
     separately.</p>
     <p>A reissued notice that appears at the very poll the old one vanished is shown as one
     outage with the reissue noted. A notice that comes back a poll or more later is a
-    separate outage — the gap is real, and it is what this site is measuring.</p>
+    separate outage - the gap is real, and it is what this site is measuring.</p>
     </details>
 
     <details><summary>What it cannot tell you</summary>
@@ -171,7 +171,7 @@ function renderOverview() {
 
   document.getElementById("basis").innerHTML =
     "Stations with a lift or escalator notice listed in <b>" + monthLabelLong(curMonth) +
-    "</b>. A station with nothing listed that month is not shown — find it by name to see its history." +
+    "</b>. A station with nothing listed that month is not shown - find it by name to see its history." +
     // one hover cue above the list, not a placeholder in every strip
     ' <span class="hoverhint">Hover a day in a bar for its detail.</span>';
 
@@ -238,7 +238,7 @@ function summaryBits(firstSeen, end, ongoing, start, listedEnd, leadDays) {
   bits.push(ongoing ? "still listed at the last poll" : "no longer listed " + whenY(end));
   if (start) {
     var claim = "Irish Rail's notice dates it from " + whenY(start);
-    if (leadDays) claim += " — " + fmtDays(leadDays) + " before it was listed";
+    if (leadDays) claim += " - " + fmtDays(leadDays) + " before it was listed";
     bits.push(claim);
   }
   if (listedEnd) bits.push("listed end " + whenY(listedEnd));

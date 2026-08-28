@@ -7,7 +7,7 @@ an escalator. Everything below should be re-checked once there is a season of
 data; the point of writing it down is so that re-check compares against
 something.
 
-## Settled — 2026-08-18
+## Settled - 2026-08-18
 
 ### Rows are stations, keyed by location code
 
@@ -102,14 +102,14 @@ every timestamp on an outage is shown in Europe/Dublin; the build and horizon
 stamps stay UTC and say so.
 
 The day cells, the month filing and `partial_days` are bucketed in Dublin too
-— **2026-08-18**, after they were not. Bucketing by UTC date while printing
+- **2026-08-18**, after they were not. Bucketing by UTC date while printing
 Dublin wall-clock split them for four hours a day in summer: a notice first
 seen at the 23:15 UTC poll on 31 August lit the 31 August cell while its own
 summary read "first listed 1 Sep 2026, 00:15", and at a month boundary it was
 filed under August and absent from September. Two conventions for one date is
 a bug in either direction; the site says Dublin everywhere a reader can see.
-The cost is that a month is no longer a whole number of days — March is 23
-hours short and October 25 long — so the cell count comes from
+The cost is that a month is no longer a whole number of days - March is 23
+hours short and October 25 long - so the cell count comes from
 `calendar.monthrange`, never from subtracting the bounds.
 
 Durations are computed from the offset-aware instants and shipped in the case
@@ -122,7 +122,7 @@ change, and did.
 - **A reopened notice publishes its gap as listed.** `LIFT_STATUS_GRACE_MISSES`
   is 1, and a notice that vanishes and comes back *unchanged* reopens the same
   row: `closed_at_utc` is nulled and `first_seen_at_utc` kept, so the site
-  paints the whole absence as listed — days that were polled every 30 minutes
+  paints the whole absence as listed - days that were polled every 30 minutes
   and showed nothing. Any gap length qualifies, not just a one-poll flap.
   The site cannot fix this alone: once the row is reopened the gap is nowhere
   in `messages`, and `identity_key` is UNIQUE so the re-listing cannot become
@@ -137,7 +137,7 @@ change, and did.
   `locationCodes` and are irrelevant to this site; noted so nobody goes
   looking.
 
-## The design layer is shared with uisce and esb — 2026-08-19
+## The design layer is shared with uisce and esb - 2026-08-19
 
 The three status sites are deliberately look-alike, and every UI fix had been ported three
 times by hand. The tokens, base rules, row/bar/card components and the browser helpers now
@@ -153,14 +153,14 @@ that checkout exists and skips otherwise. **To change the shared UI:** edit in `
 commit, `scripts/sync-ui.sh`, run the tests, commit. The full list of what is shared and what
 is per-site is in statusui's README.
 
-## The vendored copy became a pinned dependency — 2026-08-20
+## The vendored copy became a pinned dependency - 2026-08-20
 
 One day was enough to show the vendored mechanism's cost: a shared fix meant a sync, test,
-commit and PR in each of three repos, and the sites still drifted — this site and esb were
+commit and PR in each of three repos, and the sites still drifted - this site and esb were
 synced to statusui `f248ac3` while uisce sat five UI commits behind, with nothing failing to
 say so (the byte-compare only fires against the checkout you happen to have). `statusui` is
 now a real package, declared in the `site` dependency group with a `[tool.uv.sources]` git
-source and pinned to a commit in `uv.lock` — `dependencies` stays literally empty, so the Pi
+source and pinned to a commit in `uv.lock` - `dependencies` stays literally empty, so the Pi
 collector's stdlib-only file-copy install is untouched, and `default-groups` keeps a plain
 `uv run` building. The vendored tree, `scripts/sync-ui.sh` and the byte-compare went; the
 no-redeclared-globals guard stayed as `tests/test_ui_globals.py`, reading `ui.js` from the
@@ -169,14 +169,14 @@ then `../statusui/rollout.sh` bumps the pin in all three sites, runs each site's
 opens the PRs. An unpushed statusui change can be tried here with
 `uv run --with-editable ../statusui python -m lift_site ...`.
 
-## The design alignment pass — 2026-08-26
+## The design alignment pass - 2026-08-26
 
 The owner reviewed uisce and esb side by side, picked a winner per element, and asked for the
 same language here, so the three sites read as one product. What this site absorbed, and what
 it deliberately kept:
 
 - **Banner** takes the shared shape: `**August 2026 so far:** 3 out of service and 1 planned
-  works across 4 stations` — the bold long-month prefix, " so far" only while the viewed
+  works across 4 stations` - the bold long-month prefix, " so far" only while the viewed
   month is still collecting (`observed_iso` month == viewed month). The old line was the
   right-now station count; the right-now information moved to the latest month's tile (the
   lifts / escalators split "with a notice up at the last poll"), which replaces the plain
@@ -184,7 +184,7 @@ it deliberately kept:
   timestamp, stale past 16 h) replaces both the banner's "as of …" and the header's
   `stampLine`; the exact horizon survives as the chip's hover title and, in full, on the
   static station pages' sub line. `observed_iso` and `stale_hours` joined the payload for it.
-  The stamps that remain visible are still UTC and say so — the wall-clock/UTC split holds.
+  The stamps that remain visible are still UTC and say so - the wall-clock/UTC split holds.
 - **The national heading** is the shared "The national picture in August 2026" (was "Across
   the network in Aug 2026"); the "stations affected" and "out of service / planned works"
   tiles went, because the banner now carries both.
@@ -192,12 +192,12 @@ it deliberately kept:
   `.legend i.bN` site.css rules that colour the bars (so the key cannot drift), and it now
   also appears at the top of the station view and the static station pages, which had none.
 - **Search** is statusui's shared `bindSearch`, fed an index built at boot (each station
-  keyed under its own name — that is what keeps the match a substring match; `searchHits`
+  keyed under its own name - that is what keeps the match a substring match; `searchHits`
   grew a dedupe upstream for exactly this shape). The per-hit "nothing listed in Aug 2026"
   note survives via the new `note()` hook. Lost, accepted: the empty state is now the shared
   "Nothing matching “q”" rather than "No station matching “q” has had a notice yet".
 - **Rows**: the day-count stat renamed `.days` → the shared `.cml` (site.css rule deleted;
-  base carries it). The wider `--row-cols`/`--stats-cols` stay — station names and the
+  base carries it). The wider `--row-cols`/`--stats-cols` stay - station names and the
   "out of service" labels are longer than the siblings', and the knobs exist for exactly
   that. The fixed worst-first sort stays: it is the settled decision above, and it is also
   esb's pattern.
@@ -209,16 +209,16 @@ it deliberately kept:
 
 Not taken, on purpose: no grade, no percentage, no intensity ramp (the settled "a notice is
 listed or it is not"); no alphabetical-only list (26 counties scroll, a growing station list
-led by live outages is the site's point); and none of the measured-interval wording moved —
+led by live outages is the site's point); and none of the measured-interval wording moved -
 "no longer listed", never "fixed".
 
-## The permalink affordance moved out of the footer — 2026-08-26
+## The permalink affordance moved out of the footer - 2026-08-26
 
 Every drill-down on all three sites now offers the static page it has a permanent URL for, in the same place: its own line directly under the heading, above the month tabs where a site has them. The rule that styles that line, `.chead + .sub`, is promoted to statusui's `base.css`: lifts and esb had been carrying it byte for byte in their own `site.css` and uisce is now the third consumer, which is exactly the "two sites want it and none wants it different" test. The three local copies went with the pin bump that followed.
 
-This site already had the link — it was the model for the other two — but it trailed the descriptive sentence after a `·`, which made it the least prominent of the three once esb and uisce gained theirs. It now has its own line.
+This site already had the link - it was the model for the other two - but it trailed the descriptive sentence after a `·`, which made it the least prominent of the three once esb and uisce gained theirs. It now has its own line.
 
-**The wording is deliberately per site, and it is the interesting part.** A link's label makes a promise. Name it for the content on the other side and a reader who is already looking at that content asks "am I not looking at this already?" — so the label has to match the *content relationship*, not a house style:
+**The wording is deliberately per site, and it is the interesting part.** A link's label makes a promise. Name it for the content on the other side and a reader who is already looking at that content asks "am I not looking at this already?" - so the label has to match the *content relationship*, not a house style:
 
 That yields two categories, not three:
 
@@ -227,7 +227,7 @@ That yields two categories, not three:
 | esb, uisce | one month at a time | every month | "Every month for County X on one page" |
 | lifts | every month, newest first | the same months and cases (`render.station_page`) | "Permanent link to Athy station" |
 
-esb and uisce stand in the same relation to their views, so they say the same sentence. uisce first shipped "Every notice ever recorded in Co. Carlow" and that was wrong — its page caps the notice list at 60 and prints "older notices not shown here", so the label was contradicted by the page it landed on. Corrected the same day.
+esb and uisce stand in the same relation to their views, so they say the same sentence. uisce first shipped "Every notice ever recorded in Co. Carlow" and that was wrong - its page caps the notice list at 60 and prints "older notices not shown here", so the label was contradicted by the page it landed on. Corrected the same day.
 
 Naming *this* site's for its content would be a false promise in the other direction: there is no more content on the other side, only a durable address. Rejected on those grounds, not on taste.
 

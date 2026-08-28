@@ -219,7 +219,7 @@ def summary_bits(first_seen, end, ongoing, start, listed_end, lead_days=None):
     if start:
         claim = f"Irish Rail's notice dates it from {_when(start)}"
         if lead_days:
-            claim += f" — {_days(lead_days)} before it was listed"
+            claim += f" - {_days(lead_days)} before it was listed"
         bits.append(claim)
     if listed_end:
         bits.append(f"listed end {_when(listed_end)}")

@@ -1,6 +1,6 @@
 """The shared drill-down sub line, asserted to apply rather than to exist.
 
-`.chead + .sub` styles the line under a station heading — here, the station code
+`.chead + .sub` styles the line under a station heading - here, the station code
 and the data stamp on every `s/<slug>.html`. It lives in statusui's base.css and
 reaches this repo only through the pin in `uv.lock`.
 
@@ -53,7 +53,7 @@ def _winner(css, prop):
     Only a selector's subject is read; an ancestor or sibling part is assumed to
     match, which can only make this stricter than the browser. A rule inside an
     @media block is counted as competing whatever its condition, for the same
-    reason — neither file puts a `.sub` rule in one today.
+    reason - neither file puts a `.sub` rule in one today.
     """
     rules = []
     for order, (prelude, body) in enumerate(re.findall(r"([^{}]+)\{([^{}]*)\}", css)):
