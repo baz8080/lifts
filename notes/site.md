@@ -301,10 +301,12 @@ fortnight of works spanning a month end counts in both halves.
 first written per segment, which excused a month of works reissued every few
 days - the fold `merge_edits` exists to perform. It was then written over the
 outage's whole listing, which let a fault that replaced the works reach back
-and charge for the maintenance week already forgiven: six days of works then
-three of fault graded F where the works alone graded D. So it is the planned
-segments, added up, and nothing else: what the works cost, measured on the
-works.
+and charge for the maintenance week already forgiven. The test case is six
+days of works then four of fault: the fault's four days count and the works'
+seven do not, which is 60% and an F. Under the whole-listing rule all eleven
+counted, which is 0% and also an F - the same letter, a different number, and
+the difference grows with the works. So it is the planned segments, added up,
+and nothing else: what the works cost, measured on the works.
 
 ### One bar per kind
 
