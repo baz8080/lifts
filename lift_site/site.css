@@ -5,16 +5,30 @@
 /* station names run long ("Dún Laoghaire Mallin"); the row keeps its columns */
 .cname a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* day cells: 0 nothing listed, 1 lift out, 2 escalator out, 5 planned, 8 no data, 9 to come.
-   The legend swatches share these rules so the key can never drift from the bars;
-   b0 needs its own line because only .bar i defaults to --good in base.css. */
+/* day cells: 0 nothing listed, 1 out of service, 5 planned, 8 no data, 9 to come.
+   Which kind is out is the bar it is in, not the colour. The legend swatches
+   share these rules so the key can never drift from the bars; b0 needs its own
+   line because only .bar i defaults to --good in base.css. The grade key's
+   swatches take their colours from statusui's chip classes, so it has none. */
 .bar i.b1, .legend i.b1 { background: var(--critical); }
-.bar i.b2, .legend i.b2 { background: var(--serious); }
 .bar i.b5, .legend i.b5 { background: var(--maint); }
 .bar i.b8, .bar i.b9, .legend i.b8 { background: var(--cell-empty); }
 .legend i.b0 { background: var(--good); }
 
-/* a month card: bar, its readout, then the cases with no rule between */
-.card .bar + .daycap + .case { border-top: 0; margin-top: 4px; }
+/* A station with an escalator notice gets a second strip in the same space, so
+   a working lift is not painted by an escalator (Pearse, August 2026). */
+.bars { display: grid; gap: 3px; }
+.bars.labelled { grid-template-columns: 64px 1fr; column-gap: 8px; align-items: center; }
+.bars > span { font-size: 11px; color: var(--muted); }
+.bars .bar { height: 13px; }
+.bars .bar.tall { height: 18px; }
+
+/* a month card's heading carries its grade chip and the month's availability */
+.card h2, .card h3 { display: flex; align-items: center; gap: 8px; }
+.card h2 .gradechip, .card h3 .gradechip { width: 22px; height: 22px; font-size: 12px; }
+.card .av { margin-left: auto; color: var(--muted); font-weight: 500; font-size: 12.5px; }
+
+/* a month card: bar(s), the readout, then the cases with no rule between */
+.card .bar + .daycap + .case, .card .bars + .daycap + .case { border-top: 0; margin-top: 4px; }
 .case .txt { color: var(--muted); font-size: 12.5px; margin-top: 4px; font-style: italic; }
 .tl { margin-top: 8px; }

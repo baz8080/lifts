@@ -94,20 +94,23 @@ def build(outages, now, until):
         for ym in months:
             s = model.station_month(rows, ym, now, until)
             if s["faults"] or s["planned"]:
-                # Five fields, and no more: the page reads m[0]..m[4], and
-                # every byte here is in the initial load for every station.
+                # Five fields, and no more, plus the escalator bar in the
+                # months that had one: the page reads m[0]..m[5], and every
+                # byte here is in the initial load for every station.
                 per_month[ym] = [
-                    s["cells"], s["faults"], s["planned"], s["days_out"],
-                    1 if s["ongoing"] else 0,
+                    s["cells"], s["faults"], s["planned"],
+                    1 if s["ongoing"] else 0, s["avail"],
                 ]
+                if s["esc_cells"]:
+                    per_month[ym].append(s["esc_cells"])
         stats[code] = per_month
 
     blank, national = {}, {}
     for ym in months:
         blank[ym] = model.station_month([], ym, now, until)["cells"]
-        n = model.national_month(outages, ym, until)
+        n = model.national_month(outages, ym, now, until)
         national[ym] = [
-            n["stations"], n["outages"], n["faults"], n["planned"], n["station_days"], n["ongoing"],
+            n["stations"], n["outages"], n["faults"], n["planned"], n["avail"], n["ongoing"],
         ]
 
     # What is listed at the horizon, for the banner: the state of the network
@@ -142,6 +145,10 @@ def build(outages, now, until):
         "national": national,
         "current": current,
         "legend": LEGEND_SPANS,
+        "grades": GRADE_SPANS,
+        # The band table travels with the payload so the app derives a letter
+        # the same way the static pages do, from the one table in the model.
+        "bands": [list(b) for b in model.GRADE_BANDS],
     }
     return data, by_station, months
 
@@ -156,6 +163,10 @@ def case_record(o):
     lead = None
     if o.start.astimezone(DUBLIN).date() < o.first_seen.astimezone(DUBLIN).date():
         lead = (o.first_seen - o.start).days
+    # Irish Rail's end date is a placeholder near the end of the year on nearly
+    # every notice, and the notice coming down is the completion signal. It is
+    # worth showing while the works are still listed and misleading afterwards.
+    listed_end = _short(o.listed_end) if o.ongoing else None
     return [
         o.id,
         o.kind,
@@ -164,7 +175,7 @@ def case_record(o):
         _short(o.end),
         1 if o.ongoing else 0,
         _short(o.start),
-        _short(o.listed_end),
+        listed_end,
         o.head,
         o.text or "",
         [[_short(when), head, text or ""] for when, head, text in o.updates],
@@ -259,19 +270,44 @@ def _updates_html(updates):
     return f'<ul class="tl">{items}</ul>'
 
 
-DAY_LABELS = {
-    "0": "nothing listed",
-    "1": "lift out of service",
-    "2": "escalator out of service",
-    "5": "planned works",
-    "8": "no data collected for this day",
-    "9": "still to come",
-}
+def _day_labels(kind):
+    """Cell captions for one kind's bar. The kind is the bar, not the colour."""
+    return {
+        "0": "nothing listed",
+        "1": f"{KIND_LABEL[kind].lower()} out of service",
+        "5": "planned works",
+        "8": "no data collected for this day",
+        "9": "still to come",
+    }
 
 
-def _day_cells(cells, ym, partial):
+def _day_cells(cells, ym, partial, kind="lift"):
     # nothing to qualify on a day with no data or no colour yet
-    return statusui.day_cells(cells, ym, partial, DAY_LABELS, qualify=lambda ch: ch not in "89")
+    return statusui.day_cells(
+        cells, ym, partial, _day_labels(kind), qualify=lambda ch: ch not in "89"
+    )
+
+
+def _chip(letter):
+    """The shared grade chip. `g-none` and a dash where there is nothing to grade."""
+    return f'<span class="gradechip g-{letter or "none"}">{letter or "-"}</span>'
+
+
+def _bars(cells, esc_cells, ym, partial, tall=False):
+    """One bar, or a pair when the station had an escalator notice that month.
+
+    The pair is labelled only on the drill-down, where the bars are tall and
+    there is room. On an overview row the label column would shorten that one
+    station's bar and knock its days out of line with every other row's.
+    """
+    cls = "bar tall" if tall else "bar"
+    lift = f'<div class="{cls}">{_day_cells(cells, ym, partial)}</div>'
+    if not esc_cells:
+        return lift
+    esc = f'<div class="{cls}">{_day_cells(esc_cells, ym, partial, "escalator")}</div>'
+    if not tall:
+        return f'<div class="bars">{lift}{esc}</div>'
+    return f'<div class="bars labelled"><span>Lifts</span>{lift}<span>Escalators</span>{esc}</div>'
 
 
 # What each day-cell colour means. The swatches take their colours from the
@@ -280,8 +316,7 @@ def _day_cells(cells, ym, partial):
 # the static pages'.
 LEGEND_ITEMS = (
     ("b0", "nothing listed"),
-    ("b1", "lift out of service"),
-    ("b2", "escalator out of service"),
+    ("b1", "out of service"),
     ("b5", "planned works"),
     ("b8", "no data"),
 )
@@ -290,9 +325,35 @@ LEGEND_SPANS = "".join(
     f'<span><i class="{cls}"></i>{label}</span>' for cls, label in LEGEND_ITEMS
 )
 
+# The grade key. The swatch classes are the chip's own, so the key takes the
+# chip colours from statusui rather than restating them.
+GRADE_LABELS = (
+    ("A", "no days listed"),
+    ("B", "95%+ available"),
+    ("C", "90%+ available"),
+    ("D", "75%+ available"),
+    ("F", "under 75% available"),
+)
+
+GRADE_SPANS = "<span>Lift availability</span>" + "".join(
+    f'<span><i class="g-{letter}"></i>{label}</span>' for letter, label in GRADE_LABELS
+)
+
 
 def _legend_html():
-    return f'<div class="legend">{LEGEND_SPANS}</div>'
+    return f'<div class="legend">{LEGEND_SPANS}</div><div class="legend">{GRADE_SPANS}</div>'
+
+
+def month_grade(m, blank_cells):
+    """A month's availability and grade, from its row or from the quiet bar.
+
+    A month with no row had nothing listed, which is 100% of the days that were
+    watched - and no grade at all in a month that was not watched.
+    """
+    if m:
+        return m[4], model.grade(m[4])
+    avail = model.availability(sum(1 for ch in blank_cells if ch not in "89"), 0)
+    return avail, model.grade(avail)
 
 
 def station_page(code, data, by_month):
@@ -309,9 +370,11 @@ def station_page(code, data, by_month):
         f"Lift (elevator) and escalator outages at {name} station, from Irish Rail's "
         f"service-message feed, since {data['start']}."
     )
+    latest = data["months"][-1]
     body = [
         '<a class="back" href="../index.html">← All stations</a>',
         '<div class="chead">',
+        _chip(month_grade(stats.get(latest), data["blank"][latest])[1]),
         f"<h1>{html.escape(name)}</h1></div>",
         f'<div class="sub">Irish Rail station code {html.escape(code)}<br>'
         f'Data to {html.escape(data["observed"])}'
@@ -326,9 +389,15 @@ def station_page(code, data, by_month):
     for ym in months:
         m = stats.get(ym)
         cells = m[0] if m else data["blank"][ym]
+        avail, letter = month_grade(m, data["blank"][ym])
         cases = by_month.get(ym, [])
-        body.append(f'<div class="card"><h2>{month_label(ym)}</h2>')
-        body.append(f'<div class="bar tall">{_day_cells(cells, ym, data["partial"])}</div>')
+        body.append(
+            f'<div class="card"><h2>{_chip(letter)}{month_label(ym)}'
+            + (f'<span class="av">{avail}% of days available</span>' if avail is not None else "")
+            + "</h2>"
+        )
+        esc = m[5] if m and len(m) > 5 else None
+        body.append(_bars(cells, esc, ym, data["partial"], tall=True))
         body.append('<div class="daycap"></div>')
         if cases:
             body.append("".join(_case_html(k) for k in cases))

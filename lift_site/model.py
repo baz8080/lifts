@@ -5,11 +5,12 @@ of which a handful are "<Station> - Lift out of order". This module picks those
 out (and the escalator ones), files them under the station they name, and works
 out for every day of every month whether a notice was listed.
 
-That is the whole measurement. Unlike the sibling `esb` site there is no
-published standard to grade against and no magnitude in the feed - a notice is
-either listed or it is not - so a day cell says only that, and the words the
-site uses are "listed" and "no longer listed", never "fixed": a notice vanishing
-means Irish Rail took it down, which is usually but not provably the same thing.
+That is the whole measurement. The feed carries no magnitude - a notice is
+either listed or it is not - so a day cell says only that, and the grade counts
+those days: the share of the days watched on which nothing was listed. The words
+the site uses are "listed" and "no longer listed", never "fixed": a notice
+vanishing means Irish Rail took it down, which is usually but not provably the
+same thing.
 
 Every interval measured here is the one the notice was *listed* for. The start
 date Irish Rail writes on a notice is shown but never measured: it routinely
@@ -49,12 +50,28 @@ KIND_PATTERNS = (
 PLANNED_MARKER = "planned works"
 
 # Day-cell codes. One character per day of the month, packed into a string.
+# A bar carries one kind - a station gets a lift bar and, in a month it had an
+# escalator notice, an escalator bar - so the code says what was listed and the
+# bar it sits in says which kind. There is no escalator code any more.
 DAY_CLEAR = 0  # nothing listed at this station
-DAY_LIFT = 1  # a lift notice that is not planned works
-DAY_ESCALATOR = 2  # an escalator notice (and no lift one)
+DAY_OUT = 1  # a notice that is not planned works
 DAY_PLANNED = 5  # planned works only
 DAY_NO_DATA = 8  # outside the window the collector actually covered
 DAY_FUTURE = 9
+
+# How long a planned-works notice may stand before its days count against
+# availability. A week is a plausible maintenance window; the notices that sit
+# for months are unavailability with a label on it, and Irish Rail's own end
+# dates are placeholders, so the listing is the only measure of the works.
+PLANNED_GRACE = timedelta(days=7)
+
+# The scale is this site's own. There is no Irish or EU target to grade
+# against: the PRM TSI (Regulation (EU) 1300/2014) sets lift and escalator
+# design rules and a duty on the station manager to hold a written access
+# policy, not a number, and Irish Rail's charter promises only "every effort".
+# So the bands are calibrated in days a reader can count: over a 31-day month,
+# B is one day listed, C two or three, D up to a week.
+GRADE_BANDS = ((100, "A"), (95, "B"), (90, "C"), (75, "D"), (0, "F"))
 
 # Notices are re-issued when Irish Rail edits the wording or corrects a start
 # time; the collector sees that as the old notice closing and a new one opening
@@ -361,30 +378,57 @@ def _span_days(start, end, lo, hi, ongoing):
         )
 
 
-def listed_day_flags(o, lo, hi):
-    """(date, planned) per day listed inside [lo, hi), by the notice of that day."""
+def day_marks(o, lo, hi):
+    """(date, planned, counts) per day the notice was listed inside [lo, hi).
+
+    `counts` is False only for a planned-works notice whose whole listing ran
+    inside `PLANNED_GRACE`. It is a property of the notice rather than of the
+    month: a fortnight of works spanning a month end counts in both halves.
+    """
     last = len(o.segments) - 1
     for i, (seg_start, seg_end, seg_planned) in enumerate(o.segments):
+        counts = not seg_planned or seg_end - seg_start > PLANNED_GRACE
         for day in _span_days(seg_start, seg_end, lo, hi, o.ongoing and i == last):
-            yield day, seg_planned
+            yield day, seg_planned, counts
 
 
-def listed_days(o, lo, hi):
-    """The Dublin dates on which the notice was listed inside [lo, hi)."""
-    for day, _ in listed_day_flags(o, lo, hi):
-        yield day
+def availability(observed, against):
+    """Days available as a whole percent, or None for a month nobody watched.
+
+    Floored, not rounded: 100% has to mean nothing was listed, or the grade
+    contradicts the bar beside it.
+    """
+    if not observed:
+        return None
+    return (observed - against) * 100 // observed
 
 
-def _day_code(has_lift, has_escalator, has_planned):
-    # A fault beats planned works, and a lift beats an escalator: the cell says
-    # the worst thing listed that day, and step-free access is the lift.
-    if has_lift:
-        return DAY_LIFT
-    if has_escalator:
-        return DAY_ESCALATOR
-    if has_planned:
-        return DAY_PLANNED
-    return DAY_CLEAR
+def grade(avail):
+    """The band an availability falls in, or None when there is nothing to grade."""
+    if avail is None:
+        return None
+    for floor, letter in GRADE_BANDS:
+        if avail >= floor:
+            return letter
+    return GRADE_BANDS[-1][1]
+
+
+def _cells(marks, month_lo, now, until):
+    """One kind's day bar for the month, and how many of its days were watched."""
+    cells, observed = [], 0
+    for d in range(1, calendar.monthrange(month_lo.year, month_lo.month)[1] + 1):
+        day = date(month_lo.year, month_lo.month, d)
+        day_lo = datetime(day.year, day.month, day.day, tzinfo=DUBLIN)
+        if day_lo >= now:
+            cells.append(DAY_FUTURE)
+        elif day_lo + timedelta(days=1) <= COLLECTION_START or day_lo >= until:
+            # Either side of the collected window is "no data": a day the
+            # collector never reached is not a day the lift worked.
+            cells.append(DAY_NO_DATA)
+        else:
+            cells.append(marks.get(day, DAY_CLEAR))
+            observed += 1
+    return "".join(str(c) for c in cells), observed
 
 
 def station_month(outages, ym, now, until):
@@ -393,13 +437,18 @@ def station_month(outages, ym, now, until):
     `outages` is the station's full list; the selection happens here so the
     arithmetic and the filter live in one place. `now` decides only what is
     still in the future; everything measured ends at `until`.
+
+    The grade is the lift bar's alone. Step-free access is the lift, and a
+    station whose escalator is out while its lifts run should read as what it
+    is - the escalator has its own bar to say so.
     """
     lo, hi = observed_window(ym, until)
     month_lo = month_bounds(ym)[0]
 
     faults = planned = lifts = escalators = 0
     ongoing = False
-    per_day = defaultdict(lambda: [False, False, False])  # lift, escalator, planned
+    marks = {"lift": {}, "escalator": {}}
+    against = set()  # lift days that count against availability
 
     for o in outages:
         if not listed_in(o, lo, hi):
@@ -416,58 +465,57 @@ def station_month(outages, ym, now, until):
         # only month an open notice can overlap the end of.
         ongoing = ongoing or (o.ongoing and o.end == hi)
 
-        for day, day_planned in listed_day_flags(o, lo, hi):
-            flags = per_day[day]
-            if day_planned:
-                flags[2] = True
-            elif o.kind == "lift":
-                flags[0] = True
-            else:
-                flags[1] = True
+        kind_marks = marks[o.kind]
+        for day, day_planned, counts in day_marks(o, lo, hi):
+            # a fault beats planned works: the cell says the worst of the day
+            if kind_marks.get(day) != DAY_OUT:
+                kind_marks[day] = DAY_PLANNED if day_planned else DAY_OUT
+            if counts and o.kind == "lift":
+                against.add(day)
 
-    cells = []
-    days_out = 0
-    # calendar, not (month_hi - month_lo).days: the March and October months
-    # are 23 and 25 hours short of a whole number of days in Dublin.
-    for d in range(1, calendar.monthrange(month_lo.year, month_lo.month)[1] + 1):
-        day = date(month_lo.year, month_lo.month, d)
-        day_lo = datetime(day.year, day.month, day.day, tzinfo=DUBLIN)
-        if day_lo >= now:
-            cells.append(DAY_FUTURE)
-        elif day_lo + timedelta(days=1) <= COLLECTION_START or day_lo >= until:
-            # Either side of the collected window is "no data": a day the
-            # collector never reached is not a day the lift worked.
-            cells.append(DAY_NO_DATA)
-        else:
-            code = _day_code(*per_day.get(day, (False, False, False)))
-            cells.append(code)
-            if code != DAY_CLEAR:
-                days_out += 1
+    cells, observed = _cells(marks["lift"], month_lo, now, until)
+    # No escalator notice, no escalator bar: an empty second strip on every
+    # station would say "no escalator here", which the feed never says.
+    esc_cells = _cells(marks["escalator"], month_lo, now, until)[0] if marks["escalator"] else None
+    avail = availability(observed, len(against))
 
     return {
-        "cells": "".join(str(c) for c in cells),
+        "cells": cells,
+        "esc_cells": esc_cells,
         "faults": faults,
         "planned": planned,
         "lifts": lifts,
         "escalators": escalators,
-        "days_out": days_out,
+        "observed": observed,
+        "against": len(against),
+        "avail": avail,
+        "grade": grade(avail),
         "ongoing": ongoing,
     }
 
 
-def national_month(outages, ym, until):
-    """The overview's headline for one month, across every station."""
+def national_month(outages, ym, now, until):
+    """The overview's headline for one month, across every station.
+
+    The availability is aggregated over the stations listed that month, and
+    only those: the feed names a station when something is wrong with it, so
+    the site has no roll of the stations that have a lift at all, and a
+    denominator of "every station" would be invented.
+    """
     lo, hi = observed_window(ym, until)
     live = [o for o in outages if listed_in(o, lo, hi)]
-    stations = {o.code for o in live}
-    days = defaultdict(set)
+    by_code = defaultdict(list)
     for o in live:
-        days[o.code].update(listed_days(o, lo, hi))
+        by_code[o.code].append(o)
+    # Through station_month, so the headline cannot disagree with the rows.
+    per_station = [station_month(rows, ym, now, until) for rows in by_code.values()]
     return {
-        "stations": len(stations),
+        "stations": len(by_code),
         "outages": len(live),
         "faults": sum(1 for o in live if not o.planned),
         "planned": sum(1 for o in live if o.planned),
-        "station_days": sum(len(s) for s in days.values()),
+        "avail": availability(
+            sum(s["observed"] for s in per_station), sum(s["against"] for s in per_station)
+        ),
         "ongoing": len({o.code for o in live if o.ongoing and o.end == hi}),
     }
