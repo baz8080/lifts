@@ -22,6 +22,13 @@
 .bars > span { font-size: 11px; color: var(--muted); }
 .bars .bar { height: 13px; }
 .bars .bar.tall { height: 18px; }
+/* The shared reflow drops .bar onto its own line by grid area. The pair has to
+   go with it - and the strips inside it must not, or both land on the wrapper's
+   one implicit "bar" line and the escalator is drawn over the lift. */
+@media (max-width: 640px) {
+  .bars { grid-area: bar; }
+  .bars .bar { grid-area: auto; }
+}
 
 /* a month card's heading carries its grade chip and the month's availability */
 .card h2, .card h3 { display: flex; align-items: center; gap: 8px; }
