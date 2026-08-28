@@ -45,6 +45,20 @@
 .card h2 .gradechip, .card h3 .gradechip { width: 22px; height: 22px; font-size: 12px; }
 .card .av { margin-left: auto; color: var(--muted); font-weight: 500; font-size: 12.5px; }
 
+/* A run of months with nothing listed is a line, not a card with an empty bar:
+   a year of those is most of a station page, and most of its bytes. */
+.quiet { color: var(--muted); font-size: 13px; padding: 9px 4px; }
+
+/* The app's month strip swaps the view; on a page that already carries every
+   month it is a set of links to them. Same strip, so if esb or uisce grow
+   static month navigation this belongs upstream beside the rest of .months. */
+.months.jumps { margin: 14px 0; }
+.months.jumps a {
+  color: var(--ink-2); font-size: 13.5px; padding: 5px 12px; border-radius: 6px;
+  flex: none; white-space: nowrap; text-decoration: none;
+}
+.months.jumps a:hover, .months.jumps a:focus { background: var(--grid); color: var(--ink); }
+
 /* the link to the full list, under a station page's short one - same size as
    the names above it would read as one more station */
 .card .navmore { margin-top: 10px; font-size: 13px; color: var(--muted); }

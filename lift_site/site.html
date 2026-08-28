@@ -257,6 +257,49 @@ function renderOverview() {
   document.getElementById("gradekey").innerHTML = D.grades;
 }
 
+/* --- months on a station page -------------------------------------------- */
+// Mirrors render.month_sections: a month with a notice is a card, a run of
+// months without one is a line. The test is the stats row rather than the
+// shard, which is not loaded yet on the first render - the same predicate put
+// the month in the shard, and the real-corpus test holds the two together.
+function monthSections(months, stats) {
+  var out = [];
+  months.forEach(function (ym) {
+    if (stats[ym]) { out.push(["card", ym, 0]); return; }
+    var cells = D.blank[ym], watched = 0;
+    for (var i = 0; i < cells.length; i++) if ("89".indexOf(cells[i]) === -1) watched++;
+    var last = out[out.length - 1];
+    if (last && last[0] === "quiet" && !last[2] === !watched) {
+      last[1].push(ym);
+      last[2] += watched;
+    } else {
+      out.push(["quiet", [ym], watched]);
+    }
+  });
+  return out;
+}
+function quietRow(yms, watched) {
+  var span = monthLabelLong(yms[yms.length - 1]);
+  if (yms.length > 1) span += " to " + monthLabelLong(yms[0]);
+  if (!watched) return '<div class="quiet">' + esc(span) + " · no data collected</div>";
+  return '<div class="quiet">' + esc(span) + " · nothing listed, " +
+    plural(watched, "day") + " watched</div>";
+}
+// The static page can use plain anchors; here the hash is the route, so a
+// #ym-... href would send the router back to the overview.
+function monthJumps(sections) {
+  var cards = sections.filter(function (s) { return s[0] === "card"; });
+  if (cards.length < 2) return "";
+  return '<div class="months jumps">' + cards.map(function (s) {
+    return '<a href="#" onclick="jumpTo(event, \'' + s[1] + '\')">' + monthLabel(s[1]) + "</a>";
+  }).join("") + "</div>";
+}
+function jumpTo(e, ym) {
+  e.preventDefault();
+  var el = document.getElementById("ym-" + ym);
+  if (el) el.scrollIntoView({ block: "start" });
+}
+
 /* --- station ------------------------------------------------------------- */
 function renderStation() {
   var el = document.getElementById("stationview"), code = curStation;
@@ -267,7 +310,7 @@ function renderStation() {
   var shard = HIST[code] || {};
   // the view carries every month, so the chip beside the name has to say which
   // month it is the grade for
-  var latest = D.months[D.months.length - 1];
+  var latest = D.observed_month;
   var latestLabel = monthLabelLong(latest), latestGrade = monthGrade(stats[latest], latest)[1];
 
   var head =
@@ -285,18 +328,18 @@ function renderStation() {
       '<a href="s/' + D.slugs[code] + '.html">Permanent link to ' + esc(name) + " station</a></div>" +
     '<div class="legend">' + D.legend + '</div><div class="legend">' + D.grades + "</div>";
 
-  var body = months.map(function (ym) {
-    var cases = shard[ym] || [];
-    var m = stats[ym], g = monthGrade(m, ym);
+  var sections = monthSections(months, stats);
+  var body = monthJumps(sections) + sections.map(function (s) {
+    if (s[0] === "quiet") return quietRow(s[1], s[2]);
+    var ym = s[1], cases = shard[ym] || [], m = stats[ym], g = monthGrade(m, ym);
     var inner;
     if (loading) inner = '<div class="empty">Loading…</div>';
     else if (failed) inner = '<div class="empty">Could not load the outages for ' + esc(name) + ". Try reloading the page.</div>";
-    else if (!cases.length) inner = '<div class="empty">Nothing listed for ' + esc(name) + " in " + monthLabelLong(ym) + ".</div>";
     else inner = cases.map(caseHtml).join("");
-    return '<div class="card"><h3>' + gradeChip(g[1], g[1] ? "Grade " + g[1] : "No grade") +
-      monthLabelLong(ym) +
+    return '<div class="card" id="ym-' + ym + '"><h3>' +
+      gradeChip(g[1], g[1] ? "Grade " + g[1] : "No grade") + monthLabelLong(ym) +
       (g[0] == null ? "" : '<span class="av">' + g[0] + "% of days available</span>") + "</h3>" +
-      bars(m ? m[0] : D.blank[ym], m && m[5], ym, true) +
+      bars(m[0], m[5], ym, true) +
       '<div class="daycap"></div>' + inner + "</div>";
   }).join("");
 
