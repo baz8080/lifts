@@ -313,6 +313,15 @@ Rejected: labelling the two strips on an overview row. The label column
 shortened that one station's bar and knocked its days out of line with every
 other row's. The labels stay on the drill-down, where the bars are tall.
 
+Two layout bugs came out of it, both on phones. statusui's 640px reflow places
+`.bar` by grid area, which inside the new `.bars` wrapper put both strips on
+one implicit line and painted the escalator over the lift; the wrapper takes
+the area now and releases the strips. And under 480px the stats held their
+195px beside the name, leaving "Clondalkin Fonthill" 57px and an ellipsis - so
+below that width the stats take a line of their own and `--stats-cols` stops
+reserving a fixed column. That second one predates this pass; the row was just
+as squeezed when the figure read "5 days listed".
+
 ### Irish Rail's end date goes when the notice does
 
 `end` is still shown, not used, but only while the notice is still listed. On
