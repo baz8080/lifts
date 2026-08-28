@@ -74,9 +74,6 @@ class TestWrite(SiteModelCase):
         self.assertIn('class="case"', page)
         self.assertIn("no longer listed", page)
         self.assertIn(f'{render.BASE_URL}/s/rush-and-lusk.html', page)
-        # The nav links every other station and not itself.
-        self.assertIn('href="athy.html"', page)
-        self.assertNotIn('href="rush-and-lusk.html"', page)
 
     def test_the_static_page_labels_the_two_bars_only_where_there_are_two(self):
         page = (self.site / "s" / "dublin-connolly.html").read_text(encoding="utf-8")
@@ -93,6 +90,33 @@ class TestWrite(SiteModelCase):
         page = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
         self.assertIn("no longer listed", page)
         self.assertNotIn("listed end", page)
+
+    def test_a_station_page_links_what_is_out_now_and_the_full_list_once(self):
+        """The card used to link every other station from every page: the same
+        links in the same order, growing with the square of the station count.
+        Bray is the only notice still up at the last poll, so it is the only
+        station Rush and Lusk links - and the index carries the rest."""
+        page = (self.site / "s" / "rush-and-lusk.html").read_text(encoding="utf-8")
+        self.assertIn('href="bray.html"', page)
+        self.assertNotIn('href="athy.html"', page)
+        self.assertNotIn('href="rush-and-lusk.html"', page)
+        self.assertIn('href="../index.html"', page)
+
+    def test_a_page_with_nothing_else_listed_says_so(self):
+        page = (self.site / "s" / "bray.html").read_text(encoding="utf-8")
+        self.assertIn("Nothing else was listed at the last poll.", page)
+        self.assertNotIn('href="bray.html"', page)
+
+    def test_the_index_is_the_one_page_that_links_every_station(self):
+        """Without it a reader with no JavaScript, and a crawler that does not
+        run it, has no path to a station page at all: the overview's own list is
+        built from data.js."""
+        index = (self.site / "index.html").read_text(encoding="utf-8")
+        for code, name in self.data["stations"].items():
+            with self.subTest(code=code):
+                self.assertIn(f'href="s/{self.data["slugs"][code]}.html">{name}</a>', index)
+        self.assertIn("not every station with a lift", index)
+        self.assertIn("since 8 August 2026", index)
 
     def test_the_static_page_says_what_a_bar_and_a_chip_mean(self):
         """A month of empty `<i>`s and a bare letter convey nothing to a screen

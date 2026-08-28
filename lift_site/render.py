@@ -376,6 +376,13 @@ def _legend_html():
     return f'<div class="legend">{LEGEND_SPANS}</div><div class="legend">{GRADE_SPANS}</div>'
 
 
+def _station_links(codes, data):
+    return " ".join(
+        f'<a href="{data["slugs"][c]}.html">{html.escape(data["stations"][c])}</a>'
+        for c in codes
+    )
+
+
 def _month_grade(m, blank_cells):
     """A month's availability and grade, from its row or from the quiet bar.
 
@@ -388,7 +395,7 @@ def _month_grade(m, blank_cells):
     return avail, model.grade(avail)
 
 
-def station_page(code, data, by_month):
+def station_page(code, data, by_month, listed_now=()):
     """A station's whole history on one page, newest month first.
 
     The page exists so a station has a real URL for a search engine and a
@@ -443,15 +450,21 @@ def station_page(code, data, by_month):
                 f'<p class="empty">Nothing listed for {html.escape(name)} in {month_label(ym)}.</p>'
             )
         body.append("</div>")
-    body.append('<div class="card"><h2>Every station</h2><p class="nav">')
+    # This card used to link every other station. That is a kilobyte of the
+    # same links in the same order on every page a crawler fetches, and it grows
+    # with the square of the station count. The index carries the full list
+    # once; this says what else is out, which is the reason to leave this page.
+    others = [c for c in listed_now if c != code]
+    body.append('<div class="card"><h2>Listed at the last poll</h2>')
     body.append(
-        " ".join(
-            f'<a href="{data["slugs"][c]}.html">{html.escape(n)}</a>'
-            for c, n in data["stations"].items()
-            if c != code
-        )
+        f'<p class="nav">{_station_links(others, data)}</p>'
+        if others
+        else '<p class="empty">Nothing else was listed at the last poll.</p>'
     )
-    body.append("</p></div>")
+    body.append(
+        '<p class="navmore"><a href="../index.html">Every station and its history</a></p>'
+    )
+    body.append("</div>")
 
     return _page(
         STATION_HTML,
@@ -477,12 +490,27 @@ def write(site_dir, outages, now, until):
 
     data, by_station, months = build(outages, now, until)
 
+    # Every station page, linked from one page rather than from all of them.
+    # The overview's own list is built by the app from data.js, so without this
+    # a reader with no JavaScript - and a crawler that does not run it - has no
+    # path to any station page at all.
     (site_dir / "index.html").write_text(
-        _page(SITE_HTML, {"CANONICAL": f"{BASE_URL}/"}), encoding="utf-8"
+        _page(
+            SITE_HTML,
+            {
+                "CANONICAL": f"{BASE_URL}/",
+                "START": data["start"],
+                "STATIONS": _station_links(data["stations"], data).replace('href="', 'href="s/'),
+            },
+        ),
+        encoding="utf-8",
     )
     (site_dir / "data.js").write_text(
         "window.LIFT_DATA = " + _dumps(data) + ";\n", encoding="utf-8"
     )
+
+    # The station pages link what was listed at the horizon, not at build time.
+    listed_now = [c for c in data["stations"] if any(o.ongoing for o in by_station.get(c, []))]
 
     for code in data["stations"]:
         by_month = shard(by_station.get(code, []), months, until)
@@ -495,7 +523,7 @@ def write(site_dir, outages, now, until):
             encoding="utf-8",
         )
         (site_dir / "s" / f"{data['slugs'][code]}.html").write_text(
-            station_page(code, data, by_month), encoding="utf-8"
+            station_page(code, data, by_month, listed_now), encoding="utf-8"
         )
 
     lastmod = now.strftime("%Y-%m-%d")

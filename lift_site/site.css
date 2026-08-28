@@ -45,6 +45,10 @@
 .card h2 .gradechip, .card h3 .gradechip { width: 22px; height: 22px; font-size: 12px; }
 .card .av { margin-left: auto; color: var(--muted); font-weight: 500; font-size: 12.5px; }
 
+/* the link to the full list, under a station page's short one - same size as
+   the names above it would read as one more station */
+.card .navmore { margin-top: 10px; font-size: 13px; color: var(--muted); }
+
 /* a month card: bar(s), the readout, then the cases with no rule between */
 .card .bar + .daycap + .case, .card .bars + .daycap + .case { border-top: 0; margin-top: 4px; }
 .case .txt { color: var(--muted); font-size: 12.5px; margin-top: 4px; font-style: italic; }
