@@ -143,6 +143,26 @@ class TestWrite(SiteModelCase):
         self.assertNotIn("<!--CANONICAL-->", page)
 
 
+class TestSkewedClocks(SiteModelCase):
+    def test_the_horizons_month_is_on_the_page_even_if_the_clock_lags(self):
+        """The months come from the build clock and the horizon from the
+        collector's. A horizon in a month the list lacks would drop that
+        month's outages from the shards, the stats and the headline."""
+        self.poll(T0, [lift()])
+        outages = self.load()
+        # the collector's clock five days ahead of the builder's, over a month
+        # end: months run from the collection month, so the one that can go
+        # missing is the horizon's, not the build clock's
+        now = datetime(2026, 8, 28, 12, 0, tzinfo=UTC)
+        until = datetime(2026, 9, 2, 12, 0, tzinfo=UTC)
+        data, _, months = render.build(outages, now, until)
+        self.assertEqual(months, ["2026-08", "2026-09"])
+        self.assertEqual(data["observed_month"], "2026-09")
+        self.assertIn("2026-09", data["blank"])
+        self.assertIn("2026-09", data["national"])
+        self.assertEqual(model.month_list(model.COLLECTION_START, now), ["2026-08"])
+
+
 class TestStaleness(SiteModelCase):
     def test_a_build_long_after_the_last_poll_says_so(self):
         self.poll(T0, [lift()])
