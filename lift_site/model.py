@@ -382,12 +382,16 @@ def day_marks(o, lo, hi):
     """(date, planned, counts) per day the notice was listed inside [lo, hi).
 
     `counts` is False only for a planned-works notice whose whole listing ran
-    inside `PLANNED_GRACE`. It is a property of the notice rather than of the
-    month: a fortnight of works spanning a month end counts in both halves.
+    inside `PLANNED_GRACE` - the whole of it, reissues folded in, not the
+    segment the day falls in: works reissued every few days are still works
+    that ran for a month, and `merge_edits` exists because Irish Rail reissue.
+    It is a property of the notice rather than of the month, too: a fortnight
+    of works spanning a month end counts in both halves.
     """
+    listed = o.end - o.first_seen
     last = len(o.segments) - 1
     for i, (seg_start, seg_end, seg_planned) in enumerate(o.segments):
-        counts = not seg_planned or seg_end - seg_start > PLANNED_GRACE
+        counts = not seg_planned or listed > PLANNED_GRACE
         for day in _span_days(seg_start, seg_end, lo, hi, o.ongoing and i == last):
             yield day, seg_planned, counts
 
@@ -411,8 +415,8 @@ def grade(avail):
 
 
 def _cells(marks, month_lo, now, until):
-    """One kind's day bar for the month, and how many of its days were watched."""
-    cells, observed = [], 0
+    """One kind's day bar for the month, and which of its days were watched."""
+    cells, observed = [], set()
     for d in range(1, calendar.monthrange(month_lo.year, month_lo.month)[1] + 1):
         day = date(month_lo.year, month_lo.month, d)
         day_lo = datetime(day.year, day.month, day.day, tzinfo=DUBLIN)
@@ -424,7 +428,7 @@ def _cells(marks, month_lo, now, until):
             cells.append(DAY_NO_DATA)
         else:
             cells.append(marks.get(day, DAY_CLEAR))
-            observed += 1
+            observed.add(day)
     return "".join(str(c) for c in cells), observed
 
 
@@ -471,10 +475,15 @@ def station_month(outages, ym, now, until):
                 against.add(day)
 
     cells, observed = _cells(marks["lift"], month_lo, now, until)
+    # A day listed but not watched is not a day off the total: the window ends
+    # at the horizon, and the bar ends at `now`, which can be the earlier of the
+    # two when the collector's clock is ahead of the builder's. Counting those
+    # days against a total that excludes them takes availability below zero.
+    against &= observed
     # No escalator notice, no escalator bar: an empty second strip on every
     # station would say "no escalator here", which the feed never says.
     esc_cells = _cells(marks["escalator"], month_lo, now, until)[0] if marks["escalator"] else None
-    avail = availability(observed, len(against))
+    avail = availability(len(observed), len(against))
 
     return {
         "cells": cells,
@@ -483,7 +492,7 @@ def station_month(outages, ym, now, until):
         "planned": planned,
         "lifts": lifts,
         "escalators": escalators,
-        "observed": observed,
+        "observed": len(observed),
         "against": len(against),
         "avail": avail,
         "grade": grade(avail),

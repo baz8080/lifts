@@ -204,6 +204,13 @@ class TestLegend(unittest.TestCase):
         for letter, _ in render.GRADE_LABELS:
             self.assertIn(f'<i class="g-{letter}">', render.GRADE_SPANS)
 
+    def test_the_grade_key_does_not_promise_an_empty_bar(self):
+        """A is 100% of the days that counted. A planned-works notice inside its
+        grace is on the bar and off the total, so "no days listed" was a claim
+        the page contradicts - Pearse grades A over six planned cells."""
+        self.assertNotIn("no days listed", render.GRADE_SPANS)
+        self.assertIn("100% available", render.GRADE_SPANS)
+
     def test_the_day_key_no_longer_names_a_kind(self):
         # The kind is the bar, not the colour, so no swatch may claim one.
         self.assertNotIn("lift", render.LEGEND_SPANS)
