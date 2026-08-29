@@ -143,6 +143,12 @@ change, and did.
 - **The 131 unidentifiable items** are all delay notices with empty
   `locationCodes` and are irrelevant to this site; noted so nobody goes
   looking.
+- **No station inventory, so no real denominator and no way to tell "this
+  station has no lift" from "this station's lift is fine".** Scoped in
+  `accessible-routes.md`, including the alerts page at
+  `/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports`
+  that this project does not collect and may be a better source than the one
+  it does.
 
 ## The design layer is shared with uisce and esb - 2026-08-19
 
