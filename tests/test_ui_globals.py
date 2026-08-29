@@ -54,7 +54,11 @@ def declares(script, name):
 class TestUiGlobals(unittest.TestCase):
     def test_site_script_redeclares_no_shared_global(self):
         shared = statusui.js_globals()
-        self.assertIn("bindDayCaption", shared, "the bundle's second file is missing")
+        # One name from each file of the bundle. The set is the whole guard, so
+        # a file that stopped being read would leave every check below passing
+        # on what is left - which is the failure this test exists to catch.
+        for name in ("loadShard", "bindDayCaption"):
+            self.assertIn(name, shared, f"the shared bundle is missing {name}")
         for page in ("site.html", "station.html"):
             text = (HERE / "lift_site" / page).read_text()
             marker = next((m for m in MARKERS if m in text), None)
