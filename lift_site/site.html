@@ -37,7 +37,6 @@
       </div>
       <p class="basis" id="basis"></p>
       <div class="legend" id="legend"></div>
-      <div class="legend" id="gradekey"></div>
       <div id="list"></div>
       <h3 class="natheading" id="natHeading"></h3>
       <div class="tiles" id="tiles"></div>
@@ -74,6 +73,7 @@
     but a day either kind was out is a day the station was short of a way up.</p>
     <p>Planned works are excused for their first week. Works still listed after that count
     against the station in full, and change colour on the bar to say so.</p>
+    <div class="legend" id="gradekey"></div>
     </details>
 
     <details><summary>What the feed leaves out</summary>
@@ -258,7 +258,6 @@ function renderOverview() {
   ].join("");
 
   document.getElementById("legend").innerHTML = D.legend;
-  document.getElementById("gradekey").innerHTML = D.grades;
 }
 
 /* --- months on a station page -------------------------------------------- */
@@ -330,7 +329,7 @@ function renderStation() {
       // station is in the link text because a screen reader lists links
       // stripped of their context.
       '<a href="s/' + D.slugs[code] + '.html">Permanent link to ' + esc(name) + " station</a></div>" +
-    '<div class="legend">' + D.legend + '</div><div class="legend">' + D.grades + "</div>";
+    '<div class="legend">' + D.legend + "</div>";
 
   var sections = monthSections(months, stats);
   var body = monthJumps(sections) + sections.map(function (s) {
@@ -470,6 +469,7 @@ function boot() {
   // replaces carried it in full
   natmeta.title = "Data to " + D.observed;
   document.getElementById("startdate").textContent = D.start;
+  document.getElementById("gradekey").innerHTML = D.grades;
   bindStationSearch();
   bindDayCaption();
   bindMonthReveal();

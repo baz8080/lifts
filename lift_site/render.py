@@ -388,7 +388,10 @@ GRADE_SPANS = "<span>Lift and escalator availability</span>" + "".join(
 
 
 def _legend_html():
-    return f'<div class="legend">{LEGEND_SPANS}</div><div class="legend">{GRADE_SPANS}</div>'
+    """The day key alone. The grade key is in the footer, under the words that
+    explain it: two legend rows stacked above the list read as one key with two
+    halves, and only the top half maps to anything in a bar."""
+    return f'<div class="legend">{LEGEND_SPANS}</div>'
 
 
 def _station_links(codes, data):
@@ -541,6 +544,7 @@ def station_page(code, data, by_month, listed_now=()):
             "TITLE": html.escape(title),
             "DESC": html.escape(desc),
             "CANONICAL": f"{BASE_URL}/s/{data['slugs'][code]}.html",
+            "GRADE-KEY": GRADE_SPANS,
             "BODY": "".join(body),
         },
     )
