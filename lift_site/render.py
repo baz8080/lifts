@@ -400,6 +400,53 @@ def _month_grade(m, blank_cells):
     return avail, model.grade(avail)
 
 
+def month_sections(months, by_month, blank):
+    """The page's months, with runs of quiet ones folded together.
+
+    A station's page carries every month since collection began. A month it had
+    a notice in is a card; a month it did not is a line, because twelve cards of
+    identical bars and "nothing listed" is most of a year's page and most of its
+    bytes. Watched and unwatched runs stay apart: a month nobody polled is not a
+    month with nothing listed. Mirrored in site.html's monthSections().
+    """
+    out = []
+    for ym in months:
+        if by_month.get(ym):
+            out.append(["card", ym, 0])
+            continue
+        watched = sum(1 for ch in blank[ym] if ch not in "89")
+        if out and out[-1][0] == "quiet" and bool(out[-1][2]) == bool(watched):
+            out[-1][1].append(ym)
+            out[-1][2] += watched
+        else:
+            out.append(["quiet", [ym], watched])
+    return out
+
+
+def _quiet_row(yms, watched):
+    """One line for a run of months with nothing listed."""
+    span = month_label(yms[-1])
+    if len(yms) > 1:
+        span += f" to {month_label(yms[0])}"
+    if not watched:
+        return f'<div class="quiet">{span} · no data collected</div>'
+    days = f"{watched} day" + ("" if watched == 1 else "s")
+    return f'<div class="quiet">{span} · nothing listed, {days} watched</div>'
+
+
+def _month_jumps(sections):
+    """Anchors to the months that have a card, when there is more than one.
+
+    The app's month strip is a row of buttons that swap the view; here the
+    months are all on the page already, so the same strip is a set of links.
+    """
+    cards = [s[1] for s in sections if s[0] == "card"]
+    if len(cards) < 2:
+        return ""
+    links = "".join(f'<a href="#ym-{ym}">{month_label(ym)}</a>' for ym in cards)
+    return f'<div class="months jumps">{links}</div>'
+
+
 def station_page(code, data, by_month, listed_now=()):
     """A station's whole history on one page, newest month first.
 
@@ -414,7 +461,14 @@ def station_page(code, data, by_month, listed_now=()):
         f"Lift (elevator) and escalator outages at {name} station, from Irish Rail's "
         f"service message feed, since {data['start']}."
     )
-    latest = data["months"][-1]
+    # The month the data reaches, not the month the calendar reaches: if
+    # collection stopped in August, August is the last month with a grade in it.
+    # It can be a month the page does not carry, though - the months come from
+    # the build clock and the horizon does not - and then the newest month the
+    # page has is the only one it can honestly point at.
+    latest = data["observed_month"]
+    if latest not in data["blank"]:
+        latest = data["months"][-1]
     letter = _month_grade(stats.get(latest), data["blank"][latest])[1]
     # The page carries every month, so a chip beside the name has to say which
     # month it is the grade for - in the sub line and in its own label.
@@ -434,26 +488,26 @@ def station_page(code, data, by_month, listed_now=()):
         + "</div>",
         _legend_html(),
     ]
-    for ym in months:
+    sections = month_sections(months, by_month, data["blank"])
+    body.append(_month_jumps(sections))
+    for kind, value, watched in sections:
+        if kind == "quiet":
+            body.append(_quiet_row(value, watched))
+            continue
+        ym = value
         m = stats.get(ym)
-        cells = m[0] if m else data["blank"][ym]
         avail, letter = _month_grade(m, data["blank"][ym])
-        cases = by_month.get(ym, [])
         body.append(
-            f'<div class="card"><h2>{_chip(letter, f"Grade {letter}" if letter else "No grade")}'
+            f'<div class="card" id="ym-{ym}">'
+            f'<h2>{_chip(letter, f"Grade {letter}" if letter else "No grade")}'
             f"{month_label(ym)}"
             + (f'<span class="av">{avail}% of days available</span>' if avail is not None else "")
             + "</h2>"
         )
         esc = m[5] if m and len(m) > 5 else None
-        body.append(_bars(cells, esc, ym, data["partial"], tall=True))
+        body.append(_bars(m[0], esc, ym, data["partial"], tall=True))
         body.append('<div class="daycap"></div>')
-        if cases:
-            body.append("".join(_case_html(k) for k in cases))
-        else:
-            body.append(
-                f'<p class="empty">Nothing listed for {html.escape(name)} in {month_label(ym)}.</p>'
-            )
+        body.append("".join(_case_html(k) for k in by_month[ym]))
         body.append("</div>")
     # This card used to link every other station. That is a kilobyte of the
     # same links in the same order on every page a crawler fetches, and it grows
