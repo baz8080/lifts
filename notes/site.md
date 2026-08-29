@@ -371,21 +371,46 @@ amber cells on the second strip, and a green **A / 100% available** chip on
 the row above them. The grade contradicted the bar underneath it, and no
 reader was going to resolve that in the site's favour.
 
-The reasoning that put escalators out - "the lift is the step-free route" -
-is true of a lift and an escalator considered separately, and useless here:
-the feed names one machine per notice in prose, so the site cannot tell
-whether the escalator that is out was the only way up, nor whether a lift that
-is not mentioned exists at all. What it can say is that Irish Rail reported
-something out at that station on that day. Both kinds count towards the grade
-now, on the same footing.
+**The grade is not step-free-access availability, and this note is the place
+that says so.** Wheelchair users cannot use an escalator - every operator
+prohibits it, Irish Rail included, and it is a matter of the step geometry
+rather than a formality. ("Flat escalators" are moving walkways, a different
+machine that can be usable where it is designed to be; the feed says
+"Escalator" and nothing else, and there is no evidence of a travelator at any
+station in this corpus.) So an escalator going out never removes step-free
+access. It removes the easier route for someone who can manage stairs with
+difficulty, or has a buggy or a suitcase.
+
+What the grade means is therefore weaker and plainer: **Irish Rail reported
+something out at this station on this day.** Vertical circulation degraded,
+not access lost. The legend says "Lift and escalator availability", which is
+the honest label for that, and the reason the footer no longer claims the lift
+is the step-free route.
+
+The site could not honestly grade step-free access anyway. A notice names one
+machine in prose - "the lift at platform 2" - and there is no roll of how many
+lifts a station has, so a lift notice coming down does not mean every lift at
+that station works. Reserving the grade for lifts would give it a name it
+could not live up to.
+
+Rejected: lifts only, with escalators visible on their own bar but out of the
+letter. That is the more precise claim, and it was the position until today;
+what killed it is that Connolly then reads A / 100% available directly above
+two amber escalator cells, and no reader resolves that contradiction in the
+site's favour. Rejected: two grades, a step-free one and a softer escalator
+one. Most honest of the three, and it costs a second chip on every row plus a
+decision about which one sorts the overview - out of proportion to a
+distinction the feed cannot support cleanly in the first place.
 
 The bars still split by kind, for the reason they always did: a working lift
 must not be painted by a broken escalator. Separate strips, one pool of days.
 
 On this corpus, aggregate availability went 70% to 66%. Connolly A to C, and
-Pearse - whose escalator has been listed since 13 August - A to F at 22%,
-which is the honest reading of a station with a machine out for seventeen of
-the twenty-two days watched.
+Pearse - whose escalator has been listed since 13 August - A to F at 22%. Note
+what that F is not saying: Pearse's lift notice came down on 13 August, so as
+far as this feed shows, the step-free route there has been fine ever since.
+The F is seventeen days of a station short of a way up, which is the measure
+the site now publishes.
 
 ### Blue said two opposite things
 
