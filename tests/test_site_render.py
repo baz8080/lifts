@@ -325,7 +325,10 @@ class TestLegend(unittest.TestCase):
             [letter for _, letter in model.GRADE_BANDS],
         )
         for letter, _ in render.GRADE_LABELS:
-            self.assertIn(f'<i class="g-{letter}">', render.GRADE_SPANS)
+            # the letter, not a bare swatch: the chip is how a reader reads a
+            # grade, and a colour key to a colour nothing else uses said nothing
+            self.assertIn(f'class="gradechip g-{letter}"', render.GRADE_SPANS)
+            self.assertIn(f">{letter}</span>", render.GRADE_SPANS)
 
     def test_the_grade_key_does_not_promise_an_empty_bar(self):
         """A is 100% of the days that counted. A planned-works notice inside its

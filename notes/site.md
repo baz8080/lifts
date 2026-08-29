@@ -406,6 +406,16 @@ Rejected: recolouring overrun works red outright. It counts like a fault and
 it is not one, and the notice text under the bar says "planned works" either
 way; two words disagreeing with one colour is how this started.
 
+### The grade key keys the letter, not a colour
+
+The key under the day key was five colour swatches - the chip fills, at swatch
+size - and a reader asking what they referred to was right to ask. A grade is
+read as a letter; the fill behind it is reinforcement, and nothing else on the
+page is painted in it. So the row was a key to a code the page does not use,
+sitting directly beneath the day key, where every swatch does map to something
+in a bar. It now carries the chips themselves, letter and all, which is the
+object a reader has actually been looking at on every row.
+
 ### Plain words on the summary tiles
 
 "4 lifts with a notice up at the last poll" asks a reader to know what a poll

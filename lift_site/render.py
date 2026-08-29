@@ -364,8 +364,11 @@ LEGEND_SPANS = "".join(
     f'<span><i class="{cls}"></i>{label}</span>' for cls, label in LEGEND_ITEMS
 )
 
-# The grade key. The swatch classes are the chip's own, so the key takes the
-# chip colours from statusui rather than restating them.
+# The grade key, keyed by the letter rather than by a colour swatch. A reader
+# identifies a grade by the letter in the chip - the colour behind it is
+# reinforcement, and nothing else on the page is painted in it - so a row of
+# plain swatches was a key to a code the page does not use, sitting directly
+# under the day key, where every swatch does map to something in a bar.
 # "A" is not "nothing listed": a planned-works notice inside its grace is on
 # the bar and off the total, so the key says what the number means. The bands
 # are days a reader can count - over a 22-day window B is one day listed, C two,
@@ -379,7 +382,8 @@ GRADE_LABELS = (
 )
 
 GRADE_SPANS = "<span>Lift and escalator availability</span>" + "".join(
-    f'<span><i class="g-{letter}"></i>{label}</span>' for letter, label in GRADE_LABELS
+    f"<span>{_chip(letter, f'Grade {letter}')}{label}</span>"
+    for letter, label in GRADE_LABELS
 )
 
 

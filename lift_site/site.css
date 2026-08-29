@@ -44,6 +44,10 @@
   .row { grid-template-columns: 1fr; grid-template-areas: "name" "stats" "bar"; }
 }
 
+/* The grade key carries real chips, letter and all, at a size that sits on a
+   legend line beside the 10px day swatches without towering over them. */
+.legend .gradechip { width: 16px; height: 16px; font-size: 10px; border-radius: 4px; }
+
 /* a month card's heading carries its grade chip and the month's availability */
 .card h2, .card h3 { display: flex; align-items: center; gap: 8px; }
 .card h2 .gradechip, .card h3 .gradechip { width: 22px; height: 22px; font-size: 12px; }
