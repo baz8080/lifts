@@ -29,6 +29,32 @@ checked out at `../lifts-data`. Set `LIFT_STATUS_DATA_DIR` to it (after a
 `rebuild`), or pass `--data-dir`. `tests/test_site_real.py` skips without it,
 so run the suite with it set before shipping anything that touches the site.
 
+In a Claude Code web session all of that is already done:
+`.claude/hooks/session-start.sh` syncs the dependencies, clones or updates
+`../lifts-data`, rebuilds the database and exports `LIFT_STATUS_DATA_DIR`. It
+also clones `../statusui`, which the UI workflow below needs. Locally it exits
+without doing anything.
+
+## Looking at the built site
+
+Chromium is on the box, and a change to the bars or the rows is worth seeing:
+
+```bash
+python3 -m lift_site --data-dir ../lifts-data                    # writes out/site/
+/opt/pw-browsers/chromium-1194/chrome-linux/chrome --headless --no-sandbox \
+  --disable-gpu --hide-scrollbars --window-size=980,1300 --virtual-time-budget=3000 \
+  --screenshot=/tmp/site.png file://$PWD/out/site/index.html
+```
+
+`--dump-dom` with a `<script>` that writes measurements into `document.title`
+gets numbers out of a rendered page - widths, overflow, computed styles.
+
+**Its layout viewport never goes below 500px**, whatever `--window-size` says. A
+narrow shot is a cropped image of a 500px page, not a phone: an element hanging
+off the right edge of the PNG is not proof of overflow (compare `scrollWidth`
+with `clientWidth` instead), and a rule under `@media (max-width: 480px)` can
+only be seen by raising its breakpoint in a copy of the built page.
+
 Lifts are elevators outside Ireland; the page metadata says so for search engines.
 
 ## The UI is shared - change it upstream
