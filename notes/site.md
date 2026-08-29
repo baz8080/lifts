@@ -143,6 +143,9 @@ change, and did.
 - **The 131 unidentifiable items** are all delay notices with empty
   `locationCodes` and are irrelevant to this site; noted so nobody goes
   looking.
+- **No station inventory, so no real denominator and no way to tell "this
+  station has no lift" from "this station's lift is fine".** Scoped in
+  `accessible-routes.md`.
 
 ## The design layer is shared with uisce and esb - 2026-08-19
 
@@ -250,6 +253,15 @@ across 20 stations, of which 5 are planned works and 2 are escalators.
 
 ### The grade is availability
 
+**Amended 2026-08-29.** Three things below are superseded and left standing
+because the reasoning around them still holds. The number is no longer lift
+notices alone - both kinds count, see "An escalator out is a day the station
+was short of a way up". The no-EU-target paragraph is no longer "said plainly
+in the footer": that paragraph was removed from the page, and the reasoning
+lives here instead. And the Pearse example at the end of this section is stale
+- Pearse now grades F / 22% on its escalator, and Tullamore is the station
+that carries an A over planned-works cells.
+
 "5 days listed" was a raw count: it says nothing about whether that is bad,
 and a 31-day month and a 20-day partial one are not comparable by it. The
 number on a row is now the share of the days watched on which no lift notice
@@ -323,6 +335,9 @@ The escalator is out of the grade for the same reason it has its own bar: the
 lift is the step-free route. A station whose escalator is listed still leads
 the overview, because "a notice up right now" is the first sort key.
 
+**Reversed 2026-08-29.** See "An escalator out is a day the station was short
+of a way up" below: both kinds count now, and only the bars stay split.
+
 Rejected: labelling the two strips on an overview row. The label column
 shortened that one station's bar and knocked its days out of line with every
 other row's. The labels stay on the drill-down, where the bars are tall.
@@ -354,3 +369,105 @@ would be invented. The composite "4 / 1 lifts / escalators" tile is split in
 two. Getting a real denominator needs a station inventory scraped from
 irishrail.ie, which is a second source with its own staleness and its own
 name-to-code join; not done here.
+
+## The grade counts both kinds, and overrun works get their own colour - 2026-08-29
+
+The corpus is 21 days (8-29 August 2026, 964 runs), 24 outages across 21
+stations, of which 6 are planned works and 2 are escalators.
+
+### An escalator out is a day the station was short of a way up
+
+Reverses "the escalator is out of the grade" under One bar per kind above. The
+case against it was Connolly: an escalator listed on 17 and 18 August, two
+**red** cells on the second strip - it is a fault notice, not works - and a
+green **A / 100% available** chip on the row above them. The grade
+contradicted the bar underneath it, and no reader was going to resolve that in
+the site's favour.
+
+**The grade is not step-free-access availability, and this note is the place
+that says so.** Wheelchair users cannot use an escalator - every operator
+prohibits it, Irish Rail included, and it is a matter of the step geometry
+rather than a formality. ("Flat escalators" are moving walkways, a different
+machine that can be usable where it is designed to be; the feed says
+"Escalator" and nothing else, and there is no evidence of a travelator at any
+station in this corpus.) So an escalator going out never removes step-free
+access. It removes the easier route for someone who can manage stairs with
+difficulty, or has a buggy or a suitcase.
+
+What the grade means is therefore weaker and plainer: **Irish Rail reported
+something out at this station on this day.** Vertical circulation degraded,
+not access lost. The legend says "Lift and escalator availability", which is
+the honest label for that, and the reason the footer no longer claims the lift
+is the step-free route.
+
+The site could not honestly grade step-free access anyway. A notice names one
+machine in prose - "the lift at platform 2" - and there is no roll of how many
+lifts a station has, so a lift notice coming down does not mean every lift at
+that station works. Reserving the grade for lifts would give it a name it
+could not live up to.
+
+Rejected: lifts only, with escalators visible on their own bar but out of the
+letter. That is the more precise claim, and it was the position until today;
+what killed it is that Connolly then reads A / 100% available directly above
+two red escalator cells, and no reader resolves that contradiction in the
+site's favour. Rejected: two grades, a step-free one and a softer escalator
+one. Most honest of the three, and it costs a second chip on every row plus a
+decision about which one sorts the overview - out of proportion to a
+distinction the feed cannot support cleanly in the first place.
+
+The bars still split by kind, for the reason they always did: a working lift
+must not be painted by a broken escalator. Separate strips, one pool of days.
+
+On this corpus, aggregate availability went 70% to 66%. Connolly A to C, and
+Pearse - whose escalator has been listed since 13 August - A to F at 22%. Note
+what that F is not saying: Pearse's lift notice came down on 13 August, so as
+far as this feed shows, the step-free route there has been fine ever since.
+The F is seventeen days of a station short of a way up, which is the measure
+the site now publishes.
+
+### Blue said two opposite things
+
+`5` was every planned-works day, excused or not. Midleton (19 days, 0%
+available) and Pearse's lift (6 days, costing nothing) drew the same blue, so
+the one colour on the bar carried both "this is forgiven" and "this is the
+whole reason the grade is F". A reader comparing two blue bars had no way to
+see which was which.
+
+Planned works past their grace are now `6`, amber, with their own key entry.
+Amber rather than a second red: works that overran are not a fault, and a
+deuteranope cannot tell orange from `--critical` at cell width. The day cell
+takes the worst of what was listed on it - fault, then overrun works, then
+works inside their grace - which is `DAY_SEVERITY`, an explicit ranking now
+that three shades can share a day rather than two.
+
+Rejected: recolouring overrun works red outright. It counts like a fault and
+it is not one, and the notice text under the bar says "planned works" either
+way; two words disagreeing with one colour is how this started.
+
+### The grade key keys the letter, not a colour
+
+The key under the day key was five colour swatches - the chip fills, at swatch
+size - and a reader asking what they referred to was right to ask. A grade is
+read as a letter; the fill behind it is reinforcement, and nothing else on the
+page is painted in it. So the row was a key to a code the page does not use,
+sitting directly beneath the day key, where every swatch does map to something
+in a bar. It now carries the chips themselves, letter and all, which is the
+object a reader has actually been looking at on every row.
+
+### Plain words on the summary tiles
+
+"4 lifts with a notice up at the last poll" asks a reader to know what a poll
+is and what a notice is; "70% of days available" asks them to work out what
+was available. Neither is a term a visitor arrives with. The tiles now read
+"lifts reported out when we last checked" and "of days with no lift or
+escalator reported out, across the stations named this month" - longer, and
+the denominator is still stated, which is the part that could not be dropped.
+"Poll" is gone from the visitor-facing text; "listed" stays, because a notice
+being listed is exactly what the site measures and "fixed" is the word it must
+not use.
+
+Two footer paragraphs went with it. The one about there being no Irish or EU
+target was the site explaining its own methodology to someone who had not
+asked - the reasoning is above, under The grade is availability, and that is
+where it belongs. And "a notice names a lift in prose" was answering a
+question in the vocabulary of the person who wrote the parser.

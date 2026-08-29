@@ -229,7 +229,9 @@ def summary_bits(first_seen, end, ongoing, start, listed_end, lead_days=None):
         if first_seen <= COLLECTION_START_SHORT
         else f"first listed {_when(first_seen)}"
     ]
-    bits.append("still listed at the last poll" if ongoing else f"no longer listed {_when(end)}")
+    bits.append(
+        "still listed when we last checked" if ongoing else f"no longer listed {_when(end)}"
+    )
     if start:
         claim = f"Irish Rail's notice dates it from {_when(start)}"
         if lead_days:
@@ -279,6 +281,7 @@ def _day_labels(kind):
         "0": "nothing listed",
         "1": f"{KIND_LABEL[kind].lower()} out of service",
         "5": "planned works",
+        "6": "planned works, listed over a week",
         "8": "no data collected for this day",
         "9": "still to come",
     }
@@ -311,7 +314,7 @@ def _bar_label(cells, ym, kind):
     one sentence, and the cases below it carry the detail.
     """
     watched = sum(1 for ch in cells if ch not in "89")
-    listed = sum(1 for ch in cells if ch in "15")
+    listed = sum(1 for ch in cells if ch in "156")
     what = f"{KIND_LABEL[kind]}s in {month_label(ym)}"
     if not watched:
         return f"{what}: no data collected"
@@ -353,6 +356,7 @@ LEGEND_ITEMS = (
     ("b0", "nothing listed"),
     ("b1", "out of service"),
     ("b5", "planned works"),
+    ("b6", "planned works over a week"),
     ("b8", "no data"),
 )
 
@@ -360,10 +364,15 @@ LEGEND_SPANS = "".join(
     f'<span><i class="{cls}"></i>{label}</span>' for cls, label in LEGEND_ITEMS
 )
 
-# The grade key. The swatch classes are the chip's own, so the key takes the
-# chip colours from statusui rather than restating them.
+# The grade key, keyed by the letter rather than by a colour swatch. A reader
+# identifies a grade by the letter in the chip - the colour behind it is
+# reinforcement, and nothing else on the page is painted in it - so a row of
+# plain swatches was a key to a code the page does not use, sitting directly
+# under the day key, where every swatch does map to something in a bar.
 # "A" is not "nothing listed": a planned-works notice inside its grace is on
-# the bar and off the total, so the key says what the number means.
+# the bar and off the total, so the key says what the number means. The bands
+# are days a reader can count - over a 22-day window B is one day listed, C two,
+# D three to five - which is why the key gives percentages and not adjectives.
 GRADE_LABELS = (
     ("A", "100% available"),
     ("B", "95%+ available"),
@@ -372,8 +381,9 @@ GRADE_LABELS = (
     ("F", "under 75% available"),
 )
 
-GRADE_SPANS = "<span>Lift availability</span>" + "".join(
-    f'<span><i class="g-{letter}"></i>{label}</span>' for letter, label in GRADE_LABELS
+GRADE_SPANS = "<span>Lift and escalator availability</span>" + "".join(
+    f"<span>{_chip(letter, f'Grade {letter}')}{label}</span>"
+    for letter, label in GRADE_LABELS
 )
 
 
@@ -514,11 +524,11 @@ def station_page(code, data, by_month, listed_now=()):
     # with the square of the station count. The index carries the full list
     # once; this says what else is out, which is the reason to leave this page.
     others = [c for c in listed_now if c != code]
-    body.append('<div class="card"><h2>Listed at the last poll</h2>')
+    body.append('<div class="card"><h2>Out when we last checked</h2>')
     body.append(
         f'<p class="nav">{_station_links(others, data)}</p>'
         if others
-        else '<p class="empty">Nothing else was listed at the last poll.</p>'
+        else '<p class="empty">Nothing else was out when we last checked.</p>'
     )
     body.append(
         '<p class="navmore"><a href="../index.html">Every station and its history</a></p>'

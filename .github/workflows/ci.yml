@@ -23,6 +23,11 @@ jobs:
       - name: Lint
         run: uv run ruff check
 
+      # The house dash is a spaced hyphen. Cheap to check, and it was an
+      # unwritten rule for long enough to be worth writing down twice.
+      - name: No em dashes
+        run: ./scripts/no-em-dash.sh
+
   test:
     runs-on: ubuntu-latest
     strategy:

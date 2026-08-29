@@ -68,19 +68,19 @@
     </details>
 
     <details><summary>How the grade works</summary>
-    <p>Availability is the share of the days watched on which no lift notice was listed at
-    that station, and the grade is a band of it. Planned works are excused for their first
-    week and count against a station after that. Escalators are not in the grade and have
-    their own bar: the lift is the step-free route.</p>
-    <p>The scale is this site's own. There is no Irish or EU target for lift availability to
-    grade against.</p>
+    <p>Availability is the share of the days watched on which nothing was reported out at
+    that station - no lift and no escalator - and the grade is a band of it. Lifts and
+    escalators keep separate bars, so a working lift is never painted by a broken escalator,
+    but a day either kind was out is a day the station was short of a way up.</p>
+    <p>Planned works are excused for their first week. Works still listed after that count
+    against the station in full, and change colour on the bar to say so.</p>
     </details>
 
     <details><summary>What the feed leaves out</summary>
-    <p>A notice names a lift in prose - “the lift at platform 2” - so there is no count of the
-    lifts at a station, and no way to tell whether another step-free route is open. The feed
-    is read every 30 minutes, so a notice that goes up and comes down between two reads is
-    not here at all.</p>
+    <p>Irish Rail names the lift or escalator in the notice - “the lift at platform 2”.
+    There's no way to tell whether another accessible route is open.</p>
+    <p>The feed is read every 30 minutes, so a notice that goes up and comes down between two
+    reads is not here at all.</p>
     </details>
 
     <details><summary>Every station named so far</summary>
@@ -110,7 +110,7 @@ var curMonth = null, curStation = null;
 
 var KIND = { lift: "Lift", escalator: "Escalator" };
 var CELL = {
-  0: "nothing listed", 5: "planned works",
+  0: "nothing listed", 5: "planned works", 6: "planned works, listed over a week",
   8: "no data collected for this day", 9: "still to come"
 };
 // Starts can be a year old, so every instant carries its year; the station
@@ -137,7 +137,7 @@ function barLabel(cells, ym, kind) {
   var watched = 0, listed = 0;
   for (var i = 0; i < cells.length; i++) {
     if ("89".indexOf(cells[i]) === -1) watched++;
-    if ("15".indexOf(cells[i]) !== -1) listed++;
+    if ("156".indexOf(cells[i]) !== -1) listed++;
   }
   var what = KIND[kind] + "s in " + monthLabelLong(ym);
   if (!watched) return what + ": no data collected";
@@ -244,13 +244,17 @@ function renderOverview() {
   var c = D.current;
   var live = curMonth === D.months[D.months.length - 1];
   document.getElementById("tiles").innerHTML = [
-    tile(n[4] == null ? "-" : n[4] + "%", "of days available at the stations listed"),
+    // "nothing reported out" would be a claim the page contradicts: works
+    // inside their grace are on the bar and off the total, so Tullamore ships
+    // at 100% with two planned-works cells drawn on it.
+    tile(n[4] == null ? "-" : n[4] + "%",
+         "of days with lifts and escalators available, across the stations named this month"),
     // the latest month's counts are the live ones, so they read as the state of
     // the network now; a past month's are what it ended the month with
-    live ? tile(c.lifts, one(c.lifts, "lift") + " with a notice up at the last poll")
-         : tile(n[0], one(n[0], "station") + " with a notice"),
-    live ? tile(c.escalators, one(c.escalators, "escalator") + " with a notice up at the last poll")
-         : tile(n[5], one(n[5], "station") + " still listed when the month ended")
+    live ? tile(c.lifts, one(c.lifts, "lift") + " reported out when we last checked")
+         : tile(n[0], one(n[0], "station") + " with something reported out"),
+    live ? tile(c.escalators, one(c.escalators, "escalator") + " reported out when we last checked")
+         : tile(n[5], one(n[5], "station") + " still out when the month ended")
   ].join("");
 
   document.getElementById("legend").innerHTML = D.legend;
@@ -354,7 +358,7 @@ function summaryBits(firstSeen, end, ongoing, start, listedEnd, leadDays) {
   // strings are Dublin wall-clock with no offset, so subtracting them loses
   // the hour at the October clock change.
   var bits = [firstSeen <= START_ISO ? "listed when collection began" : "first listed " + whenY(firstSeen)];
-  bits.push(ongoing ? "still listed at the last poll" : "no longer listed " + whenY(end));
+  bits.push(ongoing ? "still listed when we last checked" : "no longer listed " + whenY(end));
   if (start) {
     var claim = "Irish Rail's notice dates it from " + whenY(start);
     if (leadDays) claim += " - " + fmtDays(leadDays) + " before it was listed";

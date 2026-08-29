@@ -55,14 +55,21 @@ PLANNED_MARKER = "planned works"
 # bar it sits in says which kind. There is no escalator code any more.
 DAY_CLEAR = 0  # nothing listed at this station
 DAY_OUT = 1  # a notice that is not planned works
-DAY_PLANNED = 5  # planned works only
+DAY_PLANNED = 5  # planned works still inside their grace
+DAY_PLANNED_LONG = 6  # planned works that outran the grace, and so count
 DAY_NO_DATA = 8  # outside the window the collector actually covered
 DAY_FUTURE = 9
+
+# When two notices cover one day the cell shows the worst of them: a fault
+# outranks works that overran, which outrank works still inside their grace.
+DAY_SEVERITY = {DAY_PLANNED: 1, DAY_PLANNED_LONG: 2, DAY_OUT: 3}
 
 # How long a planned-works notice may stand before its days count against
 # availability. A week is a plausible maintenance window; the notices that sit
 # for months are unavailability with a label on it, and Irish Rail's own end
 # dates are placeholders, so the listing is the only measure of the works.
+# Past it the days count in full and change colour: one blue bar for works that
+# both do and do not count said opposite things in the same shade.
 PLANNED_GRACE = timedelta(days=7)
 
 # The scale is this site's own. There is no Irish or EU target to grade
@@ -449,9 +456,10 @@ def station_month(outages, ym, now, until):
     arithmetic and the filter live in one place. `now` decides only what is
     still in the future; everything measured ends at `until`.
 
-    The grade is the lift bar's alone. Step-free access is the lift, and a
-    station whose escalator is out while its lifts run should read as what it
-    is - the escalator has its own bar to say so.
+    Both kinds count towards the grade. They keep separate bars, because a
+    working lift must not be painted by a broken escalator, but a day is a day
+    the station was short of a way up: Connolly reading 100% over two days of
+    escalator outage was the grade disagreeing with the bar under it.
     """
     lo, hi = observed_window(ym, until)
     month_lo = month_bounds(ym)[0]
@@ -459,7 +467,7 @@ def station_month(outages, ym, now, until):
     faults = planned = lifts = escalators = 0
     ongoing = False
     marks = {"lift": {}, "escalator": {}}
-    against = set()  # lift days that count against availability
+    against = set()  # days, either kind, that count against availability
 
     for o in outages:
         if not listed_in(o, lo, hi):
@@ -478,10 +486,12 @@ def station_month(outages, ym, now, until):
 
         kind_marks = marks[o.kind]
         for day, day_planned, counts in day_marks(o, lo, hi):
-            # a fault beats planned works: the cell says the worst of the day
-            if kind_marks.get(day) != DAY_OUT:
-                kind_marks[day] = DAY_PLANNED if day_planned else DAY_OUT
-            if counts and o.kind == "lift":
+            code = DAY_OUT
+            if day_planned:
+                code = DAY_PLANNED_LONG if counts else DAY_PLANNED
+            if DAY_SEVERITY[code] > DAY_SEVERITY.get(kind_marks.get(day), 0):
+                kind_marks[day] = code
+            if counts:
                 against.add(day)
 
     cells, observed = _cells(marks["lift"], month_lo, now, until)
