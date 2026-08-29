@@ -454,6 +454,24 @@ sitting directly beneath the day key, where every swatch does map to something
 in a bar. It now carries the chips themselves, letter and all, which is the
 object a reader has actually been looking at on every row.
 
+### ... and then left the top of the page entirely
+
+Two legend rows stacked above the list read as one key with two halves, and
+only the top half maps to anything a reader can see in a bar. Rebuilding the
+grade key as chips fixed what it keyed without fixing where it sat: it was
+still a second row of swatches in the position that says "this explains the
+thing below".
+
+It now sits in the footer, inside `<details>` "How the grade works", directly
+under the sentences that define availability and the planned-works grace. The
+key and its explanation are one thing, and the top of the page carries the one
+legend that belongs there. The static station pages get the same section for
+themselves rather than a link to the index's: a station page is where a search
+result lands, and its chip has to be explicable without a second page load.
+
+Filled once at boot rather than on every render, unlike the day key: it sits
+outside the view that re-renders, and its content never changes.
+
 ### Plain words on the summary tiles
 
 "4 lifts with a notice up at the last poll" asks a reader to know what a poll
