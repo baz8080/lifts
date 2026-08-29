@@ -295,14 +295,17 @@ class TestStationMonth(SiteModelCase):
         self.assertEqual(s["cells"][7], "5")
         self.assertIsNone(s["esc_cells"])
 
-    def test_an_escalator_notice_is_not_in_the_lift_grade(self):
+    def test_an_escalator_notice_counts_towards_the_grade(self):
         # Pearse in August 2026: the escalator listed for a fortnight while the
-        # lifts ran. The grade is the lifts', and the second bar says the rest.
+        # lifts ran. The lift bar stays clear - a working lift is never painted
+        # by a broken escalator - but the days count, because the station was
+        # short of a way up on them.
         self.poll(T0, [escalator(station="Dublin Pearse", code="PERSE")])
         self.poll(T0 + timedelta(days=2), [escalator(station="Dublin Pearse", code="PERSE")])
         s = self.cells(self.load())
-        self.assertEqual((s["avail"], s["grade"]), (100, "A"))
+        self.assertEqual(set(s["cells"]) - set("89"), {"0"})
         self.assertEqual(s["esc_cells"][7:10], "111")
+        self.assertEqual((s["against"], s["avail"], s["grade"]), (3, 0, "F"))
 
     def test_planned_works_are_excused_for_a_week_and_not_a_day_longer(self):
         short = model.PLANNED_GRACE - timedelta(hours=1)
@@ -322,8 +325,33 @@ class TestStationMonth(SiteModelCase):
         # an hour past the grace and every day of it counts, the first week
         # included; the closing poll falls after Dublin midnight, so nine days
         # carry the notice rather than the short run's eight
-        self.assertEqual(s["cells"][7:16], "5" * 9)
+        # ... and they change colour with it: one blue for works that count and
+        # works that do not said opposite things in the same shade.
+        self.assertEqual(s["cells"][7:16], "6" * 9)
         self.assertEqual((s["against"], s["avail"], s["grade"]), (9, 0, "F"))
+
+    def test_a_day_carries_the_worst_of_what_was_listed_on_it(self):
+        """Three shades can share a day now, so the ranking is explicit.
+
+        A fault outranks works that outran their grace, which outrank works
+        still inside it - and the arithmetic behind the last pair is opposite,
+        so drawing them alike is what the second planned colour exists to stop.
+        """
+        long = model.PLANNED_GRACE + timedelta(days=1)
+        works = lift(planned=True, head="Athy - Lift out of order")
+        short = lift(planned=True, start="2026-08-02T09:00:00")
+        fault = lift(planned=False, start="2026-08-03T09:00:00")
+        self.poll(T0, [works])
+        self.poll(T0 + long, [works, short])
+        self.poll(T0 + long + timedelta(days=1), [works, short, fault])
+        self.poll(T0 + long + timedelta(days=2), [works, short, fault])
+        cells = self.cells(self.load())["cells"]
+        # 9 Aug: the long works alone, past the grace by the time it came down
+        self.assertEqual(cells[8], "6")
+        # 16 Aug: the short works sit under the long one, which still wins
+        self.assertEqual(cells[15], "6")
+        # 17 Aug: the fault joins them and takes the day
+        self.assertEqual(cells[16], "1")
 
     def test_a_notice_seen_only_at_the_last_poll_still_counts_that_day(self):
         # first_seen, end and the horizon coincide: a zero-minute listing.
@@ -430,11 +458,11 @@ class TestStationMonth(SiteModelCase):
         self.assertEqual(n["stations"], 3)
         self.assertEqual(n["outages"], 3)
         self.assertEqual((n["faults"], n["planned"]), (3, 0))
-        # Two days watched at each of the three stations. Athy is listed for
-        # both; Bray for both, closed at the poll on the 9th having been listed
-        # into it; Connolly's is an escalator, which no grade counts. So four
-        # of the six station-days are unavailable.
-        self.assertEqual(n["avail"], 33)
+        # Two days watched at each of the three stations, and all three are
+        # listed on both: Athy throughout, Bray closed at the poll on the 9th
+        # having been listed into it, and Connolly's escalator, which counts
+        # like a lift. So none of the six station-days is available.
+        self.assertEqual(n["avail"], 0)
         self.assertEqual(n["ongoing"], 1)
 
 

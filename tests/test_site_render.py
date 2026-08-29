@@ -6,6 +6,7 @@ import json
 import re
 import unittest
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 from lift_site import model, render
 from tests.test_site_model import NOW, T0, SiteModelCase, escalator, lift
@@ -52,10 +53,10 @@ class TestWrite(SiteModelCase):
         esc = d["stats"]["CNLLY"]["2026-08"]
         self.assertEqual(len(esc), 6)
         self.assertEqual(len(esc[5]), 31)
-        # Connolly's notice is the escalator's, so the lift bar stays clear
-        # and the station grades on its lifts.
+        # Connolly's notice is the escalator's, so the lift bar stays clear -
+        # but the grade counts both kinds, so it is not a clean 100%.
         self.assertEqual(set(esc[0]) - set("89"), {"0"})
-        self.assertEqual(esc[4], 100)
+        self.assertLess(esc[4], 100)
 
     def test_a_shard_carries_every_outage_at_the_station_and_no_other(self):
         text = (self.site / "h" / "ATHY.js").read_text(encoding="utf-8")
@@ -104,7 +105,7 @@ class TestWrite(SiteModelCase):
 
     def test_a_page_with_nothing_else_listed_says_so(self):
         page = (self.site / "s" / "bray.html").read_text(encoding="utf-8")
-        self.assertIn("Nothing else was listed at the last poll.", page)
+        self.assertIn("Nothing else was out when we last checked.", page)
         self.assertNotIn('href="bray.html"', page)
 
     def test_the_index_is_the_one_page_that_links_every_station(self):
@@ -333,6 +334,31 @@ class TestLegend(unittest.TestCase):
         self.assertNotIn("no days listed", render.GRADE_SPANS)
         self.assertIn("100% available", render.GRADE_SPANS)
 
+    def test_every_day_code_the_bars_use_has_a_caption(self):
+        self.assertEqual(
+            set(render._day_labels("lift")),
+            {
+                str(c)
+                for c in (
+                    model.DAY_CLEAR, model.DAY_OUT, model.DAY_PLANNED,
+                    model.DAY_PLANNED_LONG, model.DAY_NO_DATA, model.DAY_FUTURE,
+                )
+            },
+        )
+
+    def test_the_two_planned_codes_are_not_the_same_colour(self):
+        """Works inside their grace are off the total and works past it are on
+        it, in full. One blue for both had Midleton at 0% and Pearse at 100%
+        with the same shade across both bars."""
+        css = Path(render.SITE_CSS).read_text(encoding="utf-8")
+        fills = {}
+        for cls in ("b1", "b5", "b6"):
+            self.assertIn(f'<i class="{cls}">', render.LEGEND_SPANS)
+            found = re.search(rf"\.bar i\.{cls},[^{{]*\{{\s*background:\s*([^;]+);", css)
+            self.assertIsNotNone(found, f"{cls} has no fill in site.css")
+            fills.setdefault(found.group(1).strip(), []).append(cls)
+        self.assertEqual(sorted(fills.values()), [["b1"], ["b5"], ["b6"]])
+
     def test_the_day_key_no_longer_names_a_kind(self):
         # The kind is the bar, not the colour, so no swatch may claim one.
         self.assertNotIn("lift", render.LEGEND_SPANS)
@@ -360,7 +386,7 @@ class TestWords(unittest.TestCase):
         bits = render.summary_bits(
             "2026-08-13T11:30", "2026-08-14T10:02", 1, "2026-08-13T09:00", None
         )
-        self.assertEqual(bits[1], "still listed at the last poll")
+        self.assertEqual(bits[1], "still listed when we last checked")
         self.assertNotIn("before it was listed", bits[2])
         self.assertEqual(len(bits), 3)
 

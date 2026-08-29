@@ -323,6 +323,9 @@ The escalator is out of the grade for the same reason it has its own bar: the
 lift is the step-free route. A station whose escalator is listed still leads
 the overview, because "a notice up right now" is the first sort key.
 
+**Reversed 2026-08-29.** See "An escalator out is a day the station was short
+of a way up" below: both kinds count now, and only the bars stay split.
+
 Rejected: labelling the two strips on an overview row. The label column
 shortened that one station's bar and knocked its days out of line with every
 other row's. The labels stay on the drill-down, where the bars are tall.
@@ -354,3 +357,69 @@ would be invented. The composite "4 / 1 lifts / escalators" tile is split in
 two. Getting a real denominator needs a station inventory scraped from
 irishrail.ie, which is a second source with its own staleness and its own
 name-to-code join; not done here.
+
+## The grade counts both kinds, and overrun works get their own colour - 2026-08-29
+
+The corpus is 21 days (8-29 August 2026, 964 runs), 24 outages across 21
+stations, of which 6 are planned works and 2 are escalators.
+
+### An escalator out is a day the station was short of a way up
+
+Reverses "the escalator is out of the grade" under One bar per kind above. The
+case against it was Connolly: an escalator listed on 17 and 18 August, two
+amber cells on the second strip, and a green **A / 100% available** chip on
+the row above them. The grade contradicted the bar underneath it, and no
+reader was going to resolve that in the site's favour.
+
+The reasoning that put escalators out - "the lift is the step-free route" -
+is true of a lift and an escalator considered separately, and useless here:
+the feed names one machine per notice in prose, so the site cannot tell
+whether the escalator that is out was the only way up, nor whether a lift that
+is not mentioned exists at all. What it can say is that Irish Rail reported
+something out at that station on that day. Both kinds count towards the grade
+now, on the same footing.
+
+The bars still split by kind, for the reason they always did: a working lift
+must not be painted by a broken escalator. Separate strips, one pool of days.
+
+On this corpus, aggregate availability went 70% to 66%. Connolly A to C, and
+Pearse - whose escalator has been listed since 13 August - A to F at 22%,
+which is the honest reading of a station with a machine out for seventeen of
+the twenty-two days watched.
+
+### Blue said two opposite things
+
+`5` was every planned-works day, excused or not. Midleton (19 days, 0%
+available) and Pearse's lift (6 days, costing nothing) drew the same blue, so
+the one colour on the bar carried both "this is forgiven" and "this is the
+whole reason the grade is F". A reader comparing two blue bars had no way to
+see which was which.
+
+Planned works past their grace are now `6`, amber, with their own key entry.
+Amber rather than a second red: works that overran are not a fault, and a
+deuteranope cannot tell orange from `--critical` at cell width. The day cell
+takes the worst of what was listed on it - fault, then overrun works, then
+works inside their grace - which is `DAY_SEVERITY`, an explicit ranking now
+that three shades can share a day rather than two.
+
+Rejected: recolouring overrun works red outright. It counts like a fault and
+it is not one, and the notice text under the bar says "planned works" either
+way; two words disagreeing with one colour is how this started.
+
+### Plain words on the summary tiles
+
+"4 lifts with a notice up at the last poll" asks a reader to know what a poll
+is and what a notice is; "70% of days available" asks them to work out what
+was available. Neither is a term a visitor arrives with. The tiles now read
+"lifts reported out when we last checked" and "of days with no lift or
+escalator reported out, across the stations named this month" - longer, and
+the denominator is still stated, which is the part that could not be dropped.
+"Poll" is gone from the visitor-facing text; "listed" stays, because a notice
+being listed is exactly what the site measures and "fixed" is the word it must
+not use.
+
+Two footer paragraphs went with it. The one about there being no Irish or EU
+target was the site explaining its own methodology to someone who had not
+asked - the reasoning is above, under The grade is availability, and that is
+where it belongs. And "a notice names a lift in prose" was answering a
+question in the vocabulary of the person who wrote the parser.

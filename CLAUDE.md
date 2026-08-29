@@ -113,9 +113,9 @@ merged with `sort -u`.
 | Escalators included and tagged, never excluded (their own bar since 2026-08-28) | `notes/site.md` § Escalators, § One bar per kind |
 | Same-poll reissues merge; a gap of a poll or more is a new outage | `notes/site.md` § Notices reissued |
 | Planned works is what the notice text says | `notes/site.md` § Planned works |
-| Stations are graded on lift availability - days watched with no lift notice - on this site's own scale, there being no Irish or EU target; overview sorts by listed-now, then availability | `notes/site.md` § The grade is availability |
-| Planned works are excused for their first week and count in full past it | `notes/site.md` § Planned works are excused for a week |
-| A bar carries one kind; an escalator notice gets its own strip and stays out of the lift grade | `notes/site.md` § One bar per kind |
+| Stations are graded on availability - days watched with no lift *or escalator* notice - on this site's own scale, there being no Irish or EU target; overview sorts by listed-now, then availability | `notes/site.md` § The grade is availability, § An escalator out is a day the station was short of a way up |
+| Planned works are excused for their first week and count in full past it, in their own colour once they do | `notes/site.md` § Planned works are excused for a week, § Blue said two opposite things |
+| A bar carries one kind and an escalator notice gets its own strip - separate bars, one pool of graded days | `notes/site.md` § One bar per kind |
 | `end` printed as "listed end" while the notice is up, dropped once it comes down; plays no part in any measure | `notes/site.md` § `end` is shown, § Irish Rail's end date goes when the notice does |
 | Windows end at the collection horizon; zero-minute listings count in its month | `notes/site.md` § Windows end |
 | Displayed instants are Dublin wall-clock; build/horizon stamps are UTC | `notes/site.md` § Displayed instants |
