@@ -100,26 +100,15 @@ removes the name-matching problem below entirely.
 
 No accessibility data at all. Inventory only.
 
-### D. The lifts-and-escalators alerts page - the interesting unknown
+### D. The lifts-and-escalators alerts page - checked, useless
 
-`irishrail.ie/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports`,
-titled "Alerts for Lifts and Escalators". Discovered while scoping this; it is
-not the endpoint this project collects.
+`https://www.irishrail.ie/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports`,
+titled "Alerts for Lifts and Escalators". Found while scoping this and it
+looked promising: if it were a per-machine inventory with status it would have
+been a better primary source than the message feed, and would have answered
+"how many lifts does this station have".
 
-Two possibilities, and they are far apart:
-
-- It renders the same service messages the collector already has, in which
-  case it is worth nothing and should be written off in one line.
-- It is a per-machine inventory with status - every lift at every station,
-  named, with an up/down state - in which case **it is a better primary source
-  than the message feed** and reframes this whole project. It would answer "how
-  many lifts does this station have", which is the question underneath most of
-  the others.
-
-Search suggested Irish Rail updates station information "weekly", which if it
-applies to this page makes it an inventory rather than a realtime feed - but
-that phrasing came from a summary, not from the page. **Check this second.**
-Ten minutes with devtools open settles which of the two it is.
+**Checked on 2026-08-29. It is not.** Ruled out; do not spend time on it again.
 
 ### E. Station pages, scraped
 
@@ -164,10 +153,11 @@ alone may be reason to prefer it for question 1 even if GTFS is richer.
 ## Phasing, smallest first
 
 **Phase 0 - verification, no code.** Answer, in this order: does
-`pathways.txt` exist for Irish Rail; what is the alerts page actually serving;
-is `wheelchair_boarding` populated; is `getAllStationsXML` still unkeyed. Each
-is a browser tab. The answers decide whether phases 2 and 3 exist at all, and
-this is the only phase that cannot be done from a Claude Code web session.
+`pathways.txt` exist for Irish Rail; is `wheelchair_boarding` populated; is
+`getAllStationsXML` still unkeyed. Each is a browser tab. The answers decide
+whether phases 2 and 3 exist at all, and this is the only phase that cannot be
+done from a Claude Code web session. (The alerts page was the fourth check and
+has been struck - see D above.)
 
 **Phase 1 - the inventory.** Station list with codes, from C or from GTFS
 `stops.txt`. Snapshot committed to `lifts-data`. The site gains a real
@@ -175,7 +165,7 @@ denominator and can finally say "N of 144 stations had a notice this month".
 Small, useful on its own, and independent of everything below it.
 
 **Phase 2 - the accessibility flag.** Only if `wheelchair_boarding` turns out
-to be populated, or the alerts page turns out to be an inventory. The site
+to be populated. The site
 gains the ability to distinguish "no lift here" from "lift working", which is
 the misreading most worth fixing: today those are the same green cells.
 
