@@ -139,6 +139,19 @@ rejected, a dependency nothing else records, a constraint from outside the code.
 One line where one will do. If the reasoning needs a paragraph it belongs in the
 commit message, the PR, or `notes/` - not above the line.
 
+## Punctuation
+
+**No em dashes.** Not in the site's prose, the code comments, `notes/`, commit
+messages, PR bodies, issue bodies or the replies in a session. The house dash
+is a spaced hyphen - like this one - and it is what every file here already
+uses. Write it out where a sentence reads better for it: "which is", "because",
+a colon, or two sentences.
+
+This was an unwritten rule until 2026-08-29, which is exactly why it kept being
+broken: the repo was clean and every violation arrived in a PR body or a chat
+reply, where nothing checked it. `scripts/no-em-dash.sh` checks the tracked
+files; the prose outside the repo is on whoever is writing it.
+
 ## Before changing anything the site publishes
 
 `tests/test_site_real.py` runs the pipeline against the real corpus: every
