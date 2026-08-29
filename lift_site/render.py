@@ -291,9 +291,34 @@ def _day_cells(cells, ym, partial, kind="lift"):
     )
 
 
-def _chip(letter):
-    """The shared grade chip. `g-none` and a dash where there is nothing to grade."""
-    return f'<span class="gradechip g-{letter or "none"}">{letter or "-"}</span>'
+def _chip(letter, label):
+    """The shared grade chip, with the name a screen reader reads for it.
+
+    The letter alone is a letter: `role="img"` and the label are what make it a
+    grade out loud. Mirrored in site.html's gradeChip().
+    """
+    return (
+        f'<span class="gradechip g-{letter or "none"}" role="img" '
+        f'aria-label="{html.escape(label)}" title="{html.escape(label)}">{letter or "-"}</span>'
+    )
+
+
+def _bar_label(cells, ym, kind):
+    """What a bar says to a screen reader. Mirrored in site.html's barLabel().
+
+    A month of empty `<i>`s conveys nothing on its own, and there is no reading
+    of 31 day-cells that is worth listening to - so the bar is one image with
+    one sentence, and the cases below it carry the detail.
+    """
+    watched = sum(1 for ch in cells if ch not in "89")
+    listed = sum(1 for ch in cells if ch in "15")
+    what = f"{KIND_LABEL[kind]}s in {month_label(ym)}"
+    if not watched:
+        return f"{what}: no data collected"
+    days = f"{watched} day" + ("" if watched == 1 else "s")
+    if not listed:
+        return f"{what}: nothing listed on {days} watched"
+    return f"{what}: listed on {listed} of {days} watched"
 
 
 def _bars(cells, esc_cells, ym, partial, tall=False):
@@ -304,10 +329,17 @@ def _bars(cells, esc_cells, ym, partial, tall=False):
     station's bar and knock its days out of line with every other row's.
     """
     cls = "bar tall" if tall else "bar"
-    lift = f'<div class="{cls}">{_day_cells(cells, ym, partial)}</div>'
+    lift = (
+        f'<div class="{cls}" role="img" aria-label="{html.escape(_bar_label(cells, ym, "lift"))}">'
+        f"{_day_cells(cells, ym, partial)}</div>"
+    )
     if not esc_cells:
         return lift
-    esc = f'<div class="{cls}">{_day_cells(esc_cells, ym, partial, "escalator")}</div>'
+    esc = (
+        f'<div class="{cls}" role="img" '
+        f'aria-label="{html.escape(_bar_label(esc_cells, ym, "escalator"))}">'
+        f'{_day_cells(esc_cells, ym, partial, "escalator")}</div>'
+    )
     if not tall:
         return f'<div class="bars">{lift}{esc}</div>'
     return f'<div class="bars labelled"><span>Lifts</span>{lift}<span>Escalators</span>{esc}</div>'
@@ -373,15 +405,19 @@ def station_page(code, data, by_month):
     title = f"Lift outages at {name} station"
     desc = (
         f"Lift (elevator) and escalator outages at {name} station, from Irish Rail's "
-        f"service-message feed, since {data['start']}."
+        f"service message feed, since {data['start']}."
     )
     latest = data["months"][-1]
+    letter = _month_grade(stats.get(latest), data["blank"][latest])[1]
+    # The page carries every month, so a chip beside the name has to say which
+    # month it is the grade for - in the sub line and in its own label.
+    graded = f"graded on {month_label(latest)}"
     body = [
         '<a class="back" href="../index.html">← All stations</a>',
         '<div class="chead">',
-        _chip(_month_grade(stats.get(latest), data["blank"][latest])[1]),
+        _chip(letter, f"Grade {letter} for {month_label(latest)}" if letter else "No grade yet"),
         f"<h1>{html.escape(name)}</h1></div>",
-        f'<div class="sub">Irish Rail station code {html.escape(code)}<br>'
+        f'<div class="sub">Irish Rail station code {html.escape(code)} · {graded}<br>'
         f'Data to {html.escape(data["observed"])}'
         + (
             ' · <span class="stale">collection has stopped</span>'
@@ -397,7 +433,8 @@ def station_page(code, data, by_month):
         avail, letter = _month_grade(m, data["blank"][ym])
         cases = by_month.get(ym, [])
         body.append(
-            f'<div class="card"><h2>{_chip(letter)}{month_label(ym)}'
+            f'<div class="card"><h2>{_chip(letter, f"Grade {letter}" if letter else "No grade")}'
+            f"{month_label(ym)}"
             + (f'<span class="av">{avail}% of days available</span>' if avail is not None else "")
             + "</h2>"
         )
