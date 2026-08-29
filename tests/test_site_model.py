@@ -440,7 +440,7 @@ class TestStationMonth(SiteModelCase):
         s = self.cells(outages)
         # the four fault days count; the seven of works do not
         self.assertEqual(s["against"], 4)
-        self.assertEqual((s["avail"], s["grade"]), (60, "F"))
+        self.assertEqual((s["avail"], s["grade"]), (60, "E"))
 
     def test_ongoing_is_only_true_in_the_horizons_month(self):
         self.poll(T0, [lift()])
@@ -526,9 +526,14 @@ class TestShard(SiteModelCase):
 class TestGrade(unittest.TestCase):
     def test_the_bands_meet_where_they_say_they_do(self):
         self.assertEqual(
-            [model.grade(a) for a in (100, 99, 95, 94, 90, 89, 75, 74, 0)],
-            ["A", "B", "B", "C", "C", "D", "D", "F", "F"],
+            [model.grade(a) for a in (100, 99, 95, 94, 90, 89, 75, 74, 50, 49, 0)],
+            ["A", "B", "B", "C", "C", "D", "D", "E", "E", "F", "F"],
         )
+
+    def test_the_scale_runs_a_to_f_inclusive(self):
+        """A scale that skips E is an American-ism, and Irish Rail is not
+        American. E is up to half the month listed; F is more than half."""
+        self.assertEqual([letter for _, letter in model.GRADE_BANDS], list("ABCDEF"))
 
     def test_a_month_nobody_watched_has_no_availability_and_no_grade(self):
         self.assertIsNone(model.availability(0, 0))
