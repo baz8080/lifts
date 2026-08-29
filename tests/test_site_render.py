@@ -74,9 +74,6 @@ class TestWrite(SiteModelCase):
         self.assertIn('class="case"', page)
         self.assertIn("no longer listed", page)
         self.assertIn(f'{render.BASE_URL}/s/rush-and-lusk.html', page)
-        # The nav links every other station and not itself.
-        self.assertIn('href="athy.html"', page)
-        self.assertNotIn('href="rush-and-lusk.html"', page)
 
     def test_the_static_page_labels_the_two_bars_only_where_there_are_two(self):
         page = (self.site / "s" / "dublin-connolly.html").read_text(encoding="utf-8")
@@ -93,6 +90,33 @@ class TestWrite(SiteModelCase):
         page = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
         self.assertIn("no longer listed", page)
         self.assertNotIn("listed end", page)
+
+    def test_a_station_page_links_what_is_out_now_and_the_full_list_once(self):
+        """The card used to link every other station from every page: the same
+        links in the same order, growing with the square of the station count.
+        Bray is the only notice still up at the last poll, so it is the only
+        station Rush and Lusk links - and the index carries the rest."""
+        page = (self.site / "s" / "rush-and-lusk.html").read_text(encoding="utf-8")
+        self.assertIn('href="bray.html"', page)
+        self.assertNotIn('href="athy.html"', page)
+        self.assertNotIn('href="rush-and-lusk.html"', page)
+        self.assertIn('href="../index.html"', page)
+
+    def test_a_page_with_nothing_else_listed_says_so(self):
+        page = (self.site / "s" / "bray.html").read_text(encoding="utf-8")
+        self.assertIn("Nothing else was listed at the last poll.", page)
+        self.assertNotIn('href="bray.html"', page)
+
+    def test_the_index_is_the_one_page_that_links_every_station(self):
+        """Without it a reader with no JavaScript, and a crawler that does not
+        run it, has no path to a station page at all: the overview's own list is
+        built from data.js."""
+        index = (self.site / "index.html").read_text(encoding="utf-8")
+        for code, name in self.data["stations"].items():
+            with self.subTest(code=code):
+                self.assertIn(f'href="s/{self.data["slugs"][code]}.html">{name}</a>', index)
+        self.assertIn("not every station with a lift", index)
+        self.assertIn("since 8 August 2026", index)
 
     def test_the_static_page_says_what_a_bar_and_a_chip_mean(self):
         """A month of empty `<i>`s and a bare letter convey nothing to a screen
@@ -187,6 +211,84 @@ class TestSlugs(unittest.TestCase):
             ),
             {"A": "rush-and-lusk", "B": "dun-laoghaire", "C": "rush-and-lusk-c"},
         )
+
+
+class TestMonthSections(SiteModelCase):
+    """A station's page carries every month since collection began. The months
+    it had a notice in are cards; the rest are lines."""
+
+    def setUp(self):
+        super().setUp()
+        self.poll(T0, [lift()])
+        self.poll(T0 + timedelta(hours=1), [])
+        october = datetime(2026, 10, 5, 10, 0, tzinfo=UTC)
+        # a notice of its own, not August's coming back: a reopened notice
+        # still publishes its gap as listed (notes/site.md, Open)
+        self.poll(october, [lift(start="2026-10-01T09:00:00")])
+        self.poll(october + timedelta(days=1), [])
+        self.now = datetime(2026, 11, 10, 12, 0, tzinfo=UTC)
+        outages = self.load(now=self.now)
+        self.site = self.dir / "site"
+        self.data = render.write(self.site, outages, self.now, self.until)
+        self.page = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
+
+    def test_a_month_with_a_notice_is_a_card_and_the_rest_are_lines(self):
+        self.assertIn('<div class="card" id="ym-2026-10">', self.page)
+        self.assertIn('<div class="card" id="ym-2026-08">', self.page)
+        self.assertNotIn('id="ym-2026-09"', self.page)
+        self.assertIn("September 2026 · nothing listed, 30 days watched", self.page)
+        # November is past the horizon: nobody watched it, which is not the
+        # same as nothing being listed in it.
+        self.assertIn("November 2026 · no data collected", self.page)
+
+    def test_the_months_with_cards_are_linked_from_the_top(self):
+        strip = re.search(r'<div class="months jumps">(.*?)</div>', self.page, re.S).group(1)
+        self.assertEqual(
+            re.findall(r'href="#ym-([\d-]+)"', strip), ["2026-10", "2026-08"]
+        )
+
+    def test_one_card_needs_no_strip(self):
+        page = render.station_page(
+            "ATHY", self.data, {"2026-08": []}, ()
+        )
+        self.assertNotIn("months jumps", page)
+
+
+class TestMonthSectionRules(unittest.TestCase):
+    BLANK = {
+        "2026-08": "0" * 31, "2026-09": "0" * 30,
+        "2026-10": "8" * 31, "2026-11": "8" * 30, "2026-12": "0" * 31,
+    }
+
+    def sections(self, loud):
+        return render.month_sections(
+            list(self.BLANK), {ym: [1] for ym in loud}, self.BLANK
+        )
+
+    def test_consecutive_quiet_months_fold_into_one_run(self):
+        self.assertEqual(
+            self.sections(["2026-12"]),
+            [["quiet", ["2026-08", "2026-09"], 61],
+             ["quiet", ["2026-10", "2026-11"], 0],
+             ["card", "2026-12", 0]],
+        )
+
+    def test_a_card_breaks_a_run_and_so_does_the_data_running_out(self):
+        self.assertEqual(
+            self.sections(["2026-09"]),
+            [["quiet", ["2026-08"], 31],
+             ["card", "2026-09", 0],
+             ["quiet", ["2026-10", "2026-11"], 0],
+             ["quiet", ["2026-12"], 31]],
+        )
+
+    def test_a_run_reads_from_its_oldest_month_to_its_newest(self):
+        self.assertEqual(
+            render._quiet_row(["2026-11", "2026-10"], 0),
+            '<div class="quiet">October 2026 to November 2026 · no data collected</div>',
+        )
+        self.assertIn("August 2026 · nothing listed, 1 day watched",
+                      render._quiet_row(["2026-08"], 1))
 
 
 class TestBarLabel(unittest.TestCase):
