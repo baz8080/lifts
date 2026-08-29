@@ -244,8 +244,11 @@ function renderOverview() {
   var c = D.current;
   var live = curMonth === D.months[D.months.length - 1];
   document.getElementById("tiles").innerHTML = [
+    // "nothing reported out" would be a claim the page contradicts: works
+    // inside their grace are on the bar and off the total, so Tullamore ships
+    // at 100% with two planned-works cells drawn on it.
     tile(n[4] == null ? "-" : n[4] + "%",
-         "of days with no lift or escalator reported out, across the stations named this month"),
+         "of days with lifts and escalators available, across the stations named this month"),
     // the latest month's counts are the live ones, so they read as the state of
     // the network now; a past month's are what it ended the month with
     live ? tile(c.lifts, one(c.lifts, "lift") + " reported out when we last checked")

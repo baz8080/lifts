@@ -9,8 +9,8 @@
    grace, 6 planned works past it, 8 no data, 9 to come.
    Which kind is out is the bar it is in, not the colour. The legend swatches
    share these rules so the key can never drift from the bars; b0 needs its own
-   line because only .bar i defaults to --good in base.css. The grade key's
-   swatches take their colours from statusui's chip classes, so it has none. */
+   line because only .bar i defaults to --good in base.css. The grade key has
+   no swatches of its own - it carries real chips; see .legend .gradechip. */
 .bar i.b1, .legend i.b1 { background: var(--critical); }
 .bar i.b5, .legend i.b5 { background: var(--maint); }
 /* Works past their grace count exactly as a fault does, but they are not one -

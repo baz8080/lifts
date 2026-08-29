@@ -253,6 +253,15 @@ across 20 stations, of which 5 are planned works and 2 are escalators.
 
 ### The grade is availability
 
+**Amended 2026-08-29.** Three things below are superseded and left standing
+because the reasoning around them still holds. The number is no longer lift
+notices alone - both kinds count, see "An escalator out is a day the station
+was short of a way up". The no-EU-target paragraph is no longer "said plainly
+in the footer": that paragraph was removed from the page, and the reasoning
+lives here instead. And the Pearse example at the end of this section is stale
+- Pearse now grades F / 22% on its escalator, and Tullamore is the station
+that carries an A over planned-works cells.
+
 "5 days listed" was a raw count: it says nothing about whether that is bad,
 and a 31-day month and a 20-day partial one are not comparable by it. The
 number on a row is now the share of the days watched on which no lift notice
@@ -370,9 +379,10 @@ stations, of which 6 are planned works and 2 are escalators.
 
 Reverses "the escalator is out of the grade" under One bar per kind above. The
 case against it was Connolly: an escalator listed on 17 and 18 August, two
-amber cells on the second strip, and a green **A / 100% available** chip on
-the row above them. The grade contradicted the bar underneath it, and no
-reader was going to resolve that in the site's favour.
+**red** cells on the second strip - it is a fault notice, not works - and a
+green **A / 100% available** chip on the row above them. The grade
+contradicted the bar underneath it, and no reader was going to resolve that in
+the site's favour.
 
 **The grade is not step-free-access availability, and this note is the place
 that says so.** Wheelchair users cannot use an escalator - every operator
@@ -399,7 +409,7 @@ could not live up to.
 Rejected: lifts only, with escalators visible on their own bar but out of the
 letter. That is the more precise claim, and it was the position until today;
 what killed it is that Connolly then reads A / 100% available directly above
-two amber escalator cells, and no reader resolves that contradiction in the
+two red escalator cells, and no reader resolves that contradiction in the
 site's favour. Rejected: two grades, a step-free one and a softer escalator
 one. Most honest of the three, and it costs a second chip on every row plus a
 decision about which one sorts the overview - out of proportion to a
