@@ -38,6 +38,9 @@ jobs:
       # the artefact worth reading when a refresh changes anything: it prints
       # every verdict beside the prose it came from.
       - name: Report what the snapshot says
+        # Explicit `bash` for its pipefail: the default shell has none, so `tee`
+        # would swallow a non-zero exit from `report` and pass the step.
+        shell: bash
         run: |
           uv run python -m lift_status --data-dir lifts-data rebuild
           uv run python -m lift_access --data-dir lifts-data report | tee report.txt

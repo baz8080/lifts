@@ -55,6 +55,19 @@ def refresh(args):
             file=sys.stderr,
         )
         return 1
+    if not records:
+        # The guard above counts failures, and an index that parses but names no
+        # station produces none: `station_slugs` keys off `kontentStations`, a CMS
+        # internal that is nobody's promise. Renamed, every fetch is skipped, the
+        # empty snapshot becomes the newest file, and the site loses every verdict
+        # and its denominator without a single error.
+        print(
+            f"error: the station list at {fetch.INDEX_URL} parsed but named no stations, "
+            "so nothing was fetched and no snapshot was written. The payload's shape has "
+            "probably changed; check fetch.station_slugs against it.",
+            file=sys.stderr,
+        )
+        return 1
     path = fetch.write_snapshot(directory / f"{STATIONS_PREFIX}-{stamp}.jsonl", records)
     print(f"wrote {path} ({len(records)} stations)")
     return 0

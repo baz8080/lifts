@@ -211,3 +211,41 @@ class WithNoSnapshotAtAll(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AnIndexThatNamesNoStationIsRefused(unittest.TestCase):
+    """The partial-fetch guard counts failures, and this produces none.
+
+    `station_slugs` keys off `kontentStations`, a CMS internal nobody promised to
+    keep. Renamed, the index still parses, no station is attempted, and both
+    lists come back empty - so the guard passes, an empty snapshot becomes the
+    newest file on disk, and every verdict and the denominator go with it.
+    """
+
+    def _refresh(self, index_body):
+        from lift_access import __main__ as cli
+
+        original, fetch._get = fetch._get, lambda url, timeout=60: (200, index_body)
+        delay, backoff = fetch.DELAY_SECONDS, fetch.BACKOFF_SECONDS
+        fetch.DELAY_SECONDS = fetch.BACKOFF_SECONDS = 0
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                code = cli.main(["--data-dir", tmp, "refresh"])
+                written = sorted((Path(tmp) / snapshot.SNAPSHOT_DIR).glob("*.jsonl"))
+                return code, written
+        finally:
+            fetch._get, fetch.DELAY_SECONDS, fetch.BACKOFF_SECONDS = original, delay, backoff
+
+    def test_it_exits_non_zero_and_writes_nothing(self):
+        renamed = list(PAYLOAD)
+        renamed[2] = {"station-station/athy-en-ie": 3, "kontentRailStations-en-ie": 12}
+        code, written = self._refresh(json.dumps(renamed))
+        self.assertEqual(code, 1)
+        self.assertEqual(written, [])
+
+    def test_an_empty_station_list_is_refused_too(self):
+        emptied = list(PAYLOAD)
+        emptied[12] = []
+        code, written = self._refresh(json.dumps(emptied))
+        self.assertEqual(code, 1)
+        self.assertEqual(written, [])

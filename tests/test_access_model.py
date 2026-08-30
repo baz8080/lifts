@@ -271,6 +271,15 @@ class AReviewedEntryExpiresWithThePageItQuotes(unittest.TestCase):
         result = model.verdict(reworded, "lift", "The lift at platform 1 is out.")
         self.assertEqual(result.state, "unknown")
 
+    def test_a_stale_entry_still_reports_the_platforms_the_page_omits(self):
+        # Two separate reasons to distrust the reading, and the reader is owed
+        # both: the "lost" path says so and the stale-only path used to drop it.
+        reworded = station("RAHNY")._replace(platform_access="Lift to platform 1")
+        result = model.verdict(reworded, "lift", "The lift at platform 1 and 3 is out.")
+        self.assertEqual(result.state, "unknown")
+        self.assertIn("needs reviewing again", result.detail)
+        self.assertIn("does not list a lift at", result.detail)
+
     def test_it_does_not_quietly_become_a_loss_instead(self):
         # "unknown" and not "lost": the review said there was a way round, and a
         # reworded page is not evidence that there is not.
@@ -523,6 +532,51 @@ class TheHeadIsHandWrittenAndMayBeWrong(unittest.TestCase):
         self.assertEqual(
             model.verdict(station("ATHY"), "lift", "The lift at platform 2 is out.").state, "lost"
         )
+
+
+class TellingPeopleWhatToUseInsteadIsNotASecondFailure(unittest.TestCase):
+    """The forfeit above must not fire on the wording that states things clearest.
+
+    "The escalator is out of service. Please use the lift" names both machines
+    and says outright what broke. Reading the second sentence as a second outage
+    forfeits exactly the notices that need no forfeiting.
+    """
+
+    def test_an_escalator_notice_may_point_at_the_lift(self):
+        result = model.verdict(
+            station("PERSE"),
+            "escalator",
+            "The escalator at platform 2 is out of service. Please use the lift.",
+        )
+        self.assertEqual(result.state, "escalator")
+        self.assertEqual(result.platforms, ("2",))
+
+    def test_a_lift_notice_may_point_at_the_escalator(self):
+        result = model.verdict(
+            station("ATHY"),
+            "lift",
+            "The lift at platform 2 is out of order. Customers should use the escalator.",
+        )
+        self.assertEqual(result.state, "lost")
+        self.assertEqual(result.platforms, ("2",))
+
+    def test_a_sentence_that_says_both_is_still_a_forfeit(self):
+        # One sentence carrying an instruction and an outage names two machines
+        # and cannot be told apart, so it keeps the old answer.
+        result = model.verdict(
+            station("PERSE"),
+            "escalator",
+            "Please use the stairs as the lift and escalator are out of service.",
+        )
+        self.assertEqual(result.state, "unknown")
+
+    def test_the_second_sentence_may_still_report_a_second_outage(self):
+        result = model.verdict(
+            station("PERSE"),
+            "escalator",
+            "The escalator is out of service. The lift is also out of order.",
+        )
+        self.assertEqual(result.state, "unknown")
 
 
 if __name__ == "__main__":

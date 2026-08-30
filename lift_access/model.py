@@ -55,6 +55,22 @@ DENIES_LIFT = re.compile(r"\bno lift\b", re.IGNORECASE)
 OTHER_KIND = {"lift": ESCALATOR, "escalator": LIFT}
 SAME_KIND = {"lift": LIFT, "escalator": ESCALATOR}
 
+# Naming the other machine as the way round is not naming it as broken. "The
+# escalator at platform 2 is out of service. Please use the lift" is ordinary
+# operator wording and the clearest statement of what happened, so forfeiting it
+# loses the notices that say so outright. A sentence carrying outage wording is
+# never a redirection: "use the stairs as the lift is out of service" names both.
+SENTENCE = re.compile(r"(?<=[.!;])\s+|\n")
+REDIRECTION = re.compile(
+    r"\b(?:use|using|via|take|taking)\s+(?:the\s+|a\s+|our\s+)?(?:lifts?|escalators?)\b",
+    re.IGNORECASE,
+)
+OUT_OF_ACTION = re.compile(
+    r"\b(?:out of (?:order|service|action)|unavailable|non[- ]operational|broken|faulty|"
+    r"suspended|not (?:working|available|in (?:service|operation)))\b",
+    re.IGNORECASE,
+)
+
 # Where the notice itself names the machine's platform. The head says only
 # "Dublin Pearse - Lift out of order"; this has been in `text` all along.
 # `[^.\n]` and not `[^.]`: the class is one literal dot, so it would match a
@@ -250,6 +266,17 @@ def _alternative(station, platform):
     return bool(quoted) and quoted in " ".join((station.platform_access or "").split())
 
 
+def implicated(pattern, body):
+    """Does any sentence name this machine as broken, rather than as the way round?"""
+    for sentence in SENTENCE.split(body):
+        if not pattern.search(sentence):
+            continue
+        if REDIRECTION.search(sentence) and not OUT_OF_ACTION.search(sentence):
+            continue
+        return True
+    return False
+
+
 def _unknown(platforms, reason):
     return Verdict("unknown", tuple(platforms), reason)
 
@@ -272,7 +299,7 @@ def verdict(station, kind, text):
     # a lift notice whose text says "the lift and escalator at platform 2" still
     # has the lift out, so the platforms are still lost.
     body = plain(text) if text else ""
-    if body and OTHER_KIND[kind].search(body):
+    if body and implicated(OTHER_KIND[kind], body):
         this_kind_too = SAME_KIND[kind].search(body)
         # An escalator outage is the one verdict that is a deduction rather than
         # a reading, and it is only safe while nothing else is implicated: saying
@@ -346,13 +373,20 @@ def verdict(station, kind, text):
             f"for {station.name} does not list a lift at.",
         )
 
+    unlisted_note = (
+        f" The notice also names platform {', '.join(unlisted)}, which the page "
+        "does not list a lift at."
+        if unlisted
+        else ""
+    )
+
     lost = [p for p in served if not _alternative(station, p)]
     if not lost:
         quoted = STEP_FREE_ALTERNATIVES[(station.code, served[0])]
         return Verdict(
             "alternative",
             tuple(served),
-            f'Irish Rail\'s page names another step-free way here: "{quoted}".',
+            f'Irish Rail\'s page names another step-free way here: "{quoted}".' + unlisted_note,
         )
 
     # A reviewed entry whose sentence has gone off the page forfeits *its* own
@@ -373,7 +407,8 @@ def verdict(station, kind, text):
             tuple(stale),
             f"A reviewed step-free alternative is on file for platform {', '.join(stale)} "
             f"at {station.name}, but the sentence it quotes is no longer on Irish Rail's "
-            "page. It needs reviewing again before this can be read either way.",
+            "page. It needs reviewing again before this can be read either way."
+            + unlisted_note,
         )
 
     listed = ", ".join(plain_loss)
@@ -382,9 +417,4 @@ def verdict(station, kind, text):
         f"{subject} reached by lift, and Irish Rail's page names no other step-free "
         "way, so step-free access was gone while this was listed."
     )
-    if unlisted:
-        detail += (
-            f" The notice also names platform {', '.join(unlisted)}, which the page "
-            "does not list a lift at."
-        )
-    return Verdict("lost", tuple(plain_loss), detail + stale_note)
+    return Verdict("lost", tuple(plain_loss), detail + unlisted_note + stale_note)
