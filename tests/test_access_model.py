@@ -75,6 +75,13 @@ PROSE = {
     ),
     "DCKLS": "<p>Lift to platforms</p>",
     "PTLSE": "<p>Level to platform 2<br>\nLift and footbridge to platform 1</p>",
+    # Pearse opens with a summary sentence naming every mode in the station.
+    "PERSE": (
+        "<p>Via ramps, stairs, escalators, and lifts.</p>\n"
+        "<p>Ramp to platform 1 (City Centre and northbound)<br>\n"
+        "Lift or stairs to platform 2 (southbound)</p>\n"
+        "<p>Lifts/stairs/Escalators from the Pearse Street entrance</p>"
+    ),
     "BLANK": "",
 }
 
@@ -180,6 +187,69 @@ class TheTwoExceptions(unittest.TestCase):
     def test_every_entry_names_a_station_and_platform(self):
         for code, platform in model.STEP_FREE_ALTERNATIVES:
             self.assertTrue(code.isupper() and platform)
+
+
+class ASummarySentenceIsNotAPerPlatformClaim(unittest.TestCase):
+    """Specific beats general, or a summary line swallows the whole station."""
+
+    def test_pearse_does_not_put_a_lift_on_the_ramp_platform(self):
+        # "Via ramps, stairs, escalators, and lifts." names a lift and no
+        # platform. Counted as covering everything, it makes the page's own
+        # "Ramp to platform 1" a lift platform and reports it as access lost.
+        self.assertEqual(station("PERSE").lift_platforms, frozenset({"2"}))
+
+    def test_the_ramp_platform_is_a_disagreement_not_a_loss(self):
+        result = model.verdict(
+            station("PERSE"), "lift", "The lift at platform 1 is currently out of service."
+        )
+        self.assertEqual(result.state, "unknown")
+        self.assertIn("does not list a lift at", result.detail)
+
+    def test_the_lift_platform_still_reads_as_lost(self):
+        result = model.verdict(
+            station("PERSE"), "lift", "The lift at platform 2 is currently out of service."
+        )
+        self.assertEqual(result.state, "lost")
+        self.assertEqual(result.platforms, ("2",))
+
+    def test_a_station_that_names_no_platform_still_means_all_of_them(self):
+        for code in ("BBRHY", "DCKLS", "CLDKN"):
+            self.assertEqual(station(code).lift_platforms, frozenset({model.ALL_PLATFORMS}), code)
+
+
+class AReviewedEntryExpiresWithThePageItQuotes(unittest.TestCase):
+    """The station pages are refetched monthly because they get reworded."""
+
+    def test_the_quoted_sentence_is_what_keeps_the_entry_alive(self):
+        live = model.verdict(
+            station("RAHNY"), "lift", "The lift at platform 1 is out of service."
+        )
+        self.assertEqual(live.state, "alternative")
+
+    def test_a_reworded_page_withdraws_the_claim(self):
+        # The ramp is removed during works and the page is rewritten. Saying
+        # "another step-free way remains" on a sentence that has been deleted is
+        # the one error this module exists to prevent.
+        reworded = station("RAHNY")._replace(
+            platform_access="Lift to platform 1\nRamp to platform 2"
+        )
+        result = model.verdict(reworded, "lift", "The lift at platform 1 is out of service.")
+        self.assertEqual(result.state, "unknown")
+        self.assertIn("no longer on Irish Rail's page", result.detail)
+
+    def test_it_does_not_quietly_become_a_loss_instead(self):
+        # "unknown" and not "lost": the review said there was a way round, and a
+        # reworded page is not evidence that there is not.
+        reworded = station("RAHNY")._replace(platform_access="Lift to platform 1")
+        self.assertNotEqual(
+            model.verdict(reworded, "lift", "The lift at platform 1 is out.").state, "lost"
+        )
+
+    def test_every_entry_still_matches_the_prose_it_quotes(self):
+        # Fixture-level guard; tests/test_site_real.py checks the live snapshot.
+        for (code, _), quoted in model.STEP_FREE_ALTERNATIVES.items():
+            if code in PROSE:
+                self.assertIn(quoted, " ".join(model.plain(PROSE[code]).split()), code)
 
 
 class WhenItCannotTell(unittest.TestCase):

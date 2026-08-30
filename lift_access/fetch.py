@@ -29,6 +29,10 @@ USER_AGENT = "lifts-status/1.0 (+https://github.com/baz8080/lifts)"
 # minutes; there is no deadline on a monthly job.
 DELAY_SECONDS = 0.3
 
+# A 5xx or a dropped connection on one station is usually transient. Widens per
+# attempt, because the alternative is failing a monthly job over one blip.
+BACKOFF_SECONDS = 5
+
 
 def _get(url, timeout=60):
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
@@ -83,30 +87,39 @@ def station_slugs(payload):
     return []
 
 
-def fetch_stations(log=print):
-    """Every station payload, verbatim, as `{slug, http_status, body}` records.
+def fetch_stations(log=print, attempts=3):
+    """Every station payload, verbatim, and the slugs it could not get.
 
-    The body is kept as the text that came back rather than as parsed JSON: it is
-    the artefact, and the snapshot has to be re-derivable when the parse changes.
+    Returns both. The caller must not write a partial snapshot: a station missing
+    from it is not a station without facts, it is a station whose published
+    verdict silently becomes "unknown" and which drops out of the denominator,
+    and the newest file on disk is the one the site reads. Transient failures are
+    retried before a slug is given up on.
     """
     _, index_body = _get(INDEX_URL)
     slugs = station_slugs(json.loads(index_body))
     log(f"{len(slugs)} stations listed")
-    records = []
+    records, failed = [], {}
     for n, slug in enumerate(slugs, 1):
         url = f"{SITE}/en-ie/station/{slug}/_payload.json"
-        try:
-            status, body = _get(url)
-        except urllib.error.HTTPError as exc:
-            status, body = exc.code, ""
-        except OSError as exc:
-            log(f"  {slug}: {exc}")
-            status, body = 0, ""
-        records.append({"slug": slug, "http_status": status, "body": body})
+        for attempt in range(attempts):
+            try:
+                status, body = _get(url)
+                if status == 200 and body:
+                    records.append({"slug": slug, "http_status": status, "body": body})
+                    failed.pop(slug, None)
+                    break
+                failed[slug] = f"HTTP {status}, {len(body)} bytes"
+            except urllib.error.HTTPError as exc:
+                failed[slug] = f"HTTP {exc.code}"
+            except OSError as exc:
+                failed[slug] = str(exc)
+            if attempt < attempts - 1:
+                time.sleep(BACKOFF_SECONDS * (attempt + 1))
         if n % 25 == 0:
             log(f"  {n}/{len(slugs)}")
         time.sleep(DELAY_SECONDS)
-    return records
+    return records, failed
 
 
 def write_snapshot(path, records, fetched_at=None):

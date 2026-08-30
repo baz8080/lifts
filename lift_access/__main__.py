@@ -29,11 +29,22 @@ def refresh(args):
     directory = Path(args.data_dir) / SNAPSHOT_DIR
     stamp = datetime.now(UTC).strftime("%Y%m%d")
 
-    records = fetch.fetch_stations()
-    failed = [r["slug"] for r in records if r["http_status"] != 200]
+    records, failed = fetch.fetch_stations()
     if failed:
-        print(f"warning: {len(failed)} station(s) did not return 200: {', '.join(failed[:5])}",
-              file=sys.stderr)
+        # Refused, not warned. `latest_snapshot` reads the newest file, so a
+        # partial one shadows the last good snapshot permanently, and the damage
+        # is invisible: those stations lose their verdicts and the denominator
+        # quietly shrinks. An 8 MB JSONL diff will not show a reviewer 38 empty
+        # bodies either.
+        for slug, why in sorted(failed.items())[:10]:
+            print(f"  {slug}: {why}", file=sys.stderr)
+        print(
+            f"error: {len(failed)} of {len(failed) + len(records)} stations could not be "
+            "fetched, so no snapshot was written. The last good snapshot is untouched; "
+            "rerun when irishrail.ie is healthy.",
+            file=sys.stderr,
+        )
+        return 1
     path = fetch.write_snapshot(directory / f"{STATIONS_PREFIX}-{stamp}.jsonl", records)
     print(f"wrote {path} ({len(records)} stations)")
     return 0

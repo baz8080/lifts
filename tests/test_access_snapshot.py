@@ -86,6 +86,65 @@ class WritingASnapshot(unittest.TestCase):
             )
 
 
+class APartialFetchIsRefused(unittest.TestCase):
+    """A station missing from the snapshot is not a station without facts.
+
+    It is a station whose published verdict silently becomes "unknown" and which
+    drops out of the denominator, and `latest_snapshot` reads the newest file, so
+    a partial one shadows the last good snapshot permanently.
+    """
+
+    def _run(self, failing, attempts=2):
+        calls = []
+
+        def stub(url, timeout=60):
+            if url == fetch.INDEX_URL:
+                return 200, json.dumps(PAYLOAD)
+            slug = url.rsplit("/", 2)[-2]
+            calls.append(slug)
+            if slug in failing:
+                raise OSError("HTTP Error 503: Service Unavailable")
+            return 200, json.dumps({"slug": slug})
+
+        original, fetch._get = fetch._get, stub
+        delay, backoff = fetch.DELAY_SECONDS, fetch.BACKOFF_SECONDS
+        fetch.DELAY_SECONDS = fetch.BACKOFF_SECONDS = 0
+        try:
+            return fetch.fetch_stations(log=lambda *a: None, attempts=attempts) + (calls,)
+        finally:
+            fetch._get, fetch.DELAY_SECONDS, fetch.BACKOFF_SECONDS = original, delay, backoff
+
+    def test_a_failed_station_is_named_not_dropped(self):
+        records, failed, _ = self._run({"carlow"})
+        self.assertEqual([r["slug"] for r in records], ["athy"])
+        self.assertIn("carlow", failed)
+        self.assertIn("503", failed["carlow"])
+
+    def test_it_retries_before_giving_up(self):
+        _, _, calls = self._run({"carlow"}, attempts=3)
+        self.assertEqual(calls.count("carlow"), 3)
+
+    def test_a_clean_run_reports_nothing_failed(self):
+        records, failed, _ = self._run(set())
+        self.assertEqual(len(records), 2)
+        self.assertEqual(failed, {})
+
+    def test_a_200_with_an_empty_body_counts_as_a_failure(self):
+        # irishrail.ie answering with an empty payload is not a station with no
+        # facts; snapshot.load skips empty bodies, so it would vanish silently.
+        original, fetch._get = fetch._get, lambda url, timeout=60: (
+            (200, json.dumps(PAYLOAD)) if url == fetch.INDEX_URL else (200, "")
+        )
+        delay, backoff = fetch.DELAY_SECONDS, fetch.BACKOFF_SECONDS
+        fetch.DELAY_SECONDS = fetch.BACKOFF_SECONDS = 0
+        try:
+            records, failed = fetch.fetch_stations(log=lambda *a: None, attempts=1)
+        finally:
+            fetch._get, fetch.DELAY_SECONDS, fetch.BACKOFF_SECONDS = original, delay, backoff
+        self.assertEqual(records, [])
+        self.assertEqual(sorted(failed), ["athy", "carlow"])
+
+
 class WithNoSnapshotAtAll(unittest.TestCase):
     """The site built without station facts for months and still has to."""
 

@@ -65,6 +65,29 @@ Neither Raheny nor Cork has ever had a notice in the corpus, so the chip has
 never rendered on the live site. `tests/test_site_render.py` is the only thing
 exercising it, which is why it is tested rather than left to be discovered.
 
+## Three things a review caught
+
+**A summary sentence is not a per-platform claim.** Pearse opens "Via ramps,
+stairs, escalators, and lifts." - a lift, no platform number. Counted as
+covering the station, it made the page's own "Ramp to platform 1" a lift
+platform, and a notice about platform 1 published "Platform 1 is reached by
+lift". Specific beats general now: a bare-lift segment means every platform only
+when no other segment names one.
+
+**A reviewed entry expires with the page it quotes.** `STEP_FREE_ALTERNATIVES`
+cites a sentence, and these pages are refetched monthly because Irish Rail
+rewords them. If the sentence is gone the entry stops applying and the verdict
+becomes `unknown`, not `lost`: the review said there was a way round, and a
+reworded page is not evidence there is not. `tests/test_site_real.py` fails
+loudly so somebody looks again.
+
+**A partial fetch is refused, not warned about.** `latest_snapshot` reads the
+newest file, so a snapshot written during an irishrail.ie wobble shadows the
+last good one permanently, and the damage is invisible: those stations lose
+their verdicts to "not in the station snapshot" and the denominator quietly
+shrinks. Nobody spots 38 empty bodies in an 8 MB diff. Transient failures are
+retried, and if any station is still missing nothing is written at all.
+
 ## The safe direction
 
 A reader told access is gone when it was not has made one wasted check. A reader

@@ -147,6 +147,22 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
                     f"{o.code} platform {platform} claimed an alternative that nobody reviewed",
                 )
 
+    def test_every_reviewed_alternative_still_matches_the_live_page(self):
+        # The entries quote sentences off station pages that are refetched every
+        # month precisely because Irish Rail rewords them. This is the check that
+        # notices; the model withdraws the claim on its own, but silently.
+        for (code, platform), quoted in access_model.STEP_FREE_ALTERNATIVES.items():
+            station = self.facts.station(code)
+            if station is None:
+                continue
+            prose = " ".join((station.platform_access or "").split())
+            self.assertIn(
+                quoted,
+                prose,
+                f"{code} platform {platform}: the reviewed sentence is gone from the page. "
+                "Read it again and update or drop the entry.",
+            )
+
     def test_an_escalator_never_removes_step_free_access(self):
         for o in self.outages:
             if o.kind != "escalator":

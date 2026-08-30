@@ -123,11 +123,16 @@ def platforms_named(text):
 def read_platform_access(fragment):
     """(lift_platforms, claims_lift, denies_lift) from one station's prose.
 
-    A segment that names a lift and no platform is taken to mean every platform,
-    which is what "Lifts and footbridge to all platforms" and "Lift to platforms"
-    both say.
+    A segment that names a lift and no platform means every platform - "Lifts and
+    footbridge to all platforms", "Lift to platforms" - but **only if no other
+    segment names one specifically**. Pearse opens with a summary, "Via ramps,
+    stairs, escalators, and lifts.", and then says "Ramp to platform 1" and "Lift
+    or stairs to platform 2". Read as a per-platform claim the summary makes the
+    lift serve platform 1 too, and the site tells a reader the ramp platform lost
+    step-free access. Specific beats general, and a station that names none is
+    the only one that gets ALL_PLATFORMS.
     """
-    lift_platforms, claims, denies = set(), False, False
+    specific, general, claims, denies = set(), False, False, False
     for segment in segments(fragment):
         if DENIES_LIFT.search(segment):
             denies = True
@@ -136,8 +141,13 @@ def read_platform_access(fragment):
             continue
         claims = True
         named = platforms_named(segment)
-        lift_platforms.update(named or (ALL_PLATFORMS,))
-    return frozenset(lift_platforms), claims, denies
+        if named:
+            specific.update(named)
+        else:
+            general = True
+    if specific:
+        return frozenset(specific), claims, denies
+    return frozenset({ALL_PLATFORMS} if general else ()), claims, denies
 
 
 def station_from_node(node, slug):
@@ -185,6 +195,20 @@ def affected_platforms(text):
             if label and label not in found:
                 found.append(label)
     return tuple(found)
+
+
+def _alternative(station, platform):
+    """Is there a reviewed step-free way round the lift, and does the page still say so?
+
+    The entry quotes a sentence, and the page it was quoted from is refetched
+    every month precisely because Irish Rail rewords these. If the sentence has
+    gone, the review no longer describes the station: the entry stops applying
+    until somebody looks again. Saying "another step-free way remains" on the
+    strength of a sentence that has been deleted is the exact error this module
+    is built to avoid.
+    """
+    quoted = STEP_FREE_ALTERNATIVES.get((station.code, platform))
+    return bool(quoted) and quoted in " ".join((station.platform_access or "").split())
 
 
 def _unknown(platforms, reason):
@@ -248,13 +272,22 @@ def verdict(station, kind, text):
             f"for {station.name} does not list a lift at.",
         )
 
-    lost = [p for p in served if (station.code, p) not in STEP_FREE_ALTERNATIVES]
+    lost = [p for p in served if not _alternative(station, p)]
     if not lost:
         quoted = STEP_FREE_ALTERNATIVES[(station.code, served[0])]
         return Verdict(
             "alternative",
             tuple(served),
             f'Irish Rail\'s page names another step-free way here: "{quoted}".',
+        )
+
+    stale = [p for p in lost if (station.code, p) in STEP_FREE_ALTERNATIVES]
+    if stale:
+        return _unknown(
+            tuple(lost),
+            f"A reviewed step-free alternative is on file for platform {', '.join(stale)} "
+            f"at {station.name}, but the sentence it quotes is no longer on Irish Rail's "
+            "page. It needs reviewing again before this can be read either way.",
         )
 
     listed = ", ".join(lost)
