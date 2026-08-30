@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import html as html_mod
 import json
 import re
 import unittest
+import urllib.parse
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from lift_access import model as access_model
+from lift_access import snapshot
 from lift_site import model, render
 from tests.test_site_model import NOW, T0, SiteModelCase, escalator, lift
 
@@ -416,3 +420,134 @@ class TestMonths(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestStepFreeChip(SiteModelCase):
+    """The chip for the two stations with a lift-independent step-free route.
+
+    Neither Raheny nor Cork has ever had a notice in the real corpus, so this is
+    the only thing exercising the chip. It is here rather than nowhere because a
+    marker that has never rendered is a marker nobody has checked.
+    """
+
+    def _facts(self, code, name, prose):
+        lift_platforms, claims, denies = access_model.read_platform_access(prose)
+        station = access_model.Station(
+            code=code, name=name, slug=code.lower(), latitude=None, longitude=None,
+            platform_access=access_model.plain(prose), ticket_office_access="",
+            lift_platforms=lift_platforms,
+            claims_lift=claims, denies_lift=denies,
+        )
+        return snapshot.Facts({code: station})
+
+    def _build(self, code, name, prose):
+        self.poll(T0, [lift(station=name, code=code)])
+        outages = self.load()
+        site = self.dir / "site"
+        facts = self._facts(code, name, prose)
+        data = render.write(site, outages, NOW, self.until, facts)
+        page = (site / "s" / f"{data['slugs'][code]}.html").read_text(encoding="utf-8")
+        return data, page
+
+    def test_raheny_is_chipped_and_says_which_line_earned_it(self):
+        data, page = self._build(
+            "RAHNY",
+            "Raheny",
+            "<p>Lift or ramp to platform 1 (City Centre and Southbound)<br>"
+            "Ramp to platform 2 (Northbound)</p>",
+        )
+        self.assertEqual(data["stepfree"], ["RAHNY"])
+        self.assertIn("sfchip", page)
+        self.assertIn(render.STEP_FREE_CHIP, page)
+        self.assertIn("Lift or ramp to platform 1", page)
+
+    def test_a_station_with_no_reviewed_entry_is_not_chipped(self):
+        data, page = self._build(
+            "ATHY", "Athy", "<p>Level to platform 1<br>Lift to platform 2</p>"
+        )
+        self.assertEqual(data["stepfree"], [])
+        self.assertNotIn("sfchip", page.split("</style>", 1)[-1])
+
+    def test_a_station_missing_from_the_snapshot_is_not_chipped(self):
+        # The chip asserts something about prose. Without the station there is
+        # no prose, and the page's own "Getting to the platforms" card is empty,
+        # so the chip would be an unexplained accessibility claim.
+        self.poll(T0, [lift(station="Raheny", code="RAHNY")])
+        site = self.dir / "site"
+        data = render.write(site, self.load(), NOW, self.until, snapshot.Facts({}))
+        self.assertEqual(data["stepfree"], [])
+        page = (site / "s" / f"{data['slugs']['RAHNY']}.html").read_text(encoding="utf-8")
+        self.assertNotIn("sfchip", page.split("</style>", 1)[-1])
+
+    def test_a_reworded_page_withdraws_the_chip_too(self):
+        # The chip and the verdict ask the same question, so they cannot
+        # disagree about whether the reviewed sentence is still there.
+        self.poll(T0, [lift(station="Raheny", code="RAHNY")])
+        facts = self._facts("RAHNY", "Raheny", "<p>Lift to platform 1</p>")
+        site = self.dir / "site"
+        data = render.write(site, self.load(), NOW, self.until, facts)
+        self.assertEqual(data["stepfree"], [])
+
+    def test_a_derived_claim_says_it_is_derived(self):
+        # Nothing here is a survey. The prose is hand-written and this project
+        # has already found a typo, a self-contradiction and an omitted
+        # escalator in it, so the page says so where the claims are.
+        _, page = self._build("ATHY", "Athy", "<p>Level to platform 1<br>Lift to platform 2</p>")
+        self.assertIn("not a survey", page)
+        self.assertIn("has been wrong before", page)
+
+    def test_a_reader_who_knows_better_is_asked_to_say_so(self):
+        _, page = self._build("ATHY", "Athy", "<p>Level to platform 1<br>Lift to platform 2</p>")
+        self.assertIn(render.CORRECTION_PROMPT, page)
+        self.assertIn("issues/new?title=Station+access%3A+Athy", page)
+
+    def test_the_permalink_in_the_report_points_at_the_real_page(self):
+        # The site names pages from the notice's station name and the snapshot
+        # has its own. Re-deriving the slug sent Clondalkin and Hazelhatch to
+        # pages that do not exist.
+        data, page = self._build(
+            "HZLCH", "Hazelhatch", "<p>Lift to platform 2</p>"
+        )
+        m = re.search(r'href="(https://github\.com/baz8080/lifts/issues/new[^"]*)"', page)
+        self.assertIsNotNone(m)
+        query = urllib.parse.parse_qs(
+            urllib.parse.urlparse(html_mod.unescape(m.group(1))).query
+        )
+        self.assertEqual(query["title"], ["Station access: Hazelhatch"])
+        self.assertIn(f"/s/{data['slugs']['HZLCH']}.html", query["body"][0])
+
+    def test_the_app_only_caveats_stations_it_has_facts_for(self):
+        # A global flag printed "worked out from Irish Rail's page" above "this
+        # station is not in the station snapshot".
+        data, _ = self._build("ATHY", "Athy", "<p>Lift to platform 2</p>")
+        self.assertEqual(data["access"], ["ATHY"])
+        markup = (Path(render.TEMPLATES) / "site.html").read_text(encoding="utf-8")
+        self.assertIn("D.access.indexOf(code) >= 0", markup)
+
+    def test_the_app_carries_the_caveat_too(self):
+        # It renders verdicts without the card that holds their source.
+        data, _ = self._build("ATHY", "Athy", "<p>Lift to platform 2</p>")
+        self.assertEqual(data["access_caveat"], render.ACCESS_CAVEAT)
+        markup = (Path(render.TEMPLATES) / "site.html").read_text(encoding="utf-8")
+        self.assertIn("D.access_caveat", markup)
+
+    def test_no_snapshot_means_no_caveat_because_there_is_no_claim(self):
+        self.poll(T0, [lift()])
+        data = render.write(self.dir / "site", self.load(), NOW, self.until)
+        self.assertIsNone(data["access_caveat"])
+
+    def test_the_chip_does_not_claim_the_station_is_accessible(self):
+        # "Accessible station" is a far bigger claim than the reviewed list
+        # makes, and the international access symbol would read as one.
+        for text in (render.STEP_FREE_CHIP, render.STEP_FREE_TITLE):
+            self.assertNotIn("accessible", text.lower())
+            self.assertNotIn("♿", text)
+
+    def test_the_two_renderers_use_the_same_words(self):
+        markup = (Path(render.TEMPLATES) / "site.html").read_text(encoding="utf-8")
+        self.assertIn(f'var STEP_FREE_CHIP = "{render.STEP_FREE_CHIP}"', markup)
+        self.assertIn(f'var STEP_FREE_TITLE = "{render.STEP_FREE_TITLE}"', markup)
+
+    def test_the_app_chips_the_row_and_the_detail_head(self):
+        markup = (Path(render.TEMPLATES) / "site.html").read_text(encoding="utf-8")
+        self.assertEqual(markup.count("stepFreeChip("), 3)  # definition, row, detail

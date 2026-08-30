@@ -175,6 +175,17 @@ function gradeChip(g, label) {
   return '<span class="gradechip g-' + (g || "none") + '" role="img" aria-label="' +
     esc(label) + '" title="' + esc(label) + '">' + (g || "-") + "</span>";
 }
+// Deliberately narrow wording: "Accessible station" would be a far bigger claim
+// than the reviewed list makes. Mirrored in render._step_free_chip().
+var STEP_FREE_CHIP = "Step-free route";
+var STEP_FREE_TITLE = "Irish Rail's page names a step-free way to a platform here that does not use the lift";
+
+function stepFreeChip(code) {
+  if (!D.stepfree || D.stepfree.indexOf(code) < 0) return "";
+  return '<span class="sfchip" role="img" aria-label="' + esc(STEP_FREE_TITLE) +
+    '" title="' + esc(STEP_FREE_TITLE) + '">' + esc(STEP_FREE_CHIP) + "</span>";
+}
+
 function gradeLabel(g, where) {
   return (g ? "Grade " + g : "No grade") + " for " + where;
 }
@@ -213,7 +224,8 @@ function renderOverview() {
     var m = r.m;
     return '<div class="place"><div class="row" onclick="go(\'' + esc(r.code) + '\')">' +
       '<div class="cname">' + gradeChip(gradeFor(m[4]), gradeLabel(gradeFor(m[4]), r.name)) +
-        '<a href="s/' + D.slugs[r.code] + '.html" onclick="event.preventDefault()">' + esc(r.name) + "</a></div>" +
+        '<a href="s/' + D.slugs[r.code] + '.html" onclick="event.preventDefault()">' + esc(r.name) + "</a>" +
+        stepFreeChip(r.code) + "</div>" +
       bars(m[0], m[5], curMonth) +
       '<div class="stats"><div class="counts">' +
         "<b>" + m[1] + "</b><span>out of service</span>" +
@@ -230,7 +242,10 @@ function renderOverview() {
   document.getElementById("natline").innerHTML =
     "<strong>" + monthLabelLong(curMonth) + (partial ? " so far" : "") + ":</strong> " +
     (n[1]
-      ? n[2] + " out of service and " + n[3] + " planned works across " + plural(n[0], "station")
+      ? n[2] + " out of service and " + n[3] + " planned works across " +
+        (D.network
+          ? n[0] + " of " + D.network.stations + " stations"
+          : plural(n[0], "station"))
       : "no lift or escalator notices listed");
 
   document.getElementById("basis").innerHTML =
@@ -249,6 +264,7 @@ function renderOverview() {
     // at 100% with two planned-works cells drawn on it.
     tile(n[4] == null ? "-" : n[4] + "%",
          "of days with lifts and escalators available, across the stations named this month"),
+
     // the latest month's counts are the live ones, so they read as the state of
     // the network now; a past month's are what it ended the month with
     live ? tile(c.lifts, one(c.lifts, "lift") + " reported out when we last checked")
@@ -319,7 +335,7 @@ function renderStation() {
   var head =
     '<a class="back" href="#" onclick="event.preventDefault();go(null)">← All stations</a>' +
     '<div class="chead">' + gradeChip(latestGrade, gradeLabel(latestGrade, latestLabel)) +
-      "<h2>" + esc(name) + "</h2></div>" +
+      "<h2>" + esc(name) + "</h2>" + stepFreeChip(code) + "</div>" +
     '<div class="sub">' +
       "Irish Rail station code " + esc(code) + " · graded on " + latestLabel +
       " · every month since collection began, newest first<br>" +
@@ -329,6 +345,17 @@ function renderStation() {
       // station is in the link text because a screen reader lists links
       // stripped of their context.
       '<a href="s/' + D.slugs[code] + '.html">Permanent link to ' + esc(name) + " station</a></div>" +
+    // Only where the snapshot actually has this station: the caveat asserts that
+    // a derivation happened, and above "not in the station snapshot" it would
+    // contradict the very verdict it is explaining.
+    (D.access_caveat && D.access && D.access.indexOf(code) >= 0
+      ? '<p class="acccav">' + esc(D.access_caveat) +
+        ' <a href="' + esc(D.issues_url) + "?title=" +
+        encodeURIComponent("Station access: " + name) + "&body=" +
+        encodeURIComponent("Station: " + name + " (" + code + ")\n" +
+          D.base_url + "/s/" + D.slugs[code] + ".html\n\nWhat this gets wrong, and how you know:\n") +
+        '">' + esc(D.correction_prompt) + "</a></p>"
+      : "") +
     '<div class="legend">' + D.legend + "</div>";
 
   var sections = monthSections(months, stats);
@@ -367,8 +394,25 @@ function summaryBits(firstSeen, end, ongoing, start, listedEnd, leadDays) {
   return bits;
 }
 
+var ACCESS_LABEL = {
+  lost: "No step-free access",
+  alternative: "Another step-free way",
+  escalator: "Not a step-free route",
+  unknown: "Effect on step-free access unknown"
+};
+
+function accessHtml(a) {
+  // The sentence is built once, in lift_access.model.verdict, and shipped whole.
+  // Every other string here is rebuilt in JS to keep the payload small; this one
+  // is not, because a wording that drifts from the static page could tell a
+  // reader access remains at a station where it is gone.
+  if (!a) return "";
+  return '<div class="acc acc-' + esc(a[0]) + '"><b>' +
+    esc(ACCESS_LABEL[a[0]] || a[0]) + "</b> " + esc(a[1]) + "</div>";
+}
+
 function caseHtml(k) {
-  // [id, kind, planned, firstSeen, end, ongoing, start, listedEnd, head, text, updates, hours, leadDays]
+  // [id, kind, planned, firstSeen, end, ongoing, start, listedEnd, head, text, updates, hours, leadDays, access]
   var kind = k[1], planned = k[2], firstSeen = k[3], end = k[4], ongoing = k[5], start = k[6], listedEnd = k[7], text = k[9], ups = k[10];
   var dur = k[11];  // computed in case_record, offset-aware
   var bits = summaryBits(firstSeen, end, ongoing, start, listedEnd, k[12]);
@@ -378,6 +422,7 @@ function caseHtml(k) {
     '<span class="when">' + (dur == null ? "" : "listed " + listed(dur) + (ongoing ? " so far" : "")) + "</span></div>" +
     '<div class="sum">' + bits.map(esc).join(" · ") + "</div>" +
     (text ? '<div class="txt">' + esc(text) + "</div>" : "") +
+    accessHtml(k[13]) +
     (ups && ups.length
       ? '<ul class="tl">' + ups.map(function (u) {
           return "<li><time>" + whenY(u[0]) + "</time>notice reissued: " + esc(u[2] || u[1]) + "</li>";

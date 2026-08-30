@@ -1,8 +1,11 @@
 # Working in this repository
 
-Two things live here: `lift_status`, a collector that snapshots Irish Rail's
-realtime service-message feed every 30 minutes, and `lift_site`, a static site
-generator that turns the result into https://baz8080.github.io/lifts. **Both run
+Three things live here: `lift_status`, a collector that snapshots Irish Rail's
+realtime service-message feed every 30 minutes; `lift_site`, a static site
+generator that turns the result into https://baz8080.github.io/lifts; and
+`lift_access`, which fetches what each station *has* so an outage can be read
+against it. Only the first goes on the Pi - `scripts/install-native.sh` copies
+`lift_status` and `scripts`, nothing else. **All three run
 on the standard library alone** - `pyproject.toml` declares no runtime
 dependencies and exists only for ruff and the dev tooling, because the collector
 is installed on a Raspberry Pi by copying files. Keep it that way.
@@ -12,6 +15,8 @@ uv run python -m lift_status --data-dir <dir> poll      # one collection pass
 uv run python -m lift_status --data-dir <dir> rebuild   # replay JSONL into lift_status.db
 uv run python -m lift_status --data-dir <dir> stats
 uv run python -m lift_site --data-dir <dir>             # build out/site/
+uv run python -m lift_access --data-dir <dir> refresh   # station facts (monthly, not on the Pi)
+uv run python -m lift_access --data-dir <dir> report    # every verdict beside its source prose
 uv run --group dev ruff check
 uv run python -m unittest discover -s tests -t .
 ```
@@ -100,6 +105,19 @@ merged with `sort -u`.
 - **Every lift notice names one location code**; `eventStops[0].sStop` is the
   full station name. 131 delay notices had empty `locationCodes` and sit in
   `unidentifiable_items` - irrelevant to the site.
+- **`platformAccess` prose is a description, not a route graph, and its "and"
+  is a sequence.** Irish Rail's station pages say how each platform is reached.
+  "All platforms can be accessed via lifts and ramps" means you need both, not
+  either - reading it as a choice publishes "access remains" where access is
+  gone. Two stations in the country name a step-free way round a lift.
+  `notes/station-access.md`.
+- **The lift-call sentence is boilerplate.** "To access the lift, you must call
+  via the help point..." is template text, and at Greystones, Killiney and
+  Donabate it is the only mention of a lift. Strip it before matching, or you
+  invent lifts.
+- **`wheelchairAvailability` is not accessibility.** It means a wheelchair can
+  be borrowed at that station. The station `alert` field is stale too: it is the
+  last alert ever posted, never cleared, with end dates back to 2014.
 - **A run that failed is not a run that saw nothing.** `poll.py` enforces this
   structurally; the site's horizon is `MAX(started_at_utc)` over `outcome='ok'`
   runs only, and days past it are "no data".
@@ -124,6 +142,12 @@ merged with `sort -u`.
 | The Pi pushes twice daily (midnight and noon local) and the site builds after each slot; the stale banner trips at 16h - above the widest legitimate push gap (~14h), below a missed midnight push (17h+) | `STALE_AFTER` in `lift_site/render.py` |
 | Banner, national heading, legend placement, search widget and footer follow the shared design language (aligned 2026-08-26); the horizon left the header stamp for the freshness chip's hover title and the static pages' sub line | `notes/site.md` § The design alignment pass |
 | Every drill-down links to its static page from its own line under the heading; the wording follows the content relationship, which gives two categories: esb and uisce both say "every month ... on one page" because their pages carry months their views do not, while this site's page is the same content as its view and so names the address instead | `notes/site.md` § The permalink affordance moved out of the footer |
+| irishrail.ie `stationCode` is the same code space as `locationCodes`, so there is no name-to-code join to build | `notes/station-access.md` § The sources |
+| "and" in `platformAccess` is a sequence, not a choice; a lift out removes step-free access unless one of two reviewed exceptions applies | `notes/station-access.md` § "and" is a sequence |
+| Escalators are not step-free, so an escalator outage removes a convenience, not access. The grade still weighs them the same, so the two disagree in public: open as issue #32 | `notes/station-access.md` § Escalators |
+| OpenStreetMap was carried as a second opinion and removed: it changed no verdict, its one signal was redundant, and it has no `level` tags outside the Dublin termini | `notes/station-access.md` § OpenStreetMap |
+| GTFS, GTFS-R, the NTA developer API, NaPTAN, PTIMS and OSM all carry no station accessibility data, and the GTFS fields Google and Apple read for accessible routing are absent too. Scraping the prose is the last resort, not the lazy option | `notes/station-access.md` § Why scraping prose is the only option |
+| NeTEx and SIRI-FM are the formats that would carry this. Ireland publishes neither, and 2017/1926 only obliges publishing data that already exists. NeTEx appearing is the one thing worth watching for | `notes/station-access.md` § The regulation |
 | The design layer is shared with uisce and esb via `../statusui`, a uv git dependency pinned in `uv.lock` - edit upstream, then `../statusui/rollout.sh` bumps all three sites. Vendored copies were tried first and drifted within a day. `lift_site/site.css` is this site's own | `notes/site.md` § The vendored copy became a pinned dependency; statusui's README |
 
 Decisions go in `notes/`, dated, with the rejected alternatives and their

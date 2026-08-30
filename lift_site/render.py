@@ -11,17 +11,31 @@ never put a per-outage record in `data.js`.
 from __future__ import annotations
 
 import html
+import urllib.parse
 from collections import defaultdict
 from datetime import timedelta
 from pathlib import Path
 
 import statusui
 
+from lift_access import model as access_model
 from lift_status.parse import DUBLIN
 
 from . import model
 
 BASE_URL = "https://baz8080.github.io/lifts"
+ISSUES_URL = "https://github.com/baz8080/lifts/issues/new"
+
+# Said wherever a derived access claim appears. The derivation is careful and it
+# is still an inference off a page somebody typed: this project has already found
+# a typo in it, a self-contradiction, and a station whose page omits an escalator
+# that exists. People who use these stations know things no source here records.
+ACCESS_CAVEAT = (
+    "Worked out from Irish Rail's own station page, which is written by hand and "
+    "has been wrong before. It is a careful reading, not a survey, and it does not "
+    "know about anything the page leaves out."
+)
+CORRECTION_PROMPT = "Know this station? Tell us what this gets wrong."
 
 TEMPLATES = Path(__file__).parent
 SITE_HTML = TEMPLATES / "site.html"
@@ -70,7 +84,7 @@ def station_slugs(stations):
     return slugs
 
 
-def build(outages, now, until):
+def build(outages, now, until, facts=None):
     """Assemble every value the templates need, and nothing they do not.
 
     `now` fixes only what is still in the future; `until` is where the collected
@@ -125,8 +139,36 @@ def build(outages, now, until):
         "escalators": sum(1 for o in live if o.kind == "escalator"),
     }
 
+    # Hand-reviewed in lift_access, never inferred from the prose.
+    step_free = sorted(c for c in stations if _step_free_note(c, facts))
+
+    # The feed names a station only when something is wrong with it, so a count
+    # of them reads as the whole network without this.
+    network = None
+    if facts:
+        tally = facts.tally()
+        network = {
+            "stations": len(facts.stations),
+            "with_lift": tally["yes"],
+            "no_lift": tally["no"],
+        }
+
     data = {
         "generated": _stamp(now),
+        "network": network,
+        "stepfree": step_free,
+        # Which stations the snapshot actually has prose for. The app renders
+        # verdicts without the card that carries their source, and a single
+        # global caveat printed "worked out from Irish Rail's page" above "this
+        # station is not in the station snapshot".
+        "access": sorted(c for c in stations if facts and facts.station(c)),
+        # The app shows verdicts without the card that carries their source, so
+        # the caveat travels with the payload rather than living only on the
+        # static pages.
+        "access_caveat": ACCESS_CAVEAT if facts else None,
+        "correction_prompt": CORRECTION_PROMPT,
+        "issues_url": ISSUES_URL,
+        "base_url": BASE_URL,
         # What the build knows, as distinct from when it ran. Without this the
         # page dates itself by the clock and a reader cannot tell a quiet week
         # from a collector that stopped.
@@ -156,12 +198,18 @@ def build(outages, now, until):
     return data, by_station, months
 
 
-def case_record(o):
+def case_record(o, facts=None):
     """One outage, as compact as it can be while staying readable in the file.
 
     The two durations are computed here, from the offset-aware instants, and
     shipped: `_short` renders Dublin wall-clock without an offset, so anything
     subtracting those strings loses the hour at the October clock change.
+
+    The access verdict is shipped as a finished sentence rather than as parts.
+    Everything else in this record is re-rendered by site.html's caseHtml(), so
+    the wording lives twice; this one must not, because getting it wrong tells a
+    reader access remains where it is gone. One function in lift_access writes
+    it and both pages print it.
     """
     lead = None
     if o.start.astimezone(DUBLIN).date() < o.first_seen.astimezone(DUBLIN).date():
@@ -184,10 +232,19 @@ def case_record(o):
         [[_short(when), head, text or ""] for when, head, text in o.updates],
         round((o.end - o.first_seen).total_seconds() / 3600.0, 4),
         lead,
+        _access(o, facts),
     ]
 
 
-def shard(outages, months, until):
+def _access(o, facts):
+    """[state, sentence] for one outage, or None when no snapshot is loaded."""
+    if not facts:
+        return None
+    result = facts.verdict(o.code, o.kind, o.text)
+    return [result.state, result.detail]
+
+
+def shard(outages, months, until, facts=None):
     """Every outage at one station, grouped by month.
 
     An outage is listed under every month it overlaps, which is exactly the set
@@ -200,7 +257,7 @@ def shard(outages, months, until):
         record = None
         for ym, lo, hi in windows:
             if model.listed_in(o, lo, hi):
-                record = case_record(o) if record is None else record
+                record = case_record(o, facts) if record is None else record
                 by_month[ym].append(record)
     return by_month
 
@@ -242,10 +299,98 @@ def summary_bits(first_seen, end, ongoing, start, listed_end, lead_days=None):
     return bits
 
 
+ACCESS_LABEL = {
+    "lost": "No step-free access",
+    "alternative": "Another step-free way",
+    "escalator": "Not a step-free route",
+    "unknown": "Effect on step-free access unknown",
+}
+
+
+def correction_url(name, code, page_slug):
+    """A prefilled issue, which is the only feedback channel a static site has.
+
+    Named and slugged from what the page is actually called, not from the
+    snapshot: the site takes a station's display name from its newest notice and
+    the snapshot has its own, and they differ. Re-deriving the slug here pointed
+    Clondalkin's and Hazelhatch's reports at pages that do not exist, and gave
+    the app and the static page two different titles for the same station.
+    """
+    body = (
+        f"Station: {name} ({code})\n"
+        f"{BASE_URL}/s/{page_slug}.html\n\n"
+        "What this gets wrong, and how you know:\n"
+    )
+    query = urllib.parse.urlencode({"title": f"Station access: {name}", "body": body})
+    return f"{ISSUES_URL}?{query}"
+
+
+def _access_html(code, data, facts):
+    """What Irish Rail's own page says this station has, quoted back.
+
+    Quoted rather than summarised: every verdict on this page is derived from
+    these sentences, and a reader who can see them can see when the derivation
+    has read one wrong. That has already happened twice - see
+    notes/station-access.md.
+
+    Both legs of the journey, because they are different fields and only one of
+    them is derived from. `ticketOfficeAccess` is how you reach the concourse
+    from the street, which is where Connolly's escalator is and where
+    `platformAccess` says nothing at all.
+    """
+    station = facts.station(code) if facts else None
+    if station is None:
+        return ""
+    legs = [
+        ("Into the station", station.ticket_office_access),
+        ("To the platforms", station.platform_access),
+    ]
+    blocks = ""
+    for label, prose in legs:
+        if not prose:
+            continue
+        items = "".join(
+            f"<li>{html.escape(line)}</li>" for line in prose.split("\n") if line
+        )
+        blocks += f"<h3>{label}</h3><ul>{items}</ul>"
+    if not blocks:
+        return ""
+    note = _step_free_note(code, facts)
+    earned = (
+        f'<p class="sf"><b>{html.escape(STEP_FREE_CHIP)}.</b> '
+        f'Reviewed against this line: "{html.escape(note)}".</p>'
+        if note
+        else ""
+    )
+    report = html.escape(
+        correction_url(data["stations"][code], code, data["slugs"][code])
+    )
+    return (
+        '<div class="card access"><h2>Getting to the platforms</h2>'
+        f"{blocks}{earned}"
+        f'<p class="src">{html.escape(ACCESS_CAVEAT)} '
+        "What this page says about step-free access is worked out from the second "
+        "list; the first is shown because a lift or escalator can be on either leg. "
+        f'<a href="{report}">{html.escape(CORRECTION_PROMPT)}</a></p></div>'
+    )
+
+
+def _verdict_html(access):
+    """One outage's effect on step-free access, if a snapshot was loaded."""
+    if not access:
+        return ""
+    state, detail = access
+    return (
+        f'<div class="acc acc-{html.escape(state)}">'
+        f"<b>{html.escape(ACCESS_LABEL.get(state, state))}</b> "
+        f"{html.escape(detail)}</div>"
+    )
+
+
 def _case_html(k):
     """The same markup site.html's caseHtml() builds, for the static page."""
     (kind, planned, first_seen, end, ongoing, start, listed_end,
-     head, text, updates, hours, lead_days) = k[1:]
+     head, text, updates, hours, lead_days, access) = k[1:]
     span = ""
     if hours is not None:
         span = "listed " + _hours(hours) + (" so far" if ongoing else "")
@@ -259,6 +404,7 @@ def _case_html(k):
             f'<span class="when">{span}</span></div>',
             f'<div class="sum">{" · ".join(html.escape(b) for b in bits)}</div>',
             f'<div class="txt">{html.escape(text)}</div>' if text else "",
+            _verdict_html(access),
             _updates_html(updates),
             "</div>",
         ]
@@ -291,6 +437,37 @@ def _day_cells(cells, ym, partial, kind="lift"):
     # nothing to qualify on a day with no data or no colour yet
     return statusui.day_cells(
         cells, ym, partial, _day_labels(kind), qualify=lambda ch: ch not in "89"
+    )
+
+
+STEP_FREE_CHIP = "Step-free route"
+
+# Deliberately narrow. "Accessible station" would be a far bigger claim than the
+# reviewed list makes, and the international access symbol would read as one.
+STEP_FREE_TITLE = (
+    "Irish Rail's page names a step-free way to a platform here that does not "
+    "use the lift"
+)
+
+
+def _step_free_note(code, facts):
+    """The sentence behind this station's chip, or None.
+
+    Looks the station up rather than matching the code alone: an entry is only
+    good while the prose it quotes is on the page, and a station absent from the
+    snapshot has no prose to check. Chipping one anyway put an accessibility
+    claim on a page whose own "Getting to the platforms" card was empty.
+    """
+    return access_model.step_free_note(facts.station(code)) if facts else None
+
+
+def _step_free_chip(code, facts):
+    """The same markup site.html's stepFreeChip() builds."""
+    if not _step_free_note(code, facts):
+        return ""
+    return (
+        f'<span class="sfchip" role="img" aria-label="{html.escape(STEP_FREE_TITLE)}" '
+        f'title="{html.escape(STEP_FREE_TITLE)}">{STEP_FREE_CHIP}</span>'
     )
 
 
@@ -462,7 +639,7 @@ def _month_jumps(sections):
     return f'<div class="months jumps">{links}</div>'
 
 
-def station_page(code, data, by_month, listed_now=()):
+def station_page(code, data, by_month, listed_now=(), facts=None):
     """A station's whole history on one page, newest month first.
 
     The page exists so a station has a real URL for a search engine and a
@@ -492,7 +669,7 @@ def station_page(code, data, by_month, listed_now=()):
         '<a class="back" href="../index.html">← All stations</a>',
         '<div class="chead">',
         _chip(letter, f"Grade {letter} for {month_label(latest)}" if letter else "No grade yet"),
-        f"<h1>{html.escape(name)}</h1></div>",
+        f"<h1>{html.escape(name)}</h1>{_step_free_chip(code, facts)}</div>",
         f'<div class="sub">Irish Rail station code {html.escape(code)} · {graded}<br>'
         f'Data to {html.escape(data["observed"])}'
         + (
@@ -501,6 +678,7 @@ def station_page(code, data, by_month, listed_now=()):
             else ""
         )
         + "</div>",
+        _access_html(code, data, facts),
         _legend_html(),
     ]
     sections = month_sections(months, by_month, data["blank"])
@@ -558,12 +736,12 @@ def _page(template, markers):
     return statusui.assemble(template.read_text(encoding="utf-8"), markers)
 
 
-def write(site_dir, outages, now, until):
+def write(site_dir, outages, now, until, facts=None):
     site_dir = Path(site_dir)
     (site_dir / "s").mkdir(parents=True, exist_ok=True)
     (site_dir / "h").mkdir(parents=True, exist_ok=True)
 
-    data, by_station, months = build(outages, now, until)
+    data, by_station, months = build(outages, now, until, facts)
 
     # Every station page, linked from one page rather than from all of them.
     # The overview's own list is built by the app from data.js, so without this
@@ -588,7 +766,7 @@ def write(site_dir, outages, now, until):
     listed_now = [c for c in data["stations"] if any(o.ongoing for o in by_station.get(c, []))]
 
     for code in data["stations"]:
-        by_month = shard(by_station.get(code, []), months, until)
+        by_month = shard(by_station.get(code, []), months, until, facts)
         # Shards are keyed by station code, which is short and URL-safe; the
         # static pages take the name so their URLs read well.
         (site_dir / "h" / f"{code}.js").write_text(
@@ -598,7 +776,7 @@ def write(site_dir, outages, now, until):
             encoding="utf-8",
         )
         (site_dir / "s" / f"{data['slugs'][code]}.html").write_text(
-            station_page(code, data, by_month, listed_now), encoding="utf-8"
+            station_page(code, data, by_month, listed_now, facts), encoding="utf-8"
         )
 
     lastmod = now.strftime("%Y-%m-%d")

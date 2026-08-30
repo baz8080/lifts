@@ -7,6 +7,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from lift_access import snapshot
 from lift_status.store import DB_FILENAME, DEFAULT_DATA_DIR
 
 from . import model, render
@@ -61,12 +62,27 @@ def main(argv=None) -> int:
         print("no lift or escalator notices in the database", file=sys.stderr)
         return 1
 
-    data = render.write(args.out, outages, now, until)
+    # Optional: the site built without station facts for months and still
+    # does, it just cannot say what a station has.
+    facts = snapshot.load(args.data_dir)
+    data = render.write(args.out, outages, now, until, facts)
 
     print(
         f"built {args.out} from {len(outages)} outages across "
         f"{len(data['stations'])} stations"
     )
+    if data["network"]:
+        n = data["network"]
+        print(f"  station facts: {n['stations']} stations, {n['with_lift']} with a lift")
+        if facts.dropped:
+            print(
+                f"  WARNING: {facts.dropped} record(s) in {facts.path.name} read back as no "
+                "station, so they are published as unknown and are out of the denominator",
+                file=sys.stderr,
+            )
+    else:
+        print("  no station snapshot; the site says nothing about what a station has",
+              file=sys.stderr)
     # The horizon, not the clock: everything measured stops here, and a gap
     # between the two is a collector that has stopped rather than a quiet week.
     lag = now - until

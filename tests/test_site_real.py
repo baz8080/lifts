@@ -18,11 +18,22 @@ import unittest
 from datetime import UTC, datetime
 from pathlib import Path
 
+from lift_access import fetch, snapshot
+from lift_access import model as access_model
 from lift_site import model, render
 from lift_status.store import DB_FILENAME
 
 DATA_DIR = os.environ.get("LIFT_STATUS_DATA_DIR")
 DB_PATH = Path(DATA_DIR) / DB_FILENAME if DATA_DIR else None
+
+# The station snapshot lives in the same data repository but lands separately,
+# and the site is built to work without it. So these skip the way the rest of
+# this file skips, rather than failing a checkout that has not got it yet.
+SNAPSHOT_PATH = (
+    fetch.latest_snapshot(Path(DATA_DIR) / snapshot.SNAPSHOT_DIR, snapshot.STATIONS_PREFIX)
+    if DATA_DIR
+    else None
+)
 
 
 @unittest.skipUnless(DB_PATH and DB_PATH.exists(), "LIFT_STATUS_DATA_DIR with a rebuilt database")
@@ -35,7 +46,8 @@ class TestRealCorpus(unittest.TestCase):
         cls.conn.row_factory = sqlite3.Row
         cls._tmp = tempfile.TemporaryDirectory()
         cls.site = Path(cls._tmp.name)
-        cls.data = render.write(cls.site, cls.outages, cls.now, cls.until)
+        cls.facts = snapshot.load(DATA_DIR)
+        cls.data = render.write(cls.site, cls.outages, cls.now, cls.until, cls.facts)
 
     @classmethod
     def tearDownClass(cls):
@@ -95,3 +107,78 @@ class TestRealCorpus(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipUnless(DB_PATH and DB_PATH.exists() and SNAPSHOT_PATH, "a station snapshot")
+class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
+    """Every verdict the site would publish today, checked against the snapshot.
+
+    The rule this guards is one-directional: the site may understate access as
+    often as it likes, and may say it cannot tell, but it may never tell a
+    reader another step-free way exists unless Irish Rail's own prose says so at
+    that platform. See notes/station-access.md.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.now = datetime.now(UTC)
+        cls.outages, cls.until = model.load_outages(DB_PATH, cls.now)
+        cls.facts = snapshot.load(DATA_DIR)
+
+    def test_the_snapshot_covers_the_network(self):
+        # Every station on the railway, not the handful with a notice this month.
+        self.assertGreater(len(self.facts.stations), 100)
+
+    def test_every_notice_gets_a_verdict(self):
+        states = {"lost", "alternative", "escalator", "unknown"}
+        for o in self.outages:
+            result = self.facts.verdict(o.code, o.kind, o.text)
+            self.assertIn(result.state, states, o.head)
+
+    def test_no_outage_claims_an_alternative_without_a_reviewed_entry(self):
+        for o in self.outages:
+            result = self.facts.verdict(o.code, o.kind, o.text)
+            if result.state != "alternative":
+                continue
+            for platform in result.platforms:
+                self.assertIn(
+                    (o.code, platform),
+                    access_model.STEP_FREE_ALTERNATIVES,
+                    f"{o.code} platform {platform} claimed an alternative that nobody reviewed",
+                )
+
+    def test_every_reviewed_alternative_still_matches_the_live_page(self):
+        # The entries quote sentences off station pages that are refetched every
+        # month precisely because Irish Rail rewords them. This is the check that
+        # notices; the model withdraws the claim on its own, but silently.
+        for (code, platform), quoted in access_model.STEP_FREE_ALTERNATIVES.items():
+            station = self.facts.station(code)
+            if station is None:
+                continue
+            prose = " ".join((station.platform_access or "").split())
+            self.assertIn(
+                quoted,
+                prose,
+                f"{code} platform {platform}: the reviewed sentence is gone from the page. "
+                "Read it again and update or drop the entry.",
+            )
+
+    def test_an_escalator_never_removes_step_free_access(self):
+        for o in self.outages:
+            if o.kind != "escalator":
+                continue
+            self.assertEqual(self.facts.verdict(o.code, o.kind, o.text).state, "escalator")
+
+    def test_every_station_with_a_lift_notice_is_in_the_snapshot(self):
+        # locationCodes and irishrail.ie's stationCode are the same code space.
+        # If that ever stops being true this is where it shows up.
+        missing = sorted({o.code for o in self.outages} - set(self.facts.stations))
+        self.assertEqual(missing, [], "notice codes with no station in the snapshot")
+
+    def test_the_verdict_reaches_the_shard(self):
+        months = model.month_list(model.COLLECTION_START, max(self.now, self.until))
+        for o in self.outages[:5]:
+            by_month = render.shard([o], months, self.until, self.facts)
+            records = [r for rows in by_month.values() for r in rows]
+            self.assertTrue(records, o.head)
+            self.assertIsNotNone(records[0][13], o.head)

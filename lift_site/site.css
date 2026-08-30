@@ -75,3 +75,37 @@
 .card .bar + .daycap + .case, .card .bars + .daycap + .case { border-top: 0; margin-top: 4px; }
 .case .txt { color: var(--muted); font-size: 12.5px; margin-top: 4px; font-style: italic; }
 .tl { margin-top: 8px; }
+
+/* What a lift being out meant for step-free access. Colour-coded because it is
+   the one line on a case a wheelchair user is reading for, but never colour
+   alone: the label says which state it is. */
+.acc { font-size: 12.5px; margin-top: 6px; padding: 6px 9px; border-radius: 6px; border-left: 3px solid; }
+.acc b { font-weight: 600; }
+.acc-lost { border-color: var(--critical); background: var(--grid); }
+.acc-alternative, .acc-escalator { border-color: var(--good); background: var(--grid); }
+.acc-unknown { border-color: var(--cell-empty); background: var(--grid); color: var(--ink-2); }
+
+/* Irish Rail's own words about the station, quoted on the station page. Every
+   verdict above is derived from these lines, so they are shown rather than
+   summarised - a reader who can see them can see a misreading. */
+.card.access ul { margin: 0; padding-left: 18px; }
+.card.access li { font-size: 13.5px; margin: 3px 0; }
+.card.access .src { color: var(--muted); font-size: 12px; margin-top: 8px; }
+
+/* Marks the two stations where Irish Rail's page names a step-free way to a
+   platform that does not use the lift. Says only that: the access symbol would
+   read as "accessible station", which the reviewed list does not claim. */
+.sfchip {
+  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; flex: none;
+  background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good-text);
+  white-space: nowrap;
+}
+.card.access .sf { font-size: 12.5px; margin-top: 8px; }
+
+/* the two legs of the journey, quoted separately because only one is derived from */
+.card.access h3 { font-size: 12.5px; margin: 10px 0 2px; color: var(--muted); font-weight: 600; }
+.card.access h3:first-of-type { margin-top: 0; }
+
+/* the app shows verdicts without the card that carries their source, so it says
+   where they come from here instead */
+.acccav { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; }
