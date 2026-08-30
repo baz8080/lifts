@@ -1,9 +1,23 @@
 # Scope: does this station have another accessible route? - 2026-08-29
 
-**This is a scope, not a decision.** Nothing here is settled and nothing has
-been built. It exists because the grade now counts escalator outages, and the
-reasoning for that (see `site.md` § An escalator out is a day the station was
-short of a way up) rests on a gap: the site has no idea what a station has.
+**Answered on 2026-08-30. Everything below is kept for the reasoning; the
+answers and what was built are in [`station-access.md`](station-access.md).**
+
+All three phase-0 checks were run from a machine with real network egress, plus
+the two sources this note did not know about. In short:
+
+- **GTFS carries nothing.** No `pathways.txt`, and `wheelchair_boarding` is not
+  merely unpopulated - the column does not exist. Both closed permanently.
+- **The NTA developer API is bus-only** and the wrong shape besides. An account
+  buys nothing here. Closed.
+- **Irish Rail's own station pages carry a per-platform access description**,
+  keyed by the exact `locationCodes` code space, served as JSON. That is the
+  source, and it is what phases 1 to 3 were built on.
+- **The routes question has a near-constant answer: no.** Of 61 stations whose
+  prose mentions a lift, two name a step-free way round one. No route engine was
+  needed or built.
+
+Struck sources are marked below. Do not scope them again.
 
 ## The three questions that keep getting conflated
 
@@ -67,11 +81,10 @@ in prose - a travelator is mode 3, a different edge from an escalator.
 `levels.txt` and the `stair_count`, `max_slope` and `min_width` columns are in
 the same extension.
 
-**Unverified, and the single highest-value check:** whether the NTA publishes
-`pathways.txt` at all for Irish Rail. Most agencies do not - it is rare
-outside large metro operators, and it is optional in the spec. Check this
-first, because a yes collapses most of this document and a no closes question
-3 more or less permanently.
+**Checked on 2026-08-30. There is no `pathways.txt`, and no `levels.txt`.**
+`GTFS_Irish_Rail.zip`, `GTFS_All.zip` and `GTFS_Realtime.zip` each hold exactly
+ten files: `feed_info`, `agency`, `stops`, `calendar`, `calendar_dates`,
+`routes`, `trips`, `shapes`, `stop_times`, `translations`. Closed permanently.
 
 ### B. GTFS `stops.txt` `wheelchair_boarding` - the likely realistic source
 
@@ -81,22 +94,26 @@ Standard GTFS, near-certain to be present, values fixed by the spec:
 - `1` - some vehicles or paths at this stop are accessible
 - `2` - not accessible
 
-Answers question 2, weakly (it is a flag, not a route), and question 1 by
-giving the full station list. **Unverified:** whether the NTA populates it
-meaningfully for rail stops or leaves it `0` throughout, which is the common
-failure mode and would make it worthless. One `awk` over `stops.txt` settles it.
+**Checked on 2026-08-30. The column does not exist.** The `stops.txt` header is
+identical in all three feeds and ends at `parent_station`:
+`stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station`.
+`location_type` is empty for all 152 rail stops too, so there is not even a
+station/platform hierarchy. GTFS gives an inventory and nothing else. Closed.
+
+The same is true of the rest of the NTA catalogue: `NaPTAN.json` has 152 rail
+stops keyed by station code with `AccessArea` null on every one and the string
+"accessib" absent from the whole 22 MB file, and `ptims.zip` is bus street
+furniture.
 
 `stops.txt` also carries `stop_id`, `stop_name`, `stop_lat`, `stop_lon` and
 `parent_station`, which is the station inventory of question 1 on its own.
 
 ### C. `api.irishrail.ie/.../getAllStationsXML` - the join, no accessibility
 
-Recalled from prior knowledge, **unverified in this session**: an unkeyed
-endpoint returning every station with `StationDesc`, `StationCode`,
-`StationId`, `StationAlias`, `StationLatitude`, `StationLongitude`. If it is
-still up and still unkeyed it is the cheapest possible source for question 1,
-and it carries `StationCode` - the same code space `locationCodes` uses, which
-removes the name-matching problem below entirely.
+**Checked on 2026-08-30. Still up, still unkeyed**, 171 stations with
+`StationCode`. It was right about the code space. Superseded, though: the
+station pages carry the same codes *and* the accessibility prose, so this was
+not needed.
 
 No accessibility data at all. Inventory only.
 
@@ -112,23 +129,19 @@ been a better primary source than the message feed, and would have answered
 
 ### E. Station pages, scraped
 
-`irishrail.ie` station pages reportedly carry accessibility detail. Last
-resort: HTML scraping with stdlib only (`html.parser`) against a CMS that can
-change without notice, ~150 fetches per refresh, and no version history. Only
-if A, B and D all fail, and even then it wants a hard look at whether question
-2 is worth that fragility.
+**This turned out to be the source, and it is not scraping.** Each station page
+is server-rendered Nuxt and serves its data as JSON at `<page>/_payload.json`:
+named fields, no `html.parser`. `platformAccess` describes access per platform,
+`stationCode` gives the join for free, and the find-a-station payload lists all
+152 slugs so nothing is crawled. `robots.txt` disallows only `/stations.csv`.
+See [`station-access.md`](station-access.md).
 
 ## The join
 
-Sources B and E key on names ("Dublin Pearse", "Pearse", "Dublin Pearse
-(Westland Row)"); this project keys on `locationCodes` and takes display names
-from `eventStops[0].sStop`. Any name-based source needs a reviewed
-name-to-code mapping, committed and diffable, not a fuzzy match computed at
-build time - a silent mismatch would attach one station's accessibility to
-another's row, which is worse than saying nothing.
-
-Source C sidesteps this completely by carrying `StationCode` itself. That
-alone may be reason to prefer it for question 1 even if GTFS is richer.
+**There is no join to make.** Source E carries `stationCode` itself, in exactly
+the `locationCodes` code space. All 15 codes with lift notices matched, 15/15,
+with no fuzzy matching and no committed mapping. The worry below was real and
+the problem simply does not arise.
 
 ## What this must not break
 
@@ -150,32 +163,21 @@ alone may be reason to prefer it for question 1 even if GTFS is richer.
 - **Licensing.** NTA/data.gov.ie data is open, but the licence and attribution
   need reading before station data is redistributed inside `data.js`.
 
-## Phasing, smallest first
+## Phasing, smallest first - all three done
 
-**Phase 0 - verification, no code.** Answer, in this order: does
-`pathways.txt` exist for Irish Rail; is `wheelchair_boarding` populated; is
-`getAllStationsXML` still unkeyed. Each is a browser tab. The answers decide
-whether phases 2 and 3 exist at all, and this is the only phase that cannot be
-done from a Claude Code web session. (The alerts page was the fourth check and
-has been struck - see D above.)
+**Phase 0 - verification.** Done, 2026-08-30. See the answers at the top.
 
-**Phase 1 - the inventory.** Station list with codes, from C or from GTFS
-`stops.txt`. Snapshot committed to `lifts-data`. The site gains a real
-denominator and can finally say "N of 144 stations had a notice this month".
-Small, useful on its own, and independent of everything below it.
+**Phase 1 - the inventory.** Done. 152 stations with codes, snapshotted to
+`lifts-data/stations/`. The site has a denominator.
 
-**Phase 2 - the accessibility flag.** Only if `wheelchair_boarding` turns out
-to be populated. The site
-gains the ability to distinguish "no lift here" from "lift working", which is
-the misreading most worth fixing: today those are the same green cells.
+**Phase 2 - the accessibility flag.** Done, from a better source than the one
+scoped: `platformAccess` rather than `wheelchair_boarding`, which does not
+exist. Per station: has a lift, has none, or unknown.
 
-**Phase 3 - routes.** Only if `pathways.txt` exists. Then, and only then, the
-site could say whether a given escalator outage removed a way up or removed a
-convenience, and the grade could stop being a single number that means
-different things at different stations.
-
-Stop after any phase. Each is worth shipping alone, and phase 3 will probably
-never start.
+**Phase 3 - routes.** Answered rather than built, and the answer is that no
+graph is needed. See [`station-access.md`](station-access.md) - "and" in this
+prose is a sequence, not a choice, so a lift out nearly always removes step-free
+access, and only two stations in the country say otherwise.
 
 ## What is deliberately out
 

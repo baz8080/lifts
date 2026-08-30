@@ -70,7 +70,7 @@ def station_slugs(stations):
     return slugs
 
 
-def build(outages, now, until):
+def build(outages, now, until, facts=None):
     """Assemble every value the templates need, and nothing they do not.
 
     `now` fixes only what is still in the future; `until` is where the collected
@@ -125,8 +125,22 @@ def build(outages, now, until):
         "escalators": sum(1 for o in live if o.kind == "escalator"),
     }
 
+    # The denominator the site never had. The feed names a station only when
+    # something is wrong with it, so "across 12 stations" reads as the whole
+    # network until it is set against the 152 stations that exist.
+    network = None
+    if facts:
+        tally = facts.tally()
+        network = {
+            "stations": len(facts.stations),
+            "with_lift": tally["yes"],
+            "no_lift": tally["no"],
+            "unknown_lift": tally["unknown"],
+        }
+
     data = {
         "generated": _stamp(now),
+        "network": network,
         # What the build knows, as distinct from when it ran. Without this the
         # page dates itself by the clock and a reader cannot tell a quiet week
         # from a collector that stopped.
@@ -156,12 +170,18 @@ def build(outages, now, until):
     return data, by_station, months
 
 
-def case_record(o):
+def case_record(o, facts=None):
     """One outage, as compact as it can be while staying readable in the file.
 
     The two durations are computed here, from the offset-aware instants, and
     shipped: `_short` renders Dublin wall-clock without an offset, so anything
     subtracting those strings loses the hour at the October clock change.
+
+    The access verdict is shipped as a finished sentence rather than as parts.
+    Everything else in this record is re-rendered by site.html's caseHtml(), so
+    the wording lives twice; this one must not, because getting it wrong tells a
+    reader access remains where it is gone. One function in lift_access writes
+    it and both pages print it.
     """
     lead = None
     if o.start.astimezone(DUBLIN).date() < o.first_seen.astimezone(DUBLIN).date():
@@ -184,10 +204,19 @@ def case_record(o):
         [[_short(when), head, text or ""] for when, head, text in o.updates],
         round((o.end - o.first_seen).total_seconds() / 3600.0, 4),
         lead,
+        _access(o, facts),
     ]
 
 
-def shard(outages, months, until):
+def _access(o, facts):
+    """[state, sentence] for one outage, or None when no snapshot is loaded."""
+    if not facts:
+        return None
+    result = facts.verdict(o.code, o.kind, o.text)
+    return [result.state, result.detail]
+
+
+def shard(outages, months, until, facts=None):
     """Every outage at one station, grouped by month.
 
     An outage is listed under every month it overlaps, which is exactly the set
@@ -200,7 +229,7 @@ def shard(outages, months, until):
         record = None
         for ym, lo, hi in windows:
             if model.listed_in(o, lo, hi):
-                record = case_record(o) if record is None else record
+                record = case_record(o, facts) if record is None else record
                 by_month[ym].append(record)
     return by_month
 
@@ -242,10 +271,51 @@ def summary_bits(first_seen, end, ongoing, start, listed_end, lead_days=None):
     return bits
 
 
+ACCESS_LABEL = {
+    "lost": "No step-free access",
+    "alternative": "Another step-free way",
+    "escalator": "Step-free access unaffected",
+    "unknown": "Effect on step-free access unknown",
+}
+
+
+def _access_html(code, facts):
+    """What Irish Rail's own page says this station has, quoted back.
+
+    Quoted rather than summarised: every verdict on this page is derived from
+    these sentences, and a reader who can see them can see when the derivation
+    has read one wrong. That has already happened once - see notes/station-access.md.
+    """
+    station = facts.station(code) if facts else None
+    if station is None or not station.platform_access:
+        return ""
+    lines = "".join(
+        f"<li>{html.escape(line)}</li>" for line in station.platform_access.split("\n") if line
+    )
+    return (
+        '<div class="card access"><h2>Getting to the platforms</h2>'
+        f"<ul>{lines}</ul>"
+        '<p class="src">Irish Rail\'s station page for this station, as collected. '
+        "Everything this page says about step-free access is derived from it.</p></div>"
+    )
+
+
+def _verdict_html(access):
+    """One outage's effect on step-free access, if a snapshot was loaded."""
+    if not access:
+        return ""
+    state, detail = access
+    return (
+        f'<div class="acc acc-{html.escape(state)}">'
+        f"<b>{html.escape(ACCESS_LABEL.get(state, state))}</b> "
+        f"{html.escape(detail)}</div>"
+    )
+
+
 def _case_html(k):
     """The same markup site.html's caseHtml() builds, for the static page."""
     (kind, planned, first_seen, end, ongoing, start, listed_end,
-     head, text, updates, hours, lead_days) = k[1:]
+     head, text, updates, hours, lead_days, access) = k[1:]
     span = ""
     if hours is not None:
         span = "listed " + _hours(hours) + (" so far" if ongoing else "")
@@ -259,6 +329,7 @@ def _case_html(k):
             f'<span class="when">{span}</span></div>',
             f'<div class="sum">{" · ".join(html.escape(b) for b in bits)}</div>',
             f'<div class="txt">{html.escape(text)}</div>' if text else "",
+            _verdict_html(access),
             _updates_html(updates),
             "</div>",
         ]
@@ -462,7 +533,7 @@ def _month_jumps(sections):
     return f'<div class="months jumps">{links}</div>'
 
 
-def station_page(code, data, by_month, listed_now=()):
+def station_page(code, data, by_month, listed_now=(), facts=None):
     """A station's whole history on one page, newest month first.
 
     The page exists so a station has a real URL for a search engine and a
@@ -501,6 +572,7 @@ def station_page(code, data, by_month, listed_now=()):
             else ""
         )
         + "</div>",
+        _access_html(code, facts),
         _legend_html(),
     ]
     sections = month_sections(months, by_month, data["blank"])
@@ -558,12 +630,12 @@ def _page(template, markers):
     return statusui.assemble(template.read_text(encoding="utf-8"), markers)
 
 
-def write(site_dir, outages, now, until):
+def write(site_dir, outages, now, until, facts=None):
     site_dir = Path(site_dir)
     (site_dir / "s").mkdir(parents=True, exist_ok=True)
     (site_dir / "h").mkdir(parents=True, exist_ok=True)
 
-    data, by_station, months = build(outages, now, until)
+    data, by_station, months = build(outages, now, until, facts)
 
     # Every station page, linked from one page rather than from all of them.
     # The overview's own list is built by the app from data.js, so without this
@@ -588,7 +660,7 @@ def write(site_dir, outages, now, until):
     listed_now = [c for c in data["stations"] if any(o.ongoing for o in by_station.get(c, []))]
 
     for code in data["stations"]:
-        by_month = shard(by_station.get(code, []), months, until)
+        by_month = shard(by_station.get(code, []), months, until, facts)
         # Shards are keyed by station code, which is short and URL-safe; the
         # static pages take the name so their URLs read well.
         (site_dir / "h" / f"{code}.js").write_text(
@@ -598,7 +670,7 @@ def write(site_dir, outages, now, until):
             encoding="utf-8",
         )
         (site_dir / "s" / f"{data['slugs'][code]}.html").write_text(
-            station_page(code, data, by_month, listed_now), encoding="utf-8"
+            station_page(code, data, by_month, listed_now, facts), encoding="utf-8"
         )
 
     lastmod = now.strftime("%Y-%m-%d")

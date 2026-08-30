@@ -230,7 +230,10 @@ function renderOverview() {
   document.getElementById("natline").innerHTML =
     "<strong>" + monthLabelLong(curMonth) + (partial ? " so far" : "") + ":</strong> " +
     (n[1]
-      ? n[2] + " out of service and " + n[3] + " planned works across " + plural(n[0], "station")
+      ? n[2] + " out of service and " + n[3] + " planned works across " +
+        (D.network
+          ? n[0] + " of " + D.network.stations + " stations"
+          : plural(n[0], "station"))
       : "no lift or escalator notices listed");
 
   document.getElementById("basis").innerHTML =
@@ -249,6 +252,7 @@ function renderOverview() {
     // at 100% with two planned-works cells drawn on it.
     tile(n[4] == null ? "-" : n[4] + "%",
          "of days with lifts and escalators available, across the stations named this month"),
+
     // the latest month's counts are the live ones, so they read as the state of
     // the network now; a past month's are what it ended the month with
     live ? tile(c.lifts, one(c.lifts, "lift") + " reported out when we last checked")
@@ -367,8 +371,25 @@ function summaryBits(firstSeen, end, ongoing, start, listedEnd, leadDays) {
   return bits;
 }
 
+var ACCESS_LABEL = {
+  lost: "No step-free access",
+  alternative: "Another step-free way",
+  escalator: "Step-free access unaffected",
+  unknown: "Effect on step-free access unknown"
+};
+
+function accessHtml(a) {
+  // The sentence is built once, in lift_access.model.verdict, and shipped whole.
+  // Every other string here is rebuilt in JS to keep the payload small; this one
+  // is not, because a wording that drifts from the static page could tell a
+  // reader access remains at a station where it is gone.
+  if (!a) return "";
+  return '<div class="acc acc-' + esc(a[0]) + '"><b>' +
+    esc(ACCESS_LABEL[a[0]] || a[0]) + "</b> " + esc(a[1]) + "</div>";
+}
+
 function caseHtml(k) {
-  // [id, kind, planned, firstSeen, end, ongoing, start, listedEnd, head, text, updates, hours, leadDays]
+  // [id, kind, planned, firstSeen, end, ongoing, start, listedEnd, head, text, updates, hours, leadDays, access]
   var kind = k[1], planned = k[2], firstSeen = k[3], end = k[4], ongoing = k[5], start = k[6], listedEnd = k[7], text = k[9], ups = k[10];
   var dur = k[11];  // computed in case_record, offset-aware
   var bits = summaryBits(firstSeen, end, ongoing, start, listedEnd, k[12]);
@@ -378,6 +399,7 @@ function caseHtml(k) {
     '<span class="when">' + (dur == null ? "" : "listed " + listed(dur) + (ongoing ? " so far" : "")) + "</span></div>" +
     '<div class="sum">' + bits.map(esc).join(" · ") + "</div>" +
     (text ? '<div class="txt">' + esc(text) + "</div>" : "") +
+    accessHtml(k[13]) +
     (ups && ups.length
       ? '<ul class="tl">' + ups.map(function (u) {
           return "<li><time>" + whenY(u[0]) + "</time>notice reissued: " + esc(u[2] || u[1]) + "</li>";

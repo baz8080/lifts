@@ -1,0 +1,70 @@
+name: Refresh station facts
+
+# What a station has changes when Irish Rail edits a station page, which is a
+# few times a year. Monthly is far more often than that and still nothing next
+# to the collector's 30-minute poll - and this must never run on the Pi or in
+# that loop: it is ~300 requests against two third-party sites.
+on:
+  schedule:
+    - cron: '20 4 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # A PAT rather than the default token: this writes to a different
+      # repository. It needs `contents: write` on baz8080/lifts-data only.
+      - name: Check out the collected data
+        uses: actions/checkout@v7
+        with:
+          repository: baz8080/lifts-data
+          path: lifts-data
+          token: ${{ secrets.LIFTS_DATA_TOKEN }}
+
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          prune-cache: true
+
+      - name: Fetch the station facts
+        run: uv run python -m lift_access --data-dir lifts-data refresh
+
+      # The derivation is built out of hand-written sentences, so the report is
+      # the artefact worth reading when a refresh changes anything: it prints
+      # every verdict beside the prose it came from.
+      - name: Report what the snapshot says
+        run: |
+          uv run python -m lift_status --data-dir lifts-data rebuild
+          uv run python -m lift_access --data-dir lifts-data report | tee report.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: station-access-report
+          path: report.txt
+
+      # A PR rather than a push. A station page being reworded can move a
+      # verdict from "no step-free access" to "unknown" and back, and that is
+      # not a change to land unread.
+      - name: Open a PR against lifts-data if anything moved
+        working-directory: lifts-data
+        env:
+          GH_TOKEN: ${{ secrets.LIFTS_DATA_TOKEN }}
+        run: |
+          if [ -z "$(git status --porcelain stations)" ]; then
+            echo "station facts unchanged"
+            exit 0
+          fi
+          branch="stations-$(date -u +%Y%m%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add stations
+          git commit -m "Refresh the station facts snapshot"
+          git push -u origin "$branch"
+          gh pr create --fill --title "Refresh the station facts snapshot" \
+            --body "Automated monthly refresh. Read the station-access-report artefact on the run that opened this before merging: a reworded station page can move a verdict."

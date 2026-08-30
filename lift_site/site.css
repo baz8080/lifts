@@ -75,3 +75,19 @@
 .card .bar + .daycap + .case, .card .bars + .daycap + .case { border-top: 0; margin-top: 4px; }
 .case .txt { color: var(--muted); font-size: 12.5px; margin-top: 4px; font-style: italic; }
 .tl { margin-top: 8px; }
+
+/* What a lift being out meant for step-free access. Colour-coded because it is
+   the one line on a case a wheelchair user is reading for, but never colour
+   alone: the label says which state it is. */
+.acc { font-size: 12.5px; margin-top: 6px; padding: 6px 9px; border-radius: 6px; border-left: 3px solid; }
+.acc b { font-weight: 600; }
+.acc-lost { border-color: var(--critical); background: var(--grid); }
+.acc-alternative, .acc-escalator { border-color: var(--good); background: var(--grid); }
+.acc-unknown { border-color: var(--cell-empty); background: var(--grid); color: var(--ink-2); }
+
+/* Irish Rail's own words about the station, quoted on the station page. Every
+   verdict above is derived from these lines, so they are shown rather than
+   summarised - a reader who can see them can see a misreading. */
+.card.access ul { margin: 0; padding-left: 18px; }
+.card.access li { font-size: 13.5px; margin: 3px 0; }
+.card.access .src { color: var(--muted); font-size: 12px; margin-top: 8px; }
