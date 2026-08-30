@@ -88,6 +88,27 @@ their verdicts to "not in the station snapshot" and the denominator quietly
 shrinks. Nobody spots 38 empty bodies in an 8 MB diff. Transient failures are
 retried, and if any station is still missing nothing is written at all.
 
+## It is an inference, and the page says so
+
+Every access line on the site is worked out from a page somebody typed. This
+project has already found a typo in it (Rush and Lusk, platform 1 twice), a
+self-contradiction (Greystones), a station whose page says "Level" while its
+lifts break (Limerick Junction), and an escalator omitted from the field that
+should carry it (Connolly). Presenting derived sentences in a confident voice on
+top of that would be claiming more than is known.
+
+So the card carries a caveat in the site's own words: worked out from Irish
+Rail's page, written by hand, wrong before, a careful reading rather than a
+survey, and blind to whatever the page leaves out. The app shows verdicts
+without that card, so the caveat travels in `data.js` and renders there too.
+
+And it asks. A static site has no feedback channel, so the caveat ends in a
+prefilled GitHub issue link: "Know this station? Tell us what this gets wrong."
+People who use these stations know things no source here records, and a filed
+issue is auditable in the way this project asks every other claim to be. It is
+also the only route by which a fact that exists nowhere machine-readable can
+ever reach the site.
+
 ## The safe direction
 
 A reader told access is gone when it was not has made one wasted check. A reader

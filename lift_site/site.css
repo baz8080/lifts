@@ -105,3 +105,7 @@
 /* the two legs of the journey, quoted separately because only one is derived from */
 .card.access h3 { font-size: 12.5px; margin: 10px 0 2px; color: var(--muted); font-weight: 600; }
 .card.access h3:first-of-type { margin-top: 0; }
+
+/* the app shows verdicts without the card that carries their source, so it says
+   where they come from here instead */
+.acccav { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; }

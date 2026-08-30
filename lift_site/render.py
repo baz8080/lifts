@@ -11,6 +11,7 @@ never put a per-outage record in `data.js`.
 from __future__ import annotations
 
 import html
+import urllib.parse
 from collections import defaultdict
 from datetime import timedelta
 from pathlib import Path
@@ -23,6 +24,18 @@ from lift_status.parse import DUBLIN
 from . import model
 
 BASE_URL = "https://baz8080.github.io/lifts"
+ISSUES_URL = "https://github.com/baz8080/lifts/issues/new"
+
+# Said wherever a derived access claim appears. The derivation is careful and it
+# is still an inference off a page somebody typed: this project has already found
+# a typo in it, a self-contradiction, and a station whose page omits an escalator
+# that exists. People who use these stations know things no source here records.
+ACCESS_CAVEAT = (
+    "Worked out from Irish Rail's own station page, which is written by hand and "
+    "has been wrong before. It is a careful reading, not a survey, and it does not "
+    "know about anything the page leaves out."
+)
+CORRECTION_PROMPT = "Know this station? Tell us what this gets wrong."
 
 TEMPLATES = Path(__file__).parent
 SITE_HTML = TEMPLATES / "site.html"
@@ -144,6 +157,12 @@ def build(outages, now, until, facts=None):
         "generated": _stamp(now),
         "network": network,
         "stepfree": step_free,
+        # The app shows verdicts without the card that carries their source, so
+        # the caveat travels with the payload rather than living only on the
+        # static pages.
+        "access_caveat": ACCESS_CAVEAT if facts else None,
+        "correction_prompt": CORRECTION_PROMPT,
+        "issues_url": ISSUES_URL,
         # What the build knows, as distinct from when it ran. Without this the
         # page dates itself by the clock and a reader cannot tell a quiet week
         # from a collector that stopped.
@@ -282,6 +301,24 @@ ACCESS_LABEL = {
 }
 
 
+def correction_url(station):
+    """A prefilled issue, which is the only feedback channel a static site has.
+
+    Readers who use these stations know things no source here records, and the
+    derivation is an inference off a page somebody typed. A filed issue is also
+    auditable in the way this project asks every other claim to be.
+    """
+    body = (
+        f"Station: {station.name} ({station.code})\n"
+        f"{BASE_URL}/s/{slug(station.name)}.html\n\n"
+        "What this gets wrong, and how you know:\n"
+    )
+    query = urllib.parse.urlencode(
+        {"title": f"Station access: {station.name}", "body": body}
+    )
+    return f"{ISSUES_URL}?{query}"
+
+
 def _access_html(code, facts):
     """What Irish Rail's own page says this station has, quoted back.
 
@@ -319,12 +356,14 @@ def _access_html(code, facts):
         if note
         else ""
     )
+    report = html.escape(correction_url(station))
     return (
         '<div class="card access"><h2>Getting to the platforms</h2>'
         f"{blocks}{earned}"
-        '<p class="src">Irish Rail\'s station page for this station, as collected. '
-        "What this page says about step-free access is derived from the second list; "
-        "the first is shown because a lift or escalator can be on either leg.</p></div>"
+        f'<p class="src">{html.escape(ACCESS_CAVEAT)} '
+        "What this page says about step-free access is worked out from the second "
+        "list; the first is shown because a lift or escalator can be on either leg. "
+        f'<a href="{report}">{html.escape(CORRECTION_PROMPT)}</a></p></div>'
     )
 
 

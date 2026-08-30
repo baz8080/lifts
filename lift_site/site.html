@@ -345,6 +345,11 @@ function renderStation() {
       // station is in the link text because a screen reader lists links
       // stripped of their context.
       '<a href="s/' + D.slugs[code] + '.html">Permanent link to ' + esc(name) + " station</a></div>" +
+    (D.access_caveat
+      ? '<p class="acccav">' + esc(D.access_caveat) +
+        ' <a href="' + esc(D.issues_url) + "?title=" + encodeURIComponent("Station access: " + name) +
+        '">' + esc(D.correction_prompt) + "</a></p>"
+      : "") +
     '<div class="legend">' + D.legend + "</div>";
 
   var sections = monthSections(months, stats);

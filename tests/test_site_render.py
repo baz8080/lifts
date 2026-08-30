@@ -486,6 +486,31 @@ class TestStepFreeChip(SiteModelCase):
         data = render.write(site, self.load(), NOW, self.until, facts)
         self.assertEqual(data["stepfree"], [])
 
+    def test_a_derived_claim_says_it_is_derived(self):
+        # Nothing here is a survey. The prose is hand-written and this project
+        # has already found a typo, a self-contradiction and an omitted
+        # escalator in it, so the page says so where the claims are.
+        _, page = self._build("ATHY", "Athy", "<p>Level to platform 1<br>Lift to platform 2</p>")
+        self.assertIn("not a survey", page)
+        self.assertIn("has been wrong before", page)
+
+    def test_a_reader_who_knows_better_is_asked_to_say_so(self):
+        _, page = self._build("ATHY", "Athy", "<p>Level to platform 1<br>Lift to platform 2</p>")
+        self.assertIn(render.CORRECTION_PROMPT, page)
+        self.assertIn("issues/new?title=Station+access%3A+Athy", page)
+
+    def test_the_app_carries_the_caveat_too(self):
+        # It renders verdicts without the card that holds their source.
+        data, _ = self._build("ATHY", "Athy", "<p>Lift to platform 2</p>")
+        self.assertEqual(data["access_caveat"], render.ACCESS_CAVEAT)
+        markup = (Path(render.TEMPLATES) / "site.html").read_text(encoding="utf-8")
+        self.assertIn("D.access_caveat", markup)
+
+    def test_no_snapshot_means_no_caveat_because_there_is_no_claim(self):
+        self.poll(T0, [lift()])
+        data = render.write(self.dir / "site", self.load(), NOW, self.until)
+        self.assertIsNone(data["access_caveat"])
+
     def test_the_chip_does_not_claim_the_station_is_accessible(self):
         # "Accessible station" is a far bigger claim than the reviewed list
         # makes, and the international access symbol would read as one.
