@@ -127,32 +127,25 @@ It is also safe to derive, unlike the connectives: "Level to platform 1" is a
 direct statement, not an inference. The model already knows which platforms the
 lift serves, so the complement falls out.
 
-### What it cannot derive, and where a person would help
+### Not the direction, and not by hand
 
-The passenger-facing form of this is directional. "Platform 1 is still level"
-means nothing to somebody who does not know the layout; "you can still travel
-towards the city, but not away from it" is the sentence worth printing.
+The obvious next step looks like labelling which direction each platform faces,
+so the site could say "you could still travel towards the city". It should not
+be taken. **This is an outage archive, not a travel planner.** A reader here is
+looking at what happened, not deciding which train to catch, and a direction
+label only pays off for somebody planning a journey.
 
-**Only 10 of 57 stations name a direction in the prose**, and 2 of the 12
-notice stations above (Pearse, Malahide). For the other 10 the platform-to-
-direction mapping is not in any source checked - not GTFS, which has no
-platform data for Irish Rail at all, and not OSM, which has no `level` tags
-outside the Dublin termini.
+It is also the expensive kind of fact. Only 10 of 57 stations name a direction
+in their prose, and no source checked has the rest: GTFS carries no platform
+data for Irish Rail at all, OSM has no `level` tags outside the Dublin termini,
+NaPTAN's `AccessArea` is null on all 152 rail stops. So it would be roughly 120
+platforms labelled by hand - the unprovenanced file `accessible-routes.md`
+warns against - bought for a question this site does not answer.
 
-That mapping is stable, small (roughly 120 platforms across 57 stations), and
-exactly the kind of thing a person who uses these stations can verify. It is
-also the failure mode `accessible-routes.md` warns against: a hand-maintained
-file with no provenance and no refresh.
-
-The way to have both is the discipline `STEP_FREE_ALTERNATIVES` already sets:
-an in-repo constant, one entry per platform, **each recording how it was
-verified** - the prose sentence where there is one, and otherwise a named source
-(a station visit, a photograph, a timetable that only lists one direction from
-that platform). An entry with no verification field does not go in. That keeps
-it auditable in the way a `stations.json` somebody edited once in 2026 is not.
-
-Worth doing only if somebody will actually label them. Ten stations of it are
-free from the prose today.
+The archive-shaped version of the same fact needs no labelling at all: "the
+lift to platform 2 was out for twelve days, and platform 1 was level
+throughout" bounds how bad the outage was, which is exactly what an archive is
+for. That is derivable from the prose today.
 
 ## When it says "unknown"
 
@@ -200,81 +193,53 @@ it. `head` says only "Dublin Pearse - Lift out of order".
   station is accessible". Pearse says Yes, Docklands says No. Never surface it
   as accessibility.
 
-## OpenStreetMap: what it can do, what it cannot, and why it is still here
+## OpenStreetMap: carried, measured, removed
 
-Recorded properly because the honest answer to "what is it for" is currently
-"nothing", and the next person to look at this should not have to re-measure.
+It was here as a second opinion on Irish Rail's prose and it is gone. Recorded
+at this length so nobody adds it back on the same hunch, because the hunch is a
+good one and it is wrong.
 
-### What it can do
+**What it could do.** It is the only machine-readable station graph that exists
+for this network. Around Pearse: named `Platform 1` and `Platform 2` ways, four
+`highway=elevator` nodes carrying `level` tags, escalators as `highway=steps` +
+`conveying`, `highway=corridor`, `wheelchair` tags. A routable topology, the
+thing GTFS `pathways.txt` would have been. It also spots 13 stations where the
+prose mentions no lift and OSM maps one, Limerick Junction among them.
 
-- It is the only machine-readable station graph that exists for this network.
-  Around Pearse: named `Platform 1` and `Platform 2` ways, four
-  `highway=elevator` nodes carrying `level` tags, three escalators as
-  `highway=steps` + `conveying`, `highway=corridor`, `wheelchair` tags. That is
-  a routable topology, the thing GTFS `pathways.txt` would have been.
-- It independently spots 13 stations where Irish Rail's prose mentions no lift
-  and OSM maps one, including Limerick Junction, whose page is the single word
-  "Level" while it has lift notices on record.
-- It is a second opinion on prose that is hand-written and demonstrably stale in
-  places.
+**What it could not do.** Three measurements, all against the real data:
 
-### What it cannot do
+1. **It changed no verdict.** `has_lift()` was consulted in exactly one place,
+   as `!= "yes"`, and OSM could only move a station from `no` to `unknown`.
+   Both fail that test. Checked with a synthetic digest mapping a lift at all
+   152 stations: 24 outages, 0 verdicts changed.
+2. **Its one signal was redundant.** A station in those 13 that has a notice
+   already returns `unknown` without it, because `claims_lift` is false.
+   Limerick Junction: same verdict, same wording, with or without.
+3. **It could not answer the street-side question**, which is the only thing
+   that would have earned its keep. "Which platform is reachable without a
+   lift" needs `level` tags on platforms. Sampled over 12 stations that have
+   had notices: 12 of 12 had platforms mapped, **2 of 12** carried a `level`
+   tag, both Dublin termini. Everywhere else there is platform geometry and no
+   vertical information, so the graph is not traversable.
 
-Three measurements, all against the real data:
+Irish Rail's prose answers that same question at 32 of 57 stations, in words.
 
-**1. It cannot change a verdict. Zero, measured.** `has_lift()` is consulted in
-exactly one place, `model.verdict`, as `!= "yes"`. OSM can only move a station
-from `no` to `unknown`, and both are `!= "yes"`. Checked with a synthetic digest
-mapping a lift at all 152 stations: `24 outages, 0 verdicts changed`.
+**So it went.** It cost about 60 lines, a monthly HTTP budget against a service
+that rate-limits, and the one place the raw-artefact invariant was bent - the
+raw map extracts total roughly 450 MB, so the digest had to be derived rather
+than verbatim. For nothing that reached a reader.
 
-**2. Its one genuinely useful signal is redundant.** The 13 stations where the
-prose is silent and OSM maps a lift look like a real catch, but a station in
-that set that has a notice already returns `unknown` without OSM, because
-`claims_lift` is false. Limerick Junction is the worked example: same verdict,
-same wording, with or without the digest. The signal only bites at stations with
-*no* notice, and those never appear on the site.
+The one thing that would bring it back: the day the site says **"this station
+has no lift"** out loud, those 13 stations become a wrong claim rather than a
+silent one. Nothing says that today, and the site is an outage archive, so
+nothing may ever need to.
 
-**3. It cannot answer the street-side question**, which is the one thing that
-would have earned its keep. "Which platform is reachable from the car park or
-the street without a lift" needs `level` tags on platforms and entrances.
-Sampled across 12 stations that have had notices:
-
-| | stations |
-|---|---|
-| platforms mapped | 12 of 12 |
-| platforms carrying a `level` tag | **2 of 12** (Pearse, Connolly) |
-| lifts carrying a `level` tag | 3 of 12 |
-
-The micro-mapping is a Dublin-termini phenomenon. Everywhere else OSM has the
-platform geometry and none of the vertical information, so the graph is not
-traversable and the question is unanswerable. Irish Rail's prose answers it at
-32 of 57 stations, in words.
-
-### So why is it still here
-
-On the merits it should probably go: about 60 lines, a monthly HTTP budget, and
-the one place the raw-artefact invariant is bent, in exchange for nothing that
-reaches a reader. It is kept for one reason only, and it is a weak one: the
-moment the site says **"this station has no lift"** out loud - a full station
-list, a network accessibility figure - those 13 stations become a wrong claim
-rather than a silent one, and this is what prevents it.
-
-If that never gets built, delete it. See issue #29, which carries the same
-numbers and the fill-it / use-it / drop-it options.
-
-## The snapshot, and where it bends the invariant
+## The snapshot
 
 `lifts-data/stations/irishrail-<date>.jsonl` holds every payload **verbatim**,
 one per line, `sort_keys=True`, the shape `store.write_raw` uses. 7.8 MB plain,
 which git stores at about 2 MB and which greps and diffs. Never edited; the
 derivation is always recomputed from it.
-
-`lifts-data/stations/osm-<date>.jsonl` is **a derived digest, not a verbatim
-snapshot** - counts per station, with the bbox and the ODbL attribution. The raw
-map extracts total roughly 450 MB across the network (Pearse's box alone is
-3 MB) and cannot go in a repository. This is the one place the raw-artefact rule
-is bent, and it is bent for the only source that can never make a claim on its
-own.
 
 Refreshed monthly by `.github/workflows/stations.yml`, which opens a PR rather
 than pushing: a reworded station page can move a verdict from "no step-free

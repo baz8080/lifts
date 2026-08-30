@@ -225,24 +225,14 @@ class TheLiftCallSentenceIsBoilerplate(unittest.TestCase):
         for code in ("MHIDE", "SKRES", "RAHNY", "RLUSK"):
             self.assertEqual(model.has_lift(station(code)), "yes", code)
 
+    def test_irish_rails_page_is_the_only_source(self):
+        # OpenStreetMap was carried here as a second opinion and removed once it
+        # was measured. notes/station-access.md says what it can and cannot do,
+        # so this is a reminder rather than a bare assertion about an argument.
+        self.assertEqual(model.has_lift.__code__.co_argcount, 1)
+
     def test_greystones_keeps_its_footbridge_sentence(self):
         self.assertIn("Footbridge only to platform 2", station("GSTNS").platform_access)
-
-
-class OpenStreetMapOnlySuppresses(unittest.TestCase):
-    """It is about two-thirds complete, so its silence cannot unmake a claim."""
-
-    def test_a_mapped_lift_where_the_prose_is_silent_is_not_a_no(self):
-        self.assertEqual(model.has_lift(station("LMRKJ"), {"lifts": 2}), "unknown")
-
-    def test_no_mapped_lift_does_not_overturn_the_prose(self):
-        self.assertEqual(model.has_lift(station("MHIDE"), {"lifts": 0}), "yes")
-
-    def test_it_can_contradict_an_explicit_denial(self):
-        self.assertEqual(model.has_lift(station("DRMOD"), {"lifts": 1}), "unknown")
-
-    def test_silence_on_both_sides_is_a_no(self):
-        self.assertEqual(model.has_lift(station("KILNY"), {"lifts": 0}), "no")
 
 
 class ReadingThePlatformNumbers(unittest.TestCase):

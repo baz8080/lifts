@@ -1,10 +1,8 @@
-"""The snapshot layer: the payload resolver, and what refuses to be written.
+"""The snapshot layer: the payload resolver, and the file it writes.
 
-Two behaviours here matter beyond "it parses". A refresh that changes nothing
-must produce a byte-identical file, or the monthly job opens a PR every month
-for no reason. And a partial OpenStreetMap digest must never be written, because
-the cross-check only ever suppresses a claim: a station missing from it makes
-the site more confident about that station, not less.
+One behaviour here matters beyond "it parses": a refresh that changes nothing
+must produce a byte-identical file, or the monthly job opens a pull request
+every month with no change in it.
 """
 
 from __future__ import annotations
@@ -86,60 +84,6 @@ class WritingASnapshot(unittest.TestCase):
             self.assertEqual(
                 [r["code"] for r in fetch.load_records(path)], ["ATHY", "THRLS"]
             )
-
-
-class TheCrossCheckReportsWhatItMissed(unittest.TestCase):
-    """A station missing from the OSM digest makes the site more confident.
-
-    That is the wrong direction, so the fetch hands back what it could not get
-    and the caller refuses to write a partial file rather than warning about one.
-    """
-
-    class _Station:
-        def __init__(self, code, lat="53.0", lon="-6.0"):
-            self.code, self.latitude, self.longitude = code, lat, lon
-
-    def _run(self, failing, attempts=2):
-        calls = []
-
-        def stub(code, lat, lon):
-            calls.append(code)
-            if code in failing:
-                raise OSError("HTTP Error 509: Bandwidth Limit Exceeded")
-            return {"code": code, "lifts": 0, "escalators": 0, "platforms": 1}
-
-        original, fetch.osm_digest = fetch.osm_digest, stub
-        delay, backoff = fetch.DELAY_SECONDS, fetch.BACKOFF_SECONDS
-        fetch.DELAY_SECONDS = fetch.BACKOFF_SECONDS = 0
-        try:
-            stations = [self._Station(c) for c in ("ATHY", "CRLOW", "THRLS")]
-            return fetch.fetch_osm(stations, log=lambda *a: None, attempts=attempts) + (calls,)
-        finally:
-            fetch.osm_digest, fetch.DELAY_SECONDS, fetch.BACKOFF_SECONDS = original, delay, backoff
-
-    def test_a_rate_limited_station_is_named_not_dropped(self):
-        digests, failed, _ = self._run({"CRLOW"})
-        self.assertEqual([d["code"] for d in digests], ["ATHY", "THRLS"])
-        self.assertIn("CRLOW", failed)
-        self.assertIn("509", failed["CRLOW"])
-
-    def test_it_retries_before_giving_up(self):
-        _, _, calls = self._run({"CRLOW"}, attempts=3)
-        self.assertEqual(calls.count("CRLOW"), 3)
-
-    def test_a_clean_run_reports_nothing_failed(self):
-        digests, failed, _ = self._run(set())
-        self.assertEqual(len(digests), 3)
-        self.assertEqual(failed, {})
-
-    def test_a_station_with_no_coordinates_is_a_failure_too(self):
-        original, fetch.osm_digest = fetch.osm_digest, lambda *a: {"code": "X"}
-        delay, fetch.DELAY_SECONDS = fetch.DELAY_SECONDS, 0
-        try:
-            _, failed = fetch.fetch_osm([self._Station("ATHY", None, None)], log=lambda *a: None)
-        finally:
-            fetch.osm_digest, fetch.DELAY_SECONDS = original, delay
-        self.assertIn("ATHY", failed)
 
 
 class WithNoSnapshotAtAll(unittest.TestCase):

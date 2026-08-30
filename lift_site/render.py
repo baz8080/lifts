@@ -141,7 +141,6 @@ def build(outages, now, until, facts=None):
             "stations": len(facts.stations),
             "with_lift": tally["yes"],
             "no_lift": tally["no"],
-            "unknown_lift": tally["unknown"],
         }
 
     data = {

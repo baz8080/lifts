@@ -1,1 +1,1 @@
-"""Station accessibility facts, from irishrail.ie and cross-checked against OSM."""
+"""Station accessibility facts, from Irish Rail's own station pages."""

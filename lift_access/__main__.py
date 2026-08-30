@@ -23,7 +23,6 @@ from . import fetch, model, snapshot
 
 SNAPSHOT_DIR = snapshot.SNAPSHOT_DIR
 STATIONS_PREFIX = snapshot.STATIONS_PREFIX
-OSM_PREFIX = snapshot.OSM_PREFIX
 
 
 def refresh(args):
@@ -37,38 +36,6 @@ def refresh(args):
               file=sys.stderr)
     path = fetch.write_snapshot(directory / f"{STATIONS_PREFIX}-{stamp}.jsonl", records)
     print(f"wrote {path} ({len(records)} stations)")
-
-    stations = []
-    for record in records:
-        if not record["body"]:
-            continue
-        node = fetch.station_node(json.loads(record["body"]))
-        station = model.station_from_node(node, record["slug"])
-        if station:
-            stations.append(station)
-
-    if args.skip_osm:
-        print("skipped the OSM cross-check")
-        return 0
-    print("cross-checking against OpenStreetMap")
-    digests, failed = fetch.fetch_osm(stations)
-    if failed:
-        # Refused, not warned. The cross-check only ever suppresses a claim, so
-        # a station missing from it makes the site more confident about that
-        # station, not less - which is the one direction of error this whole
-        # module exists to avoid. The station snapshot above is already written
-        # and is the useful half; rerun for the OSM half.
-        for code, why in sorted(failed.items())[:10]:
-            print(f"  {code}: {why}", file=sys.stderr)
-        print(
-            f"error: OpenStreetMap returned nothing for {len(failed)} of {len(stations)} "
-            "stations, so no digest was written. OSM rate-limits a long burst; rerun "
-            "in a few minutes.",
-            file=sys.stderr,
-        )
-        return 1
-    path = fetch.write_snapshot(directory / f"{OSM_PREFIX}-{stamp}.jsonl", digests)
-    print(f"wrote {path} ({len(digests)} stations)")
     return 0
 
 
@@ -103,18 +70,18 @@ def report(args):
         print(f"no station snapshot under {Path(args.data_dir) / SNAPSHOT_DIR}\n"
               f"run: python -m lift_access --data-dir {args.data_dir} refresh", file=sys.stderr)
         return 1
-    stations, digests, path = facts.stations, facts.osm, facts.path
+    stations, path = facts.stations, facts.path
     print(f"{len(stations)} stations from {path}\n")
 
     tally = facts.tally()
-    print(f"lift: {tally['yes']} yes, {tally['no']} no, {tally['unknown']} unknown\n")
+    print(f"lift: {tally['yes']} yes, {tally['no']} no\n")
 
     db_path = Path(args.data_dir) / DB_FILENAME
     if db_path.exists():
         print("--- what each notice on record means ---")
         for code, kind, head, text in _notices(db_path):
             station = stations.get(code)
-            result = model.verdict(station, kind, text, digests.get(code))
+            result = model.verdict(station, kind, text)
             print(f"\n  {code:6} {head}")
             print(f"    prose:   {(station.platform_access if station else '(no station)')[:150]}")
             print(f"    notice:  {model.plain(text)[:150]}")
@@ -142,8 +109,6 @@ def main(argv=None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     fetch_cmd = sub.add_parser("refresh", help="fetch the station facts and write the snapshot")
-    fetch_cmd.add_argument("--skip-osm", action="store_true",
-                           help="station payloads only, no OpenStreetMap cross-check")
     fetch_cmd.set_defaults(run=refresh)
 
     report_cmd = sub.add_parser("report", help="print what the current snapshot says")

@@ -23,25 +23,11 @@ SITE = "https://www.irishrail.ie"
 # page is the one whose job that is, so a slug going away cannot strand us.
 INDEX_URL = f"{SITE}/en-ie/travel-information/find-a-station/_payload.json"
 
-# OSM's own map API rather than Overpass: Overpass was rate-limiting and
-# 500ing across three endpoints while this was written, and the map API served
-# all 152 bboxes without a single failure.
-OSM_URL = "https://api.openstreetmap.org/api/0.6/map.json"
-
-# ~250 m either side of the station point. Wide enough for a long platform,
-# narrow enough not to drag in the shopping centre next door.
-OSM_HALF_SPAN = 0.0028
-
-OSM_ATTRIBUTION = "http://www.openstreetmap.org/copyright"
-
 USER_AGENT = "lifts-status/1.0 (+https://github.com/baz8080/lifts)"
 
 # Polite serial fetching. The whole run is ~150 requests and takes about three
 # minutes; there is no deadline on a monthly job.
 DELAY_SECONDS = 0.3
-
-# OSM answers a long burst with 429 and 509. Widens per attempt.
-BACKOFF_SECONDS = 5
 
 
 def _get(url, timeout=60):
@@ -121,73 +107,6 @@ def fetch_stations(log=print):
             log(f"  {n}/{len(slugs)}")
         time.sleep(DELAY_SECONDS)
     return records
-
-
-def osm_digest(code, lat, lon):
-    """What OSM has mapped inside one station's box.
-
-    A count, not the response. The full map extracts total ~450 MB across the
-    network - Pearse's box alone is 3 MB - which cannot go in a git repository,
-    so this is the one derived artefact in the snapshot rather than a verbatim
-    one. It is only ever used to *contradict* Irish Rail's prose, never to make
-    a claim of its own, which is what makes the compromise tolerable.
-    """
-    box = (lon - OSM_HALF_SPAN, lat - OSM_HALF_SPAN, lon + OSM_HALF_SPAN, lat + OSM_HALF_SPAN)
-    url = f"{OSM_URL}?bbox={box[0]:.4f},{box[1]:.4f},{box[2]:.4f},{box[3]:.4f}"
-    status, body = _get(url)
-    data = json.loads(body)
-    lifts = escalators = platforms = 0
-    for element in data.get("elements", []):
-        tags = element.get("tags") or {}
-        if tags.get("highway") == "elevator":
-            lifts += 1
-        elif tags.get("highway") == "steps" and tags.get("conveying"):
-            escalators += 1
-        if tags.get("railway") == "platform":
-            platforms += 1
-    # ODbL requires attribution wherever this is redistributed, and the snapshot
-    # is committed to a public repository, so it travels with the data.
-    return {
-        "code": code,
-        "bbox": [round(v, 4) for v in box],
-        "source": data.get("attribution") or OSM_ATTRIBUTION,
-        "lifts": lifts,
-        "escalators": escalators,
-        "platforms": platforms,
-    }
-
-
-def fetch_osm(stations, log=print, attempts=4):
-    """An OSM digest per station, and the stations it could not get.
-
-    Returns both, and the caller must not write a partial digest: OSM only ever
-    *suppresses* a claim here, so a station missing from it silently makes the
-    site more confident rather than less. A truncated cross-check is worse than
-    none, because it looks like one.
-
-    OSM answers a burst of 150 boxes with 429s and 509s, so each station is
-    retried with a widening wait before it is given up on.
-    """
-    digests, failed = [], {}
-    for n, station in enumerate(stations, 1):
-        try:
-            lat, lon = float(station.latitude), float(station.longitude)
-        except (TypeError, ValueError):
-            failed[station.code] = "no coordinates in the station payload"
-            continue
-        for attempt in range(attempts):
-            try:
-                digests.append(osm_digest(station.code, lat, lon))
-                failed.pop(station.code, None)
-                break
-            except Exception as exc:  # noqa: BLE001 - reported, never swallowed
-                failed[station.code] = f"{type(exc).__name__}: {exc}"
-                if attempt < attempts - 1:
-                    time.sleep(BACKOFF_SECONDS * (attempt + 1))
-        if n % 25 == 0:
-            log(f"  {n}/{len(stations)}")
-        time.sleep(DELAY_SECONDS)
-    return digests, failed
 
 
 def write_snapshot(path, records, fetched_at=None):

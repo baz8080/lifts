@@ -145,8 +145,7 @@ merged with `sort -u`.
 | irishrail.ie `stationCode` is the same code space as `locationCodes`, so there is no name-to-code join to build | `notes/station-access.md` § The sources |
 | "and" in `platformAccess` is a sequence, not a choice; a lift out removes step-free access unless one of two reviewed exceptions applies | `notes/station-access.md` § "and" is a sequence |
 | Escalators are not step-free, so an escalator outage removes a convenience, not access. Whether the grade should still weigh them the same is open | `notes/station-access.md` § Escalators |
-| OSM only ever suppresses a claim, never makes one, and a partial digest is refused rather than written | `notes/station-access.md` § OpenStreetMap |
-| The OSM digest is a derived artefact, not a verbatim snapshot; the raw extracts are ~450 MB | `notes/station-access.md` § The snapshot |
+| OpenStreetMap was carried as a second opinion and removed: it changed no verdict, its one signal was redundant, and it has no `level` tags outside the Dublin termini | `notes/station-access.md` § OpenStreetMap |
 | GTFS, the NTA developer API, NaPTAN and PTIMS all carry no accessibility data. Checked, closed, do not scope again | `notes/accessible-routes.md` |
 | The design layer is shared with uisce and esb via `../statusui`, a uv git dependency pinned in `uv.lock` - edit upstream, then `../statusui/rollout.sh` bumps all three sites. Vendored copies were tried first and drifted within a day. `lift_site/site.css` is this site's own | `notes/site.md` § The vendored copy became a pinned dependency; statusui's README |
 

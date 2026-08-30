@@ -15,15 +15,13 @@ from . import fetch, model
 
 SNAPSHOT_DIR = "stations"
 STATIONS_PREFIX = "irishrail"
-OSM_PREFIX = "osm"
 
 
 class Facts:
     """What the newest snapshot says, or an empty one when there is none."""
 
-    def __init__(self, stations=None, osm=None, path=None):
+    def __init__(self, stations=None, path=None):
         self.stations = stations or {}
-        self.osm = osm or {}
         self.path = path
 
     def __bool__(self):
@@ -33,14 +31,16 @@ class Facts:
         return self.stations.get(code)
 
     def has_lift(self, code):
+        """'yes' or 'no' for a station in the snapshot, 'unknown' for one that is not."""
         station = self.stations.get(code)
-        return model.has_lift(station, self.osm.get(code)) if station else "unknown"
+        return model.has_lift(station) if station else "unknown"
 
     def verdict(self, code, kind, text):
-        return model.verdict(self.stations.get(code), kind, text, self.osm.get(code))
+        return model.verdict(self.stations.get(code), kind, text)
 
     def tally(self):
-        counts = {"yes": 0, "no": 0, "unknown": 0}
+        """How many stations have a lift, of those in the snapshot."""
+        counts = {"yes": 0, "no": 0}
         for code in self.stations:
             counts[self.has_lift(code)] += 1
         return counts
@@ -62,6 +62,4 @@ def load(data_dir):
         station = model.station_from_node(node, record.get("slug", ""))
         if station:
             stations[station.code] = station
-    osm_path = fetch.latest_snapshot(directory, OSM_PREFIX)
-    osm = {d["code"]: d for d in fetch.load_records(osm_path)} if osm_path else {}
-    return Facts(stations, osm, stations_path)
+    return Facts(stations, stations_path)

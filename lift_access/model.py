@@ -159,21 +159,18 @@ def station_from_node(node, slug):
     )
 
 
-def has_lift(station, osm=None):
-    """'yes' | 'no' | 'unknown', for the station inventory.
+def has_lift(station):
+    """'yes' or 'no', for the station inventory.
 
-    OSM only ever suppresses. It is about two-thirds complete on Irish stations,
-    so its silence says nothing and cannot unmake Irish Rail's claim; but where
-    it maps a lift and the prose is silent - Limerick Junction, Mallow, Sligo,
-    Ennis and nine others - the site must not go on to tell a reader there is no
-    lift here.
+    Irish Rail's own page is the only source. OpenStreetMap was carried here as
+    a second opinion for a while and removed once it was measured: it changed no
+    verdict, its one signal was redundant, and it could not answer the question
+    that would have earned its keep. notes/station-access.md records what it can
+    and cannot do, so nobody adds it back on the same hunch.
     """
-    mapped = bool(osm and osm.get("lifts"))
     if station.denies_lift:
-        return "unknown" if mapped else "no"
-    if station.claims_lift:
-        return "yes"
-    return "unknown" if mapped else "no"
+        return "no"
+    return "yes" if station.claims_lift else "no"
 
 
 def affected_platforms(text):
@@ -194,7 +191,7 @@ def _unknown(platforms, reason):
     return Verdict("unknown", tuple(platforms), reason)
 
 
-def verdict(station, kind, text, osm=None):
+def verdict(station, kind, text):
     """What one notice means for step-free access at one station.
 
     The default is that a lift out removes step-free access to the platforms that
@@ -215,7 +212,7 @@ def verdict(station, kind, text, osm=None):
     if station is None:
         return _unknown(named, "This station is not in the station snapshot.")
 
-    if has_lift(station, osm) != "yes":
+    if has_lift(station) != "yes":
         return _unknown(
             named,
             f"Irish Rail's page for {station.name} does not mention a lift, so which "
