@@ -239,6 +239,7 @@ def run_rebuild(data_dir) -> int:
             )
             return 1
         with Store(data_dir) as store:
+            before = store.derived_row_count()
             store.reset_derived_tables()
             for record in store.iter_raw_lines():
                 apply_response(
@@ -251,6 +252,21 @@ def run_rebuild(data_dir) -> int:
                 )
                 count += 1
             skipped = store.raw_decode_errors
+            if count == 0 and before:
+                # The wipe is unconditional and runs before the first line is
+                # read, so this is the only thing between it and a database with
+                # history in it. `reset_derived_tables` stays in this transaction
+                # precisely so it can be taken back. A replay that recovered
+                # nothing is not a rebuild, whatever the exit code used to say.
+                store.conn.rollback()
+                print(
+                    f"error: nothing could be replayed from {store.raw_dir}, but the "
+                    f"database holds {before} derived row(s), so the wipe was rolled back "
+                    "and nothing changed. Either --data-dir is not the collected data, or "
+                    f"every raw line is unreadable ({skipped} skipped).",
+                    file=sys.stderr,
+                )
+                return 1
     print(f"rebuilt from {count} recorded run(s)")
     if skipped:
         print(
