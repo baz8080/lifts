@@ -432,7 +432,8 @@ class TestStepFreeChip(SiteModelCase):
         lift_platforms, claims, denies = access_model.read_platform_access(prose)
         station = access_model.Station(
             code=code, name=name, slug=code.lower(), latitude=None, longitude=None,
-            platform_access=access_model.plain(prose), lift_platforms=lift_platforms,
+            platform_access=access_model.plain(prose), ticket_office_access="",
+            lift_platforms=lift_platforms,
             claims_lift=claims, denies_lift=denies,
         )
         return snapshot.Facts({code: station})

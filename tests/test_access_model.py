@@ -93,6 +93,15 @@ PROSE = {
 
 NAMES = {"HZLCH": "Hazelhatch and Celbridge", "LMRKJ": "Limerick Junction"}
 
+# ticketOfficeAccess: the street-to-concourse leg, a separate field. Connolly's
+# escalator is named here and nowhere else, and Connolly is one of only two
+# stations that has escalator notices.
+ENTRY = {
+    "CNLLY": "<p>Escalator, lift or stairs from Amiens Street and from LUAS stop.<br>"
+    "Level access from car park.</p>",
+    "PERSE": "<p>Level, through main entrance to the booking hall</p>",
+}
+
 
 def station(code):
     lift_platforms, claims, denies = model.read_platform_access(PROSE[code])
@@ -103,6 +112,7 @@ def station(code):
         latitude=None,
         longitude=None,
         platform_access=model.plain(PROSE[code]),
+        ticket_office_access=model.plain(ENTRY.get(code, "")),
         lift_platforms=lift_platforms,
         claims_lift=claims,
         denies_lift=denies,
@@ -413,11 +423,18 @@ class EscalatorsAreNotStepFree(unittest.TestCase):
         for overclaim in ("step-free access unaffected", "access remains", "still step-free"):
             self.assertNotIn(overclaim, result.detail.lower())
 
-    def test_it_says_when_the_page_does_not_mention_an_escalator(self):
-        # Connolly has escalator notices on record and a page that never
-        # mentions one, so what the machine serves is not recorded anywhere.
+    def test_connollys_escalator_is_found_on_the_other_leg(self):
+        # It is named in ticketOfficeAccess and nowhere else. Checking only
+        # platformAccess published "the page does not mention an escalator" at
+        # the one station where that line rendered, and it was false.
         result = model.verdict(
             station("CNLLY"), "escalator", "The Escalator at the main concourse is out."
+        )
+        self.assertNotIn("does not mention an escalator", result.detail)
+
+    def test_it_still_says_so_when_neither_leg_names_one(self):
+        result = model.verdict(
+            station("ATHY"), "escalator", "The escalator is out of service."
         )
         self.assertIn("does not mention an escalator", result.detail)
 

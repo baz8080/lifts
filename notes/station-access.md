@@ -128,6 +128,25 @@ text in 228 messages, and both escalator notices name the machine unambiguously.
 That is a strong prior and not a proof, so `verdict` now returns `unknown` when a
 notice headed as one machine names the other in its text. It has never fired.
 
+**The journey has two legs and the derivation sees one.** `platformAccess`
+starts at the ticket office. `ticketOfficeAccess` is how you get from the street
+to the concourse, and it is a separate field. Connolly's notice is "The
+Escalator at **the main concourse**" - the entrance leg - and Connolly's
+escalator is named in `ticketOfficeAccess` and nowhere else:
+
+> "Escalator, lift or stairs from Amiens Street and from LUAS stop. Level access
+> from car park."
+
+Checking only `platformAccess` published "Irish Rail's page for Dublin Connolly
+does not mention an escalator" at the one station where that line rendered, and
+it was false. The escalator check now reads both fields and the station page
+quotes both, labelled, because a lift or an escalator can be on either leg.
+
+**The derivation still models only the platform leg**, and that is a real limit
+rather than a tidy one: a lift outage at a station entrance would be reasoned
+about against prose that describes a different part of the building. No notice
+on record is of that shape, and issue #33 carries it.
+
 **Where the source is silent.** Only 2 of 152 station pages mention an escalator
 at all, and **Connolly's does not** - though we know it has one, because it
 broke. So the prose is demonstrably not a complete inventory of vertical

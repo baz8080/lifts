@@ -287,14 +287,31 @@ def _access_html(code, facts):
 
     Quoted rather than summarised: every verdict on this page is derived from
     these sentences, and a reader who can see them can see when the derivation
-    has read one wrong. That has already happened once - see notes/station-access.md.
+    has read one wrong. That has already happened twice - see
+    notes/station-access.md.
+
+    Both legs of the journey, because they are different fields and only one of
+    them is derived from. `ticketOfficeAccess` is how you reach the concourse
+    from the street, which is where Connolly's escalator is and where
+    `platformAccess` says nothing at all.
     """
     station = facts.station(code) if facts else None
-    if station is None or not station.platform_access:
+    if station is None:
         return ""
-    lines = "".join(
-        f"<li>{html.escape(line)}</li>" for line in station.platform_access.split("\n") if line
-    )
+    legs = [
+        ("Into the station", station.ticket_office_access),
+        ("To the platforms", station.platform_access),
+    ]
+    blocks = ""
+    for label, prose in legs:
+        if not prose:
+            continue
+        items = "".join(
+            f"<li>{html.escape(line)}</li>" for line in prose.split("\n") if line
+        )
+        blocks += f"<h3>{label}</h3><ul>{items}</ul>"
+    if not blocks:
+        return ""
     note = _step_free_note(code, facts)
     earned = (
         f'<p class="sf"><b>{html.escape(STEP_FREE_CHIP)}.</b> '
@@ -304,9 +321,10 @@ def _access_html(code, facts):
     )
     return (
         '<div class="card access"><h2>Getting to the platforms</h2>'
-        f"<ul>{lines}</ul>{earned}"
+        f"{blocks}{earned}"
         '<p class="src">Irish Rail\'s station page for this station, as collected. '
-        "Everything this page says about step-free access is derived from it.</p></div>"
+        "What this page says about step-free access is derived from the second list; "
+        "the first is shown because a lift or escalator can be on either leg.</p></div>"
     )
 
 

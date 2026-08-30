@@ -86,6 +86,11 @@ class Station(NamedTuple):
     latitude: str | None
     longitude: str | None
     platform_access: str  # the prose, as published, for quoting back to a reader
+    # How you get from the street to the concourse. A separate leg of the
+    # journey, and the derivation does not model it: `platform_access` starts at
+    # the ticket office. Read here only so the page can quote it and so the
+    # escalator check can see Connolly's, which is named nowhere else.
+    ticket_office_access: str
     lift_platforms: frozenset  # platforms the prose puts a lift at; may be {ALL_PLATFORMS}
     claims_lift: bool
     denies_lift: bool  # Dromod is the only station that says so outright
@@ -164,6 +169,7 @@ def station_from_node(node, slug):
     if not isinstance(node, dict) or not node.get("stationCode"):
         return None
     fragment = (node.get("platformAccess") or {}).get("html") or ""
+    entry = (node.get("ticketOfficeAccess") or {}).get("html") or ""
     lift_platforms, claims, denies = read_platform_access(fragment)
     return Station(
         code=str(node["stationCode"]).strip(),
@@ -172,6 +178,7 @@ def station_from_node(node, slug):
         latitude=node.get("latitude"),
         longitude=node.get("longitude"),
         platform_access=plain(fragment),
+        ticket_office_access=plain(entry),
         lift_platforms=lift_platforms,
         claims_lift=claims,
         denies_lift=denies,
@@ -269,7 +276,12 @@ def verdict(station, kind, text):
             "An escalator is moving stairs, so it was not a step-free route to begin "
             "with and its being out did not remove one."
         )
-        if station is not None and not ESCALATOR.search(station.platform_access or ""):
+        # Both fields: Connolly's escalator is named only in ticketOfficeAccess,
+        # and Connolly is one of the two stations that has escalator notices.
+        named_here = station is not None and ESCALATOR.search(
+            f"{station.platform_access or ''}\n{station.ticket_office_access or ''}"
+        )
+        if station is not None and not named_here:
             detail += (
                 f" Irish Rail's page for {station.name} does not mention an escalator, "
                 "so what this one served is not recorded."

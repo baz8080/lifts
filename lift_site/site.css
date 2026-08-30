@@ -101,3 +101,7 @@
   white-space: nowrap;
 }
 .card.access .sf { font-size: 12.5px; margin-top: 8px; }
+
+/* the two legs of the journey, quoted separately because only one is derived from */
+.card.access h3 { font-size: 12.5px; margin: 10px 0 2px; color: var(--muted); font-weight: 600; }
+.card.access h3:first-of-type { margin-top: 0; }
