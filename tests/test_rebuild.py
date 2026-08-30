@@ -119,11 +119,42 @@ class TestRebuildRoundTrip(unittest.TestCase):
         self.assertEqual(before["unidentifiable"], after["unidentifiable"])
 
     def test_rebuild_with_no_raw_logs_is_a_harmless_noop(self):
+        # A fresh install has nothing to replay and nothing to lose.
         code = poll.run_rebuild(self.data_dir)
         self.assertEqual(code, 0)
         snap = _snapshot(self.data_dir)
         self.assertEqual(snap["messages"], {})
         self.assertEqual(snap["runs"], [])
+
+    def test_rebuild_refuses_to_empty_a_database_it_cannot_replay(self):
+        # The wipe runs before the first line is read, so a --data-dir that is
+        # not the collected data, an unmounted drive or a renamed raw/ used to
+        # empty the database and report success. The raw log being the source of
+        # truth makes that recoverable, not harmless: the exit code said the
+        # rebuild worked.
+        poll.run_poll(self.data_dir, client=FakeClient([(200, json.dumps([STATION_A]))]))
+        before = _snapshot(self.data_dir)
+        self.assertTrue(before["messages"])
+
+        for path in (self.data_dir / "raw").glob("messages-*.jsonl"):
+            path.rename(path.with_suffix(".moved"))
+
+        code = poll.run_rebuild(self.data_dir)
+        self.assertEqual(code, 1)
+        after = _snapshot(self.data_dir)
+        self.assertEqual(before["messages"], after["messages"])
+        self.assertEqual(before["runs"], after["runs"])
+
+    def test_a_log_of_nothing_but_unreadable_lines_is_refused_too(self):
+        # Same rule from the other direction: files present, none replayable.
+        poll.run_poll(self.data_dir, client=FakeClient([(200, json.dumps([STATION_A]))]))
+        before = _snapshot(self.data_dir)
+        for path in (self.data_dir / "raw").glob("messages-*.jsonl"):
+            path.write_text("{ truncated\n", encoding="utf-8")
+
+        code = poll.run_rebuild(self.data_dir)
+        self.assertEqual(code, 1)
+        self.assertEqual(_snapshot(self.data_dir)["messages"], before["messages"])
 
 
 if __name__ == "__main__":

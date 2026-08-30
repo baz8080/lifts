@@ -196,6 +196,13 @@ class Store:
         self.conn.execute("DELETE FROM messages")
         self.conn.execute("DELETE FROM runs")
 
+    def derived_row_count(self) -> int:
+        """How much history the wipe above would destroy."""
+        return sum(
+            self.conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+            for table in ("runs", "messages", "unidentifiable_items")
+        )
+
     # -- message lifecycle ---------------------------------------------
 
     def diff_and_update_messages(self, run_id: int, observed_at: str, items: list) -> dict:

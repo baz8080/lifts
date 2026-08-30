@@ -153,32 +153,48 @@ def storage_banner(data_dir, problem: str) -> str:
     )
 
 
+def _marker_path() -> Path:
+    state_dir = os.environ.get("LIFT_STATUS_DATA_DIR") or tempfile.gettempdir()
+    return Path(state_dir) / ".last-alert.json"
+
+
+def _digest(message: str) -> str:
+    return hashlib.sha256(message.encode("utf-8")).hexdigest()
+
+
 def _suppressed(message: str) -> bool:
-    """True if this exact banner was already pushed within the repeat window.
+    """True if this exact banner was already *delivered* within the repeat window.
 
     A stuck condition would otherwise push every 30 minutes until someone
     patches the code, teaching the user to mute the topic. Best-effort: any
-    problem reading or writing the marker means send.
+    problem reading the marker means send.
     """
-    state_dir = os.environ.get("LIFT_STATUS_DATA_DIR") or tempfile.gettempdir()
-    path = Path(state_dir) / ".last-alert.json"
-    digest = hashlib.sha256(message.encode("utf-8")).hexdigest()
-    now = time.time()
     try:
-        state = json.loads(path.read_text(encoding="utf-8"))
+        state = json.loads(_marker_path().read_text(encoding="utf-8"))
         sent_at = float(state.get("sent_at", 0))
-        if state.get("digest") == digest and now - sent_at < ALERT_REPEAT_SECONDS:
+        if state.get("digest") == _digest(message) and time.time() - sent_at < ALERT_REPEAT_SECONDS:
             return True
     except (OSError, ValueError, TypeError, AttributeError):
         # AttributeError: the file parsed but is not an object (`null`, a list,
         # a bare string), so .get is not there. Best-effort means send, not die
         # here - notify()'s own guard starts after this call.
         pass
+    return False
+
+
+def _mark_delivered(message: str) -> None:
+    """Start the repeat window, and only once the webhook has actually taken it.
+
+    Writing this on the attempt instead silences the next 24 hours on a webhook
+    blip, which lands hardest at the only moment that matters: the first alert
+    of a collector that has stopped.
+    """
     try:
-        path.write_text(json.dumps({"digest": digest, "sent_at": now}), encoding="utf-8")
+        _marker_path().write_text(
+            json.dumps({"digest": _digest(message), "sent_at": time.time()}), encoding="utf-8"
+        )
     except OSError:
         pass
-    return False
 
 
 def notify(message: str, dedup: bool = True) -> bool:
@@ -201,6 +217,8 @@ def notify(message: str, dedup: bool = True) -> bool:
             headers = {"Content-Type": "application/json"}
         req = urllib.request.Request(url, data=data, headers=headers, method="POST")
         urllib.request.urlopen(req, timeout=10).close()
+        if dedup:
+            _mark_delivered(message)
         return True
     except Exception as exc:  # pragma: no cover - never let alerting break the run
         print(f"warning: alert webhook failed: {exc}", file=sys.stderr)
