@@ -17,6 +17,7 @@ from pathlib import Path
 
 import statusui
 
+from lift_access import model as access_model
 from lift_status.parse import DUBLIN
 
 from . import model
@@ -128,6 +129,11 @@ def build(outages, now, until, facts=None):
     # The denominator the site never had. The feed names a station only when
     # something is wrong with it, so "across 12 stations" reads as the whole
     # network until it is set against the 152 stations that exist.
+    # Stations where Irish Rail's own page names a step-free way to a platform
+    # that does not use the lift. Two in the country, both hand-reviewed in
+    # lift_access.model.STEP_FREE_ALTERNATIVES - never inferred from the prose.
+    step_free = sorted(c for c in stations if _step_free_note(c, facts))
+
     network = None
     if facts:
         tally = facts.tally()
@@ -141,6 +147,7 @@ def build(outages, now, until, facts=None):
     data = {
         "generated": _stamp(now),
         "network": network,
+        "stepfree": step_free,
         # What the build knows, as distinct from when it ran. Without this the
         # page dates itself by the clock and a reader cannot tell a quiet week
         # from a collector that stopped.
@@ -292,9 +299,16 @@ def _access_html(code, facts):
     lines = "".join(
         f"<li>{html.escape(line)}</li>" for line in station.platform_access.split("\n") if line
     )
+    note = _step_free_note(code, facts)
+    earned = (
+        f'<p class="sf"><b>{html.escape(STEP_FREE_CHIP)}.</b> '
+        f'Reviewed against this line: "{html.escape(note)}".</p>'
+        if note
+        else ""
+    )
     return (
         '<div class="card access"><h2>Getting to the platforms</h2>'
-        f"<ul>{lines}</ul>"
+        f"<ul>{lines}</ul>{earned}"
         '<p class="src">Irish Rail\'s station page for this station, as collected. '
         "Everything this page says about step-free access is derived from it.</p></div>"
     )
@@ -362,6 +376,36 @@ def _day_cells(cells, ym, partial, kind="lift"):
     # nothing to qualify on a day with no data or no colour yet
     return statusui.day_cells(
         cells, ym, partial, _day_labels(kind), qualify=lambda ch: ch not in "89"
+    )
+
+
+STEP_FREE_CHIP = "Step-free route"
+
+# Deliberately narrow. "Accessible station" would be a far bigger claim than the
+# reviewed list makes, and the international access symbol would read as one.
+STEP_FREE_TITLE = (
+    "Irish Rail's page names a step-free way to a platform here that does not "
+    "use the lift"
+)
+
+
+def _step_free_note(code, facts):
+    """The sentence behind this station's chip, or None if it has no entry."""
+    if not facts:
+        return None
+    for (station_code, _), sentence in access_model.STEP_FREE_ALTERNATIVES.items():
+        if station_code == code:
+            return sentence
+    return None
+
+
+def _step_free_chip(code, facts):
+    """The same markup site.html's stepFreeChip() builds."""
+    if not _step_free_note(code, facts):
+        return ""
+    return (
+        f'<span class="sfchip" role="img" aria-label="{html.escape(STEP_FREE_TITLE)}" '
+        f'title="{html.escape(STEP_FREE_TITLE)}">{STEP_FREE_CHIP}</span>'
     )
 
 
@@ -563,7 +607,7 @@ def station_page(code, data, by_month, listed_now=(), facts=None):
         '<a class="back" href="../index.html">← All stations</a>',
         '<div class="chead">',
         _chip(letter, f"Grade {letter} for {month_label(latest)}" if letter else "No grade yet"),
-        f"<h1>{html.escape(name)}</h1></div>",
+        f"<h1>{html.escape(name)}</h1>{_step_free_chip(code, facts)}</div>",
         f'<div class="sub">Irish Rail station code {html.escape(code)} · {graded}<br>'
         f'Data to {html.escape(data["observed"])}'
         + (

@@ -91,3 +91,13 @@
 .card.access ul { margin: 0; padding-left: 18px; }
 .card.access li { font-size: 13.5px; margin: 3px 0; }
 .card.access .src { color: var(--muted); font-size: 12px; margin-top: 8px; }
+
+/* Marks the two stations where Irish Rail's page names a step-free way to a
+   platform that does not use the lift. Says only that: the access symbol would
+   read as "accessible station", which the reviewed list does not claim. */
+.sfchip {
+  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; flex: none;
+  background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good-text);
+  white-space: nowrap;
+}
+.card.access .sf { font-size: 12.5px; margin-top: 8px; }

@@ -51,6 +51,20 @@ entry to the exception list is a human decision in a diff, never a parser
 output, and `tests/test_site_real.py` fails if any published verdict claims an
 alternative that is not in it.
 
+## The chip
+
+The two exceptions get a small green pill, "Step-free route", on the overview
+row, the app's station detail and the static station page, and the card that
+quotes the prose says which line earned it. It deliberately does not say
+"accessible station" and does not use the international access symbol: both
+would read as a far bigger claim than the reviewed list makes, which is only
+that Irish Rail's page names a step-free way to a platform there that does not
+use the lift.
+
+Neither Raheny nor Cork has ever had a notice in the corpus, so the chip has
+never rendered on the live site. `tests/test_site_render.py` is the only thing
+exercising it, which is why it is tested rather than left to be discovered.
+
 ## The safe direction
 
 A reader told access is gone when it was not has made one wasted check. A reader

@@ -175,6 +175,17 @@ function gradeChip(g, label) {
   return '<span class="gradechip g-' + (g || "none") + '" role="img" aria-label="' +
     esc(label) + '" title="' + esc(label) + '">' + (g || "-") + "</span>";
 }
+// Deliberately narrow wording: "Accessible station" would be a far bigger claim
+// than the reviewed list makes. Mirrored in render._step_free_chip().
+var STEP_FREE_CHIP = "Step-free route";
+var STEP_FREE_TITLE = "Irish Rail's page names a step-free way to a platform here that does not use the lift";
+
+function stepFreeChip(code) {
+  if (!D.stepfree || D.stepfree.indexOf(code) < 0) return "";
+  return '<span class="sfchip" role="img" aria-label="' + esc(STEP_FREE_TITLE) +
+    '" title="' + esc(STEP_FREE_TITLE) + '">' + esc(STEP_FREE_CHIP) + "</span>";
+}
+
 function gradeLabel(g, where) {
   return (g ? "Grade " + g : "No grade") + " for " + where;
 }
@@ -213,7 +224,8 @@ function renderOverview() {
     var m = r.m;
     return '<div class="place"><div class="row" onclick="go(\'' + esc(r.code) + '\')">' +
       '<div class="cname">' + gradeChip(gradeFor(m[4]), gradeLabel(gradeFor(m[4]), r.name)) +
-        '<a href="s/' + D.slugs[r.code] + '.html" onclick="event.preventDefault()">' + esc(r.name) + "</a></div>" +
+        '<a href="s/' + D.slugs[r.code] + '.html" onclick="event.preventDefault()">' + esc(r.name) + "</a>" +
+        stepFreeChip(r.code) + "</div>" +
       bars(m[0], m[5], curMonth) +
       '<div class="stats"><div class="counts">' +
         "<b>" + m[1] + "</b><span>out of service</span>" +
@@ -323,7 +335,7 @@ function renderStation() {
   var head =
     '<a class="back" href="#" onclick="event.preventDefault();go(null)">← All stations</a>' +
     '<div class="chead">' + gradeChip(latestGrade, gradeLabel(latestGrade, latestLabel)) +
-      "<h2>" + esc(name) + "</h2></div>" +
+      "<h2>" + esc(name) + "</h2>" + stepFreeChip(code) + "</div>" +
     '<div class="sub">' +
       "Irish Rail station code " + esc(code) + " · graded on " + latestLabel +
       " · every month since collection began, newest first<br>" +
