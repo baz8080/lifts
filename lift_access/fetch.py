@@ -25,6 +25,10 @@ INDEX_URL = f"{SITE}/en-ie/travel-information/find-a-station/_payload.json"
 
 USER_AGENT = "lifts-status/1.0 (+https://github.com/baz8080/lifts)"
 
+# Keyed under this in `failed` when the station list itself could not be read, so
+# the caller can say "the run never started" rather than counting it as a station.
+INDEX_FAILED = "(station index)"
+
 # Polite serial fetching. The whole run is ~150 requests and takes about three
 # minutes; there is no deadline on a monthly job.
 DELAY_SECONDS = 0.3
@@ -102,7 +106,7 @@ def fetch_stations(log=print, attempts=3):
     except Exception as exc:  # noqa: BLE001 - reported, never swallowed
         # Without the index there is no list to fetch, and an HTML error page
         # where the payload should be is a JSONDecodeError, not an OSError.
-        return [], {"(station index)": f"{type(exc).__name__}: {exc}"}
+        return [], {INDEX_FAILED: f"{type(exc).__name__}: {exc}"}
     log(f"{len(slugs)} stations listed")
     records, failed = [], {}
     for n, slug in enumerate(slugs, 1):

@@ -30,6 +30,16 @@ def refresh(args):
     stamp = datetime.now(UTC).strftime("%Y%m%d")
 
     records, failed = fetch.fetch_stations()
+    if fetch.INDEX_FAILED in failed:
+        # No station was attempted, so counting this as a failed station reads as
+        # "1 of 1 stations could not be fetched", which is nonsense.
+        print(
+            f"error: could not read the station list from {fetch.INDEX_URL}\n"
+            f"  {failed[fetch.INDEX_FAILED]}\n"
+            "No stations were fetched and no snapshot was written.",
+            file=sys.stderr,
+        )
+        return 1
     if failed:
         # Refused, not warned. `latest_snapshot` reads the newest file, so a
         # partial one shadows the last good snapshot permanently, and the damage

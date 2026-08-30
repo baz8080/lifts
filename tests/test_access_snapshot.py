@@ -146,7 +146,14 @@ class APartialFetchIsRefused(unittest.TestCase):
         # An HTML error page where the payload should be is a JSONDecodeError.
         records, failed = self._raw(lambda url, timeout=60: (200, "<html>502</html>"))
         self.assertEqual(records, [])
-        self.assertIn("JSONDecodeError", failed["(station index)"])
+        self.assertIn("JSONDecodeError", failed[fetch.INDEX_FAILED])
+
+    def test_an_index_failure_is_not_counted_as_a_station(self):
+        # No station was attempted. Counting it as one reads as "1 of 1 stations
+        # could not be fetched", which tells the operator the wrong thing.
+        records, failed = self._raw(lambda url, timeout=60: (200, "<html>502</html>"))
+        self.assertEqual(list(failed), [fetch.INDEX_FAILED])
+        self.assertEqual(len(records) + len(failed) - 1, 0)
 
     def _raw(self, stub):
         original, fetch._get = fetch._get, stub
