@@ -20,9 +20,13 @@ STATIONS_PREFIX = "irishrail"
 class Facts:
     """What the newest snapshot says, or an empty one when there is none."""
 
-    def __init__(self, stations=None, path=None):
+    def __init__(self, stations=None, path=None, dropped=0):
         self.stations = stations or {}
         self.path = path
+        # Records in the file that read back as no station. Refusing to load
+        # would take the site down over a snapshot it could still mostly use,
+        # so this is carried out to the build to say out loud instead.
+        self.dropped = dropped
 
     def __bool__(self):
         return bool(self.stations)
@@ -52,7 +56,8 @@ def load(data_dir):
     if stations_path is None:
         return Facts()
     stations = {}
-    for record in fetch.load_records(stations_path):
+    records = fetch.load_records(stations_path)
+    for record in records:
         if not record.get("body"):
             continue
         try:
@@ -62,4 +67,8 @@ def load(data_dir):
         station = model.station_from_node(node, record.get("slug", ""))
         if station:
             stations[station.code] = station
-    return Facts(stations, stations_path)
+    # `refresh` refuses to write a record it cannot read, so a gap here means
+    # this file was written against a payload shape the reader has since stopped
+    # matching. Every dropped station becomes an "unknown" verdict and leaves the
+    # denominator, which is not a thing to discover from the published figure.
+    return Facts(stations, stations_path, len(records) - len(stations))

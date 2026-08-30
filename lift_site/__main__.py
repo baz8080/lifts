@@ -74,6 +74,12 @@ def main(argv=None) -> int:
     if data["network"]:
         n = data["network"]
         print(f"  station facts: {n['stations']} stations, {n['with_lift']} with a lift")
+        if facts.dropped:
+            print(
+                f"  WARNING: {facts.dropped} record(s) in {facts.path.name} read back as no "
+                "station, so they are published as unknown and are out of the denominator",
+                file=sys.stderr,
+            )
     else:
         print("  no station snapshot; the site says nothing about what a station has",
               file=sys.stderr)

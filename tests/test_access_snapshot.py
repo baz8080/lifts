@@ -104,7 +104,9 @@ class APartialFetchIsRefused(unittest.TestCase):
             calls.append(slug)
             if slug in failing:
                 raise OSError("HTTP Error 503: Service Unavailable")
-            return 200, json.dumps({"slug": slug})
+            # A real payload, not a stub body: fetch_stations counts a station
+            # as fetched only if what came back reads back as one.
+            return 200, json.dumps(PAYLOAD)
 
         original, fetch._get = fetch._get, stub
         delay, backoff = fetch.DELAY_SECONDS, fetch.BACKOFF_SECONDS
@@ -249,3 +251,86 @@ class AnIndexThatNamesNoStationIsRefused(unittest.TestCase):
         code, written = self._refresh(json.dumps(emptied))
         self.assertEqual(code, 1)
         self.assertEqual(written, [])
+
+
+class APayloadThatCannotBeReadIsNotAFetchedStation(unittest.TestCase):
+    """A 200 proves the transport worked, not that the payload still parses.
+
+    The snapshot is written verbatim and nothing downstream refuses it, so a
+    renamed cache key would write a file of clean records that read back as
+    almost no stations, and the site would publish what survived as the national
+    denominator with every other station an "unknown" verdict.
+    """
+
+    def _fetch(self, body_for):
+        original, fetch._get = fetch._get, lambda url, timeout=60: (
+            (200, json.dumps(PAYLOAD))
+            if url == fetch.INDEX_URL
+            else (200, body_for(url.rsplit("/", 2)[-2]))
+        )
+        delay, backoff = fetch.DELAY_SECONDS, fetch.BACKOFF_SECONDS
+        fetch.DELAY_SECONDS = fetch.BACKOFF_SECONDS = 0
+        try:
+            return fetch.fetch_stations(log=lambda *a: None, attempts=1)
+        finally:
+            fetch._get, fetch.DELAY_SECONDS, fetch.BACKOFF_SECONDS = original, delay, backoff
+
+    def test_a_renamed_cache_key_is_a_failure_not_a_record(self):
+        renamed = list(PAYLOAD)
+        renamed[2] = {"stationDetail/athy-en-ie": 3, "kontentStations-en-ie": 12}
+        records, failed = self._fetch(lambda slug: json.dumps(renamed))
+        self.assertEqual(records, [])
+        self.assertEqual(sorted(failed), ["athy", "carlow"])
+        self.assertIn("no station in it", failed["athy"])
+
+    def test_a_payload_with_no_station_code_is_a_failure_too(self):
+        # station_from_node returns None without one, and the code is the join
+        # to the message feed, so a station without it is of no use here.
+        codeless = list(PAYLOAD)
+        codeless[4] = ""
+        records, failed = self._fetch(lambda slug: json.dumps(codeless))
+        self.assertEqual(records, [])
+        self.assertIn("no station in it", failed["athy"])
+
+    def test_a_body_that_is_not_json_never_reaches_the_snapshot(self):
+        records, failed = self._fetch(lambda slug: "<html>maintenance</html>")
+        self.assertEqual(records, [])
+        self.assertEqual(sorted(failed), ["athy", "carlow"])
+
+    def test_a_readable_payload_is_still_recorded_verbatim(self):
+        records, failed = self._fetch(lambda slug: json.dumps(PAYLOAD))
+        self.assertEqual(failed, {})
+        self.assertEqual([r["slug"] for r in records], ["athy", "carlow"])
+        self.assertEqual(records[0]["body"], json.dumps(PAYLOAD))
+
+
+class ASnapshotThatShrinksOnReadSaysSo(unittest.TestCase):
+    """The write side cannot catch a reader that changed after the file was written."""
+
+    def _load(self, records):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        directory = Path(tmp.name) / snapshot.SNAPSHOT_DIR
+        fetch.write_snapshot(directory / "irishrail-20260901.jsonl", records)
+        return snapshot.load(tmp.name)
+
+    def test_it_counts_what_it_could_not_read(self):
+        unreadable = list(PAYLOAD)
+        unreadable[2] = {"stationDetail/athy-en-ie": 3}
+        facts = self._load([
+            {"slug": "athy", "http_status": 200, "body": json.dumps(PAYLOAD)},
+            {"slug": "carlow", "http_status": 200, "body": json.dumps(unreadable)},
+        ])
+        self.assertEqual(len(facts.stations), 1)
+        self.assertEqual(facts.dropped, 1)
+
+    def test_a_snapshot_that_reads_clean_drops_nothing(self):
+        facts = self._load([{"slug": "athy", "http_status": 200, "body": json.dumps(PAYLOAD)}])
+        self.assertEqual(facts.dropped, 0)
+        self.assertTrue(facts)
+
+    def test_a_missing_snapshot_is_not_a_drop(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            facts = snapshot.load(tmp)
+        self.assertFalse(facts)
+        self.assertEqual(facts.dropped, 0)

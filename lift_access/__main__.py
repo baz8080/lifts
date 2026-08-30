@@ -106,6 +106,13 @@ def report(args):
         return 1
     stations, path = facts.stations, facts.path
     print(f"{len(stations)} stations from {path}\n")
+    if facts.dropped:
+        print(
+            f"warning: {facts.dropped} record(s) in {path.name} read back as no station. "
+            "refresh refuses to write one it cannot read, so the payload shape has moved "
+            "under fetch.station_node since this file was written.",
+            file=sys.stderr,
+        )
 
     tally = facts.tally()
     print(f"lift: {tally['yes']} yes, {tally['no']} no\n")

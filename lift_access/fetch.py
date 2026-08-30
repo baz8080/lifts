@@ -17,6 +17,8 @@ import urllib.error
 import urllib.request
 from datetime import UTC, datetime
 
+from . import model
+
 SITE = "https://www.irishrail.ie"
 
 # Every station payload carries the full station list, but the find-a-station
@@ -91,6 +93,21 @@ def station_slugs(payload):
     return []
 
 
+def _yields_station(slug, body):
+    """Does this payload actually carry a station, or only look like one?
+
+    A 200 with a non-empty body proves the transport worked, not that the CMS
+    still shapes its payload the way `station_node` reads it. A renamed cache
+    key writes a snapshot of clean records that read back as no stations at all,
+    and the site publishes whatever survived as the national denominator.
+    """
+    try:
+        node = station_node(json.loads(body))
+    except json.JSONDecodeError:
+        return False
+    return model.station_from_node(node, slug) is not None
+
+
 def fetch_stations(log=print, attempts=3):
     """Every station payload, verbatim, and the slugs it could not get.
 
@@ -99,6 +116,9 @@ def fetch_stations(log=print, attempts=3):
     verdict silently becomes "unknown" and which drops out of the denominator,
     and the newest file on disk is the one the site reads. Transient failures are
     retried before a slug is given up on.
+
+    A station counts as fetched only if its payload reads back as one, because
+    the snapshot is written verbatim and nothing downstream refuses it.
     """
     try:
         _, index_body = _get(INDEX_URL)
@@ -114,11 +134,14 @@ def fetch_stations(log=print, attempts=3):
         for attempt in range(attempts):
             try:
                 status, body = _get(url)
-                if status == 200 and body:
+                if status != 200 or not body:
+                    failed[slug] = f"HTTP {status}, {len(body)} bytes"
+                elif not _yields_station(slug, body):
+                    failed[slug] = f"HTTP {status}, {len(body)} bytes, but no station in it"
+                else:
                     records.append({"slug": slug, "http_status": status, "body": body})
                     failed.pop(slug, None)
                     break
-                failed[slug] = f"HTTP {status}, {len(body)} bytes"
             except urllib.error.HTTPError as exc:
                 failed[slug] = f"HTTP {exc.code}"
             except Exception as exc:  # noqa: BLE001 - reported, never swallowed
