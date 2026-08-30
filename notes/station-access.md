@@ -109,6 +109,36 @@ issue is auditable in the way this project asks every other claim to be. It is
 also the only route by which a fact that exists nowhere machine-readable can
 ever reach the site.
 
+## What the second review caught
+
+Three of its findings were the first review's own findings, reappearing in the
+code written to fix them. Worth recording as a habit rather than three bugs.
+
+- **A stale reviewed entry forfeited every other platform.** The first review
+  found that a notice naming platforms the page does not list a lift at was
+  discarding the platforms it *did* know, and that was fixed by partitioning.
+  The drift check added afterwards repeated it: a reworded Cork page would have
+  taken platform 7 down with 5A. Same partition now.
+- **The app caveat was shown where no derivation ran.** The first review found
+  the step-free chip rendering for a station absent from the snapshot. The
+  caveat added afterwards was a single global flag and did the same thing, so
+  "worked out from Irish Rail's page" could sit above "this station is not in
+  the station snapshot". It is gated per station now.
+- **The correction link pointed at pages that do not exist.** The permalink was
+  slugged from the snapshot's station name while pages are named from the
+  newest notice's, which differ at Clondalkin and Hazelhatch. Both the slug and
+  the issue title now come from what the page is actually called.
+
+And one that was nobody's fault twice over: **a notice naming both machines
+read as unknown.** `classify` puts lift first, so "Lifts and escalators out of
+order" is a lift notice whose text names an escalator, and the premise guard
+fired on it. The worst case for a reader became the least informative verdict.
+The guard now distinguishes a text naming only the *other* machine, which means
+the head is probably wrong, from one naming both, which is a combined outage:
+whatever else broke, the lift is out, so the platforms are lost. The escalator
+branch still withdraws on both, because "an escalator was never step-free" is no
+comfort if a lift went with it.
+
 ## The safe direction
 
 A reader told access is gone when it was not has made one wasted check. A reader

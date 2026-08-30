@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import html as html_mod
 import json
 import re
 import unittest
+import urllib.parse
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -498,6 +500,29 @@ class TestStepFreeChip(SiteModelCase):
         _, page = self._build("ATHY", "Athy", "<p>Level to platform 1<br>Lift to platform 2</p>")
         self.assertIn(render.CORRECTION_PROMPT, page)
         self.assertIn("issues/new?title=Station+access%3A+Athy", page)
+
+    def test_the_permalink_in_the_report_points_at_the_real_page(self):
+        # The site names pages from the notice's station name and the snapshot
+        # has its own. Re-deriving the slug sent Clondalkin and Hazelhatch to
+        # pages that do not exist.
+        data, page = self._build(
+            "HZLCH", "Hazelhatch", "<p>Lift to platform 2</p>"
+        )
+        m = re.search(r'href="(https://github\.com/baz8080/lifts/issues/new[^"]*)"', page)
+        self.assertIsNotNone(m)
+        query = urllib.parse.parse_qs(
+            urllib.parse.urlparse(html_mod.unescape(m.group(1))).query
+        )
+        self.assertEqual(query["title"], ["Station access: Hazelhatch"])
+        self.assertIn(f"/s/{data['slugs']['HZLCH']}.html", query["body"][0])
+
+    def test_the_app_only_caveats_stations_it_has_facts_for(self):
+        # A global flag printed "worked out from Irish Rail's page" above "this
+        # station is not in the station snapshot".
+        data, _ = self._build("ATHY", "Athy", "<p>Lift to platform 2</p>")
+        self.assertEqual(data["access"], ["ATHY"])
+        markup = (Path(render.TEMPLATES) / "site.html").read_text(encoding="utf-8")
+        self.assertIn("D.access.indexOf(code) >= 0", markup)
 
     def test_the_app_carries_the_caveat_too(self):
         # It renders verdicts without the card that holds their source.

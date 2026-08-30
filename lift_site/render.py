@@ -157,12 +157,18 @@ def build(outages, now, until, facts=None):
         "generated": _stamp(now),
         "network": network,
         "stepfree": step_free,
+        # Which stations the snapshot actually has prose for. The app renders
+        # verdicts without the card that carries their source, and a single
+        # global caveat printed "worked out from Irish Rail's page" above "this
+        # station is not in the station snapshot".
+        "access": sorted(c for c in stations if facts and facts.station(c)),
         # The app shows verdicts without the card that carries their source, so
         # the caveat travels with the payload rather than living only on the
         # static pages.
         "access_caveat": ACCESS_CAVEAT if facts else None,
         "correction_prompt": CORRECTION_PROMPT,
         "issues_url": ISSUES_URL,
+        "base_url": BASE_URL,
         # What the build knows, as distinct from when it ran. Without this the
         # page dates itself by the clock and a reader cannot tell a quiet week
         # from a collector that stopped.
@@ -301,25 +307,25 @@ ACCESS_LABEL = {
 }
 
 
-def correction_url(station):
+def correction_url(name, code, page_slug):
     """A prefilled issue, which is the only feedback channel a static site has.
 
-    Readers who use these stations know things no source here records, and the
-    derivation is an inference off a page somebody typed. A filed issue is also
-    auditable in the way this project asks every other claim to be.
+    Named and slugged from what the page is actually called, not from the
+    snapshot: the site takes a station's display name from its newest notice and
+    the snapshot has its own, and they differ. Re-deriving the slug here pointed
+    Clondalkin's and Hazelhatch's reports at pages that do not exist, and gave
+    the app and the static page two different titles for the same station.
     """
     body = (
-        f"Station: {station.name} ({station.code})\n"
-        f"{BASE_URL}/s/{slug(station.name)}.html\n\n"
+        f"Station: {name} ({code})\n"
+        f"{BASE_URL}/s/{page_slug}.html\n\n"
         "What this gets wrong, and how you know:\n"
     )
-    query = urllib.parse.urlencode(
-        {"title": f"Station access: {station.name}", "body": body}
-    )
+    query = urllib.parse.urlencode({"title": f"Station access: {name}", "body": body})
     return f"{ISSUES_URL}?{query}"
 
 
-def _access_html(code, facts):
+def _access_html(code, data, facts):
     """What Irish Rail's own page says this station has, quoted back.
 
     Quoted rather than summarised: every verdict on this page is derived from
@@ -356,7 +362,9 @@ def _access_html(code, facts):
         if note
         else ""
     )
-    report = html.escape(correction_url(station))
+    report = html.escape(
+        correction_url(data["stations"][code], code, data["slugs"][code])
+    )
     return (
         '<div class="card access"><h2>Getting to the platforms</h2>'
         f"{blocks}{earned}"
@@ -670,7 +678,7 @@ def station_page(code, data, by_month, listed_now=(), facts=None):
             else ""
         )
         + "</div>",
-        _access_html(code, facts),
+        _access_html(code, data, facts),
         _legend_html(),
     ]
     sections = month_sections(months, by_month, data["blank"])

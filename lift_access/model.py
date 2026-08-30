@@ -53,6 +53,7 @@ LIFT = re.compile(r"\blifts?\b", re.IGNORECASE)
 ESCALATOR = re.compile(r"\bescalators?\b", re.IGNORECASE)
 DENIES_LIFT = re.compile(r"\bno lift\b", re.IGNORECASE)
 OTHER_KIND = {"lift": ESCALATOR, "escalator": LIFT}
+SAME_KIND = {"lift": LIFT, "escalator": ESCALATOR}
 
 # Where the notice itself names the machine's platform. The head says only
 # "Dublin Pearse - Lift out of order"; this has been in `text` all along.
@@ -256,16 +257,26 @@ def verdict(station, kind, text):
     """
     named = affected_platforms(text)
 
-    # `classify` reads the head, and the head is hand-written. If the text names
-    # the other machine, which one broke is not established, and the verdict
-    # turns on it. Nothing in the corpus does this; the check is here because the
-    # claim below rests on the word meaning what it says.
-    if text and OTHER_KIND[kind].search(plain(text)):
-        return _unknown(
-            named,
-            f"The notice is headed as a {kind} but its text names the other machine, "
-            "so which one was out is not established.",
-        )
+    # `classify` reads the head, and the head is hand-written. A text naming only
+    # the *other* machine means the head is probably wrong and the verdict turns
+    # on which one it was. A text naming *both* is a combined outage, which is
+    # the worst case for a reader and must not be forfeited: whatever else broke,
+    # a lift notice whose text says "the lift and escalator at platform 2" still
+    # has the lift out, so the platforms are still lost.
+    body = plain(text) if text else ""
+    if body and OTHER_KIND[kind].search(body):
+        this_kind_too = SAME_KIND[kind].search(body)
+        # An escalator outage is the one verdict that is a deduction rather than
+        # a reading, and it is only safe while nothing else is implicated: saying
+        # an escalator was never step-free is no comfort if a lift went with it.
+        if not this_kind_too or kind == "escalator":
+            return _unknown(
+                named,
+                f"The notice is headed as a {kind} but its text names the other machine "
+                + ("as well, so what was out is not established."
+                   if this_kind_too
+                   else "instead, so which one was out is not established."),
+            )
 
     if kind == "escalator":
         # The deduction, and only the deduction: an escalator has steps, so it was
@@ -336,17 +347,29 @@ def verdict(station, kind, text):
             f'Irish Rail\'s page names another step-free way here: "{quoted}".',
         )
 
+    # A reviewed entry whose sentence has gone off the page forfeits *its* own
+    # platform and no others. Cork has entries for 5A, 5B and 6: a reworded page
+    # must not take platform 7 down with them when 7 has no entry, is lift-served
+    # and is plainly lost. Same partition as `unlisted` above.
     stale = [p for p in lost if (station.code, p) in STEP_FREE_ALTERNATIVES]
-    if stale:
+    plain_loss = [p for p in lost if (station.code, p) not in STEP_FREE_ALTERNATIVES]
+    stale_note = (
+        f" A reviewed step-free alternative is on file for platform {', '.join(stale)}, "
+        "but the sentence it quotes is no longer on Irish Rail's page, so that platform "
+        "needs reviewing again."
+        if stale
+        else ""
+    )
+    if not plain_loss:
         return _unknown(
-            tuple(lost),
+            tuple(stale),
             f"A reviewed step-free alternative is on file for platform {', '.join(stale)} "
             f"at {station.name}, but the sentence it quotes is no longer on Irish Rail's "
             "page. It needs reviewing again before this can be read either way.",
         )
 
-    listed = ", ".join(lost)
-    subject = f"Platform {listed} is" if len(lost) == 1 else f"Platforms {listed} are"
+    listed = ", ".join(plain_loss)
+    subject = f"Platform {listed} is" if len(plain_loss) == 1 else f"Platforms {listed} are"
     detail = (
         f"{subject} reached by lift, and Irish Rail's page names no other step-free "
         "way, so step-free access was gone while this was listed."
@@ -356,4 +379,4 @@ def verdict(station, kind, text):
             f" The notice also names platform {', '.join(unlisted)}, which the page "
             "does not list a lift at."
         )
-    return Verdict("lost", tuple(lost), detail)
+    return Verdict("lost", tuple(plain_loss), detail + stale_note)

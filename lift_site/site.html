@@ -345,9 +345,15 @@ function renderStation() {
       // station is in the link text because a screen reader lists links
       // stripped of their context.
       '<a href="s/' + D.slugs[code] + '.html">Permanent link to ' + esc(name) + " station</a></div>" +
-    (D.access_caveat
+    // Only where the snapshot actually has this station: the caveat asserts that
+    // a derivation happened, and above "not in the station snapshot" it would
+    // contradict the very verdict it is explaining.
+    (D.access_caveat && D.access && D.access.indexOf(code) >= 0
       ? '<p class="acccav">' + esc(D.access_caveat) +
-        ' <a href="' + esc(D.issues_url) + "?title=" + encodeURIComponent("Station access: " + name) +
+        ' <a href="' + esc(D.issues_url) + "?title=" +
+        encodeURIComponent("Station access: " + name) + "&body=" +
+        encodeURIComponent("Station: " + name + " (" + code + ")\n" +
+          D.base_url + "/s/" + D.slugs[code] + ".html\n\nWhat this gets wrong, and how you know:\n") +
         '">' + esc(D.correction_prompt) + "</a></p>"
       : "") +
     '<div class="legend">' + D.legend + "</div>";

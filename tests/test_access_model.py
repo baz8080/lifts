@@ -253,6 +253,24 @@ class AReviewedEntryExpiresWithThePageItQuotes(unittest.TestCase):
         self.assertEqual(result.state, "unknown")
         self.assertIn("no longer on Irish Rail's page", result.detail)
 
+    def test_a_stale_entry_forfeits_its_own_platform_and_no_others(self):
+        # Cork has entries for 5A, 5B and 6. A reworded page must not take
+        # platform 7 down with them: 7 has no entry, is lift-served, and is lost.
+        cork = model.Station(
+            "CORK", "Cork (Kent)", "cork", None, None,
+            "Platforms 1, 2, 3 and 4 are level\nLift to platform 5A, 5B, 6 and 7", "",
+            frozenset({"5A", "5B", "6", "7"}), True, False,
+        )
+        result = model.verdict(cork, "lift", "The lift at platform 5A and 7 is out of service.")
+        self.assertEqual(result.state, "lost")
+        self.assertEqual(result.platforms, ("7",))
+        self.assertIn("needs reviewing again", result.detail)
+
+    def test_a_stale_entry_alone_is_still_unknown(self):
+        reworded = station("RAHNY")._replace(platform_access="Lift to platform 1")
+        result = model.verdict(reworded, "lift", "The lift at platform 1 is out.")
+        self.assertEqual(result.state, "unknown")
+
     def test_it_does_not_quietly_become_a_loss_instead(self):
         # "unknown" and not "lost": the review said there was a way round, and a
         # reworded page is not evidence that there is not.
@@ -454,16 +472,32 @@ class EscalatorsAreNotStepFree(unittest.TestCase):
 class TheHeadIsHandWrittenAndMayBeWrong(unittest.TestCase):
     """The whole escalator deduction rests on the word meaning what it says."""
 
-    def test_an_escalator_head_naming_a_lift_is_not_deduced_about(self):
+    def test_an_escalator_head_naming_only_a_lift_is_not_deduced_about(self):
         result = model.verdict(
             station("PERSE"), "escalator", "The lift at platform 2 is currently out of service."
         )
         self.assertEqual(result.state, "unknown")
         self.assertIn("names the other machine", result.detail)
 
-    def test_a_lift_head_naming_an_escalator_is_not_either(self):
+    def test_a_lift_head_naming_only_an_escalator_is_not_either(self):
         result = model.verdict(
             station("ATHY"), "lift", "The escalator at platform 2 is out of service."
+        )
+        self.assertEqual(result.state, "unknown")
+
+    def test_both_machines_out_is_still_a_lost_lift(self):
+        # The worst case for a reader must not become the least informative
+        # verdict. Whatever else broke, the lift is out, so the platform is lost.
+        result = model.verdict(
+            station("ATHY"), "lift", "The lift and escalator at platform 2 are out of service."
+        )
+        self.assertEqual(result.state, "lost")
+        self.assertEqual(result.platforms, ("2",))
+
+    def test_both_machines_out_withdraws_the_escalator_deduction(self):
+        # "An escalator was never step-free" is no comfort if a lift went too.
+        result = model.verdict(
+            station("PERSE"), "escalator", "The lift and escalator at platform 2 are out."
         )
         self.assertEqual(result.state, "unknown")
 
