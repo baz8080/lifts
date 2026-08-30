@@ -115,10 +115,17 @@ access; it removes a convenience. Only 2 of 147 stations mention an escalator in
 
 This sits awkwardly beside `site.md` § *An escalator out is a day the station
 was short of a way up*, which counts escalator outages in the grade at the same
-weight as lift outages. **Not settled here.** The station page now says an
-escalator outage did not remove step-free access while the grade still marks the
-day down, and those two should be reconciled. Left as its own decision rather
-than folded into this change.
+weight as lift outages. **Not settled, and now filed as issue #32.** Measured on
+the August 2026 corpus: Dublin Pearse is graded **F**, the worst band, on the
+strength of an escalator alone, on a page that also tells the reader that
+outage did not remove step-free access. Connolly is C where lifts alone would
+be A, and the national figure is 67% against 70%.
+
+The two rules were decided at different times against different questions and
+both look sound in isolation. The issue carries the options; the real question
+under it is what the grade is for, which the escalator case exposed rather than
+caused. Do not try to settle it from `platformAccess`: it mentions an escalator
+at 2 of 147 stations.
 
 ## The other platform is often still step-free, and the prose says so
 
