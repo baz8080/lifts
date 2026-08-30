@@ -17,7 +17,11 @@ the two sources this note did not know about. In short:
   prose mentions a lift, two name a step-free way round one. No route engine was
   needed or built.
 
-Struck sources are marked below. Do not scope them again.
+Struck sources are marked below. Do not scope them again. The one source worth
+checking again is **NeTEx**, the European standard for station equipment and
+accessibility, with **SIRI-FM** for live lift status. Ireland publishes neither
+today. See `station-access.md` for why that is lawful rather than an oversight,
+and for the GTFS fields Google and Apple read that are also absent.
 
 ## The three questions that keep getting conflated
 

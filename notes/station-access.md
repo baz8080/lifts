@@ -216,6 +216,75 @@ it. `head` says only "Dublin Pearse - Lift out of order".
   station is accessible". Pearse says Yes, Docklands says No. Never surface it
   as accessibility.
 
+## Why scraping prose is the only option, not the lazy one
+
+Scraping a marketing site for accessibility facts should be a last resort, and
+this is the record that it is one. Four independent consumers of Irish public
+transport data hit the same wall, which is much stronger evidence that the data
+was never created than that the searching was bad.
+
+### The formats that exist for exactly this, and that Ireland does not publish
+
+- **NeTEx** is the European standard for a station's static equipment and
+  accessibility: lifts, escalators, ramps, entrances, and the paths between
+  them. **SIRI-FM** (Facility Monitoring) is its realtime companion, and it is
+  precisely a live "is this lift working" feed.
+- Neither is published for Ireland. Searched data.gov.ie and the NTA's
+  `transitData/PT_Data.html` catalogue on 2026-08-30: 24 GTFS archives, NaPTAN,
+  PTIMS, and nothing else. The only "accessibility" strings on the NTA data page
+  are navigation menu links.
+
+### The regulation, and the hole in it
+
+Delegated Regulation (EU) 2017/1926 requires each member state to run a National
+Access Point publishing the listed travel data types, with NeTEx as the required
+representation. The Annex applies to those data types **"provided they exist in
+digital machine-readable format"**.
+
+That is the whole story. The duty is to publish what you hold, not to create it.
+If Irish Rail never captured a lift inventory in machine-readable form, nothing
+compels them to start, and the obligation is satisfied by publishing timetables.
+So the absence is lawful and permanent-looking rather than an oversight somebody
+will fix.
+
+### What the mapping apps have to work with, which is nothing
+
+Google Maps, Apple Maps, Transit, Citymapper and Moovit all consume GTFS for
+transit directions, and accessible routing in all of them rests on three fields.
+Checked against the live Irish Rail feed:
+
+| field | purpose | present? |
+|---|---|---|
+| `stops.txt` `wheelchair_boarding` | can you board here | **no, column absent** |
+| `trips.txt` `wheelchair_accessible` | does the vehicle take a wheelchair | **no, column absent** |
+| `pathways.txt` | step-free route, entrance to platform | **no, file absent** |
+
+So none of them can offer wheelchair routing on Irish Rail. That is a gap in the
+input, not in their products. Their place-level accessibility pins come from
+their own pipelines instead - Google from Places and Local Guides, Apple from
+its own surveys - which is the same shape as the OpenStreetMap result below:
+crowd-sourced, patchy, no platform detail, and no idea a lift is out today.
+
+### Where that leaves this
+
+The only machine-readable statement of what an Irish rail station has is a
+free-text CMS field on irishrail.ie, written by hand, with no schema, no
+versioning and no obligation to be accurate. This project has already found a
+typo in it (Rush and Lusk naming platform 1 twice), a self-contradiction
+(Greystones), and a station whose page says "Level" while its lifts break
+(Limerick Junction).
+
+Which makes the dated snapshots in `lifts-data/stations/` the only versioned
+machine-readable record of Irish rail station access that appears to exist. That
+was not the intent and it is a poor substitute for the operator holding one, but
+it is a reason to keep the monthly refresh running beyond keeping the derivation
+fresh.
+
+**Do not re-run these searches.** GTFS, GTFS-Realtime, NaPTAN, PTIMS, the NTA
+developer API and OpenStreetMap are all checked and recorded, here and in
+`accessible-routes.md`. If anything changes it will be because Ireland starts
+publishing NeTEx, and that is the one thing worth checking again.
+
 ## OpenStreetMap: carried, measured, removed
 
 It was here as a second opinion on Irish Rail's prose and it is gone. Recorded
