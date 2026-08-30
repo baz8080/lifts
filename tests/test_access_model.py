@@ -252,6 +252,45 @@ class AReviewedEntryExpiresWithThePageItQuotes(unittest.TestCase):
                 self.assertIn(quoted, " ".join(model.plain(PROSE[code]).split()), code)
 
 
+class SentenceScopedPatternsStayOnOneLine(unittest.TestCase):
+    """`[^.]` is a class holding one literal dot, so it matches newlines too."""
+
+    def test_a_notice_does_not_borrow_a_platform_from_another_line(self):
+        # plain() turns the <br> the feed puts in `text` into a newline.
+        self.assertEqual(
+            model.affected_platforms(
+                "The lift is currently out of service<br>Trains depart from platform 3"
+            ),
+            (),
+        )
+
+    def test_it_still_reads_a_platform_in_the_same_sentence(self):
+        self.assertEqual(
+            model.affected_platforms("The lift at platform 2 is out of service."), ("2",)
+        )
+
+    def test_boilerplate_cannot_swallow_the_line_after_it(self):
+        prose = (
+            "<p>To access the lift, you must call via the help point<br>"
+            "Level to platform 1<br>Lift to platform 2</p>"
+        )
+        self.assertIn("Level to platform 1", model.segments(prose))
+
+    def test_a_platform_range_is_not_read_as_its_endpoints(self):
+        # "1 to 4" as (1, 4) drops the two in the middle and would report them
+        # as lift-free. Under-reading sends them to `unknown`, which is safe;
+        # expanding the range would be inventing platform numbers.
+        self.assertEqual(model.platforms_named("Lift to platforms 1 to 4"), ("1",))
+
+    def test_the_separators_that_are_really_used_still_work(self):
+        self.assertEqual(
+            model.platforms_named("Ramp or lift to platform 5A, 5B and 6"), ("5A", "5B", "6")
+        )
+        self.assertEqual(
+            model.platforms_named("Ramp access from Platform 2 to Platform 3"), ("2", "3")
+        )
+
+
 class WhenItCannotTell(unittest.TestCase):
     def assert_unknown(self, code, text):
         result = model.verdict(station(code), "lift", text)

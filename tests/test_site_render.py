@@ -465,6 +465,26 @@ class TestStepFreeChip(SiteModelCase):
         self.assertEqual(data["stepfree"], [])
         self.assertNotIn("sfchip", page.split("</style>", 1)[-1])
 
+    def test_a_station_missing_from_the_snapshot_is_not_chipped(self):
+        # The chip asserts something about prose. Without the station there is
+        # no prose, and the page's own "Getting to the platforms" card is empty,
+        # so the chip would be an unexplained accessibility claim.
+        self.poll(T0, [lift(station="Raheny", code="RAHNY")])
+        site = self.dir / "site"
+        data = render.write(site, self.load(), NOW, self.until, snapshot.Facts({}))
+        self.assertEqual(data["stepfree"], [])
+        page = (site / "s" / f"{data['slugs']['RAHNY']}.html").read_text(encoding="utf-8")
+        self.assertNotIn("sfchip", page.split("</style>", 1)[-1])
+
+    def test_a_reworded_page_withdraws_the_chip_too(self):
+        # The chip and the verdict ask the same question, so they cannot
+        # disagree about whether the reviewed sentence is still there.
+        self.poll(T0, [lift(station="Raheny", code="RAHNY")])
+        facts = self._facts("RAHNY", "Raheny", "<p>Lift to platform 1</p>")
+        site = self.dir / "site"
+        data = render.write(site, self.load(), NOW, self.until, facts)
+        self.assertEqual(data["stepfree"], [])
+
     def test_the_chip_does_not_claim_the_station_is_accessible(self):
         # "Accessible station" is a far bigger claim than the reviewed list
         # makes, and the international access symbol would read as one.

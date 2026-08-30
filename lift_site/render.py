@@ -389,13 +389,14 @@ STEP_FREE_TITLE = (
 
 
 def _step_free_note(code, facts):
-    """The sentence behind this station's chip, or None if it has no entry."""
-    if not facts:
-        return None
-    for (station_code, _), sentence in access_model.STEP_FREE_ALTERNATIVES.items():
-        if station_code == code:
-            return sentence
-    return None
+    """The sentence behind this station's chip, or None.
+
+    Looks the station up rather than matching the code alone: an entry is only
+    good while the prose it quotes is on the page, and a station absent from the
+    snapshot has no prose to check. Chipping one anyway put an accessibility
+    claim on a page whose own "Getting to the platforms" card was empty.
+    """
+    return access_model.step_free_note(facts.station(code)) if facts else None
 
 
 def _step_free_chip(code, facts):

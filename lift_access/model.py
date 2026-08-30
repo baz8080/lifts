@@ -29,30 +29,37 @@ BOILERPLATE = tuple(
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
         r"(?:in order )?to access the lifts?,?\s*(?:you must (?:first )?call|"
-        r"the customer is first required to call)[^.]*\.?",
-        r"please see (?:our )?lift call operation page[^.]*\.?",
-        r"blind passenger using (?:the )?lift call system[^.]*\.?",
-        r"see our video of a blind passenger[^.]*",
+        r"the customer is first required to call)[^.\n]*\.?",
+        r"please see (?:our )?lift call operation page[^.\n]*\.?",
+        r"blind passenger using (?:the )?lift call system[^.\n]*\.?",
+        r"see our video of a blind passenger[^.\n]*",
         r"link:\s*youtube video",
     )
 )
 
 # "platform 2", "platforms No. 2 and 3", "platform 5A, 5B and 6", "Platform 1",
 # "platforms  1 and 2" (Skerries really does have the double space).
+# `to` is not among the separators: it would read "platforms 1 to 4" as 1 and 4
+# and drop the two in the middle. The "to" in "Lift to platform 2" sits before
+# the word platform, which is matched separately.
 PLATFORM_RUN = re.compile(
     r"\bplatforms?\b[\s.:]*(?:no\.?\s*)?"
-    r"(\d+[A-Za-z]?(?:\s*(?:,|and|&|/|\bto\b)\s*(?:no\.?\s*)?\d+[A-Za-z]?)*)",
+    r"(\d+[A-Za-z]?(?:\s*(?:,|and|&|/)\s*(?:no\.?\s*)?\d+[A-Za-z]?)*)",
     re.IGNORECASE,
 )
-PLATFORM_SPLIT = re.compile(r"\s*(?:,|and|&|/|\bto\b)\s*", re.IGNORECASE)
+PLATFORM_SPLIT = re.compile(r"\s*(?:,|and|&|/)\s*", re.IGNORECASE)
 
 LIFT = re.compile(r"\blifts?\b", re.IGNORECASE)
 DENIES_LIFT = re.compile(r"\bno lift\b", re.IGNORECASE)
 
 # Where the notice itself names the machine's platform. The head says only
 # "Dublin Pearse - Lift out of order"; this has been in `text` all along.
+# `[^.\n]` and not `[^.]`: the class is one literal dot, so it would match a
+# newline, and `plain()` turns the `<br>` the feed puts in `text` into one. That
+# let "The lift is out of service<br>Trains depart from platform 3" read as a
+# lift at platform 3.
 AFFECTED = re.compile(
-    r"\b(?:lifts?|escalators?)\b[^.]*?\bplatforms?\b[\s.:]*(?:no\.?\s*)?"
+    r"\b(?:lifts?|escalators?)\b[^.\n]*?\bplatforms?\b[\s.:]*(?:no\.?\s*)?"
     r"(\d+[A-Za-z]?(?:\s*(?:,|and|&|/)\s*(?:no\.?\s*)?\d+[A-Za-z]?)*)",
     re.IGNORECASE,
 )
@@ -195,6 +202,20 @@ def affected_platforms(text):
             if label and label not in found:
                 found.append(label)
     return tuple(found)
+
+
+def step_free_note(station):
+    """The sentence behind a station's step-free chip, or None.
+
+    Asks the same question `_alternative` asks, so the chip and the verdict
+    cannot disagree: a reworded page withdraws both at once.
+    """
+    if station is None:
+        return None
+    for (code, platform), sentence in STEP_FREE_ALTERNATIVES.items():
+        if code == station.code and _alternative(station, platform):
+            return sentence
+    return None
 
 
 def _alternative(station, platform):
