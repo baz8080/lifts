@@ -46,7 +46,10 @@ class TestWrite(SiteModelCase):
         # [cells, faults, planned, ongoing, avail] and nothing else at a
         # station with no escalator notice: every byte is in the initial load.
         self.assertEqual(len(d["stats"]["ATHY"]["2026-08"]), 5)
-        self.assertEqual(d["bands"], [[100, "A"], [95, "B"], [90, "C"], [75, "D"], [0, "F"]])
+        # the model's own table, not a second copy of it: the app derives its
+        # letter from this, so a band that drifted here would grade differently
+        # from the static pages
+        self.assertEqual(d["bands"], [list(b) for b in model.GRADE_BANDS])
 
     def test_only_a_station_with_an_escalator_notice_carries_a_second_bar(self):
         d = _data(self.site)

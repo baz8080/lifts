@@ -372,13 +372,15 @@ LEGEND_SPANS = "".join(
 # "A" is not "nothing listed": a planned-works notice inside its grace is on
 # the bar and off the total, so the key says what the number means. The bands
 # are days a reader can count - over a 22-day window B is one day listed, C two,
-# D three to five - which is why the key gives percentages and not adjectives.
+# D three to five, E up to half the window - which is why the key gives
+# percentages and not adjectives.
 GRADE_LABELS = (
     ("A", "100% available"),
     ("B", "95%+ available"),
     ("C", "90%+ available"),
     ("D", "75%+ available"),
-    ("F", "under 75% available"),
+    ("E", "50%+ available"),
+    ("F", "under 50% available"),
 )
 
 GRADE_SPANS = "<span>Lift and escalator availability</span>" + "".join(

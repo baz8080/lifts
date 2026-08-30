@@ -281,11 +281,35 @@ excluding planned works). So the scale is this site's own, said plainly in the
 footer rather than dressed up as a standard.
 
 The bands are calibrated in days a reader can count, not borrowed from an
-annual-availability figure: A is nothing listed, B 95%+, C 90%+, D 75%+, F
-below that. Over a 31-day month that is one day listed for B, two or three for
-C, up to a week for D. Bands tuned for TfL's 98% were tried on paper first and
-put every station in the bottom band: at day granularity one listed day in a
-month is already 96.8%.
+annual-availability figure: A is nothing listed, B 95%+, C 90%+, D 75%+, E 50%+,
+F below that. Over a 31-day month that is one day listed for B, two or three for
+C, up to a week for D, up to half the month for E. Bands tuned for TfL's 98%
+were tried on paper first and put every station in the bottom band: at day
+granularity one listed day in a month is already 96.8%.
+
+#### The scale grew an E - 2026-08-29
+
+The scale ran A, B, C, D, F. Skipping E is an American-ism and Irish Rail is not
+American, so the letter was added. It splits the old F band and moves nothing
+else: every cut from 100 down to 75 sits where it did, so no station-month
+graded A to D changes letter.
+
+The cut is 50%, which is the same kind of number the other cuts are: a count of
+days a reader can hold. Availability is floor-divided, so over a 31-day month a
+floor of 50 makes E 8 to 15 days listed and F 16 or more, which is exactly "up
+to half the month" against "more than half".
+
+The measurement agrees, which is not something the arithmetic guaranteed. Over
+the 21 graded station-months in a rebuild of the current lifts-data the old F
+band held nine, at 0, 0, 18, 22, 22, 50, 68, 68 and 72 per cent. There is a real
+gap between 22 and 50, and the cut lands in it: E takes Limerick Junction,
+Docklands, Rush and Lusk, and Clondalkin, four stations listed for part of the
+month, and F keeps the five that were listed for most or all of it, Athy and
+Midleton among them at nothing available at all. Cuts at 60 and 40 both fall
+inside the same gap and split it identically, so 50 was chosen for saying
+something a reader can repeat.
+
+Grade mix: A 1, B 1, C 5, D 5, F 9 becomes A 1, B 1, C 5, D 5, E 4, F 5.
 
 Rejected: hours-listed availability, which is more precise but would print
 99.9% beside a bar with a red day in it - the bar is days, so the grade is

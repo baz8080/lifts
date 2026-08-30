@@ -96,8 +96,8 @@ A station is graded on **availability**: the share of the days watched on
 which no lift *or escalator* notice was listed there. The scale is this site's
 own - the PRM TSI sets design rules and a duty to hold a written access
 policy, not a number, and Irish Rail publishes no availability target - so the
-bands are calibrated in days: A is 100% available, B 95%+, C 90%+, D 75%+, F
-below that. A is not "nothing listed": planned works inside their grace are
+bands are calibrated in days: A is 100% available, B 95%+, C 90%+, D 75%+,
+E 50%+, F below that. A is not "nothing listed": planned works inside their grace are
 drawn on the bar and left out of the total.
 Planned works are excused for their first week and count in full past it, in
 their own colour once they do.

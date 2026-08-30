@@ -77,8 +77,8 @@ PLANNED_GRACE = timedelta(days=7)
 # design rules and a duty on the station manager to hold a written access
 # policy, not a number, and Irish Rail's charter promises only "every effort".
 # So the bands are calibrated in days a reader can count: over a 31-day month,
-# B is one day listed, C two or three, D up to a week.
-GRADE_BANDS = ((100, "A"), (95, "B"), (90, "C"), (75, "D"), (0, "F"))
+# B is one day listed, C two or three, D up to a week, E up to half the month.
+GRADE_BANDS = ((100, "A"), (95, "B"), (90, "C"), (75, "D"), (50, "E"), (0, "F"))
 
 # Notices are re-issued when Irish Rail edits the wording or corrects a start
 # time; the collector sees that as the old notice closing and a new one opening
