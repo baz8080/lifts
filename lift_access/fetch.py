@@ -96,8 +96,13 @@ def fetch_stations(log=print, attempts=3):
     and the newest file on disk is the one the site reads. Transient failures are
     retried before a slug is given up on.
     """
-    _, index_body = _get(INDEX_URL)
-    slugs = station_slugs(json.loads(index_body))
+    try:
+        _, index_body = _get(INDEX_URL)
+        slugs = station_slugs(json.loads(index_body))
+    except Exception as exc:  # noqa: BLE001 - reported, never swallowed
+        # Without the index there is no list to fetch, and an HTML error page
+        # where the payload should be is a JSONDecodeError, not an OSError.
+        return [], {"(station index)": f"{type(exc).__name__}: {exc}"}
     log(f"{len(slugs)} stations listed")
     records, failed = [], {}
     for n, slug in enumerate(slugs, 1):
@@ -112,8 +117,12 @@ def fetch_stations(log=print, attempts=3):
                 failed[slug] = f"HTTP {status}, {len(body)} bytes"
             except urllib.error.HTTPError as exc:
                 failed[slug] = f"HTTP {exc.code}"
-            except OSError as exc:
-                failed[slug] = str(exc)
+            except Exception as exc:  # noqa: BLE001 - reported, never swallowed
+                # Broad on purpose. A body that is not UTF-8 raises
+                # UnicodeDecodeError, which is neither HTTPError nor OSError, and
+                # would abort a run whose whole job is to say which stations it
+                # could not get.
+                failed[slug] = f"{type(exc).__name__}: {exc}"
             if attempt < attempts - 1:
                 time.sleep(BACKOFF_SECONDS * (attempt + 1))
         if n % 25 == 0:

@@ -129,6 +129,34 @@ class APartialFetchIsRefused(unittest.TestCase):
         self.assertEqual(len(records), 2)
         self.assertEqual(failed, {})
 
+    def test_a_body_that_is_not_utf8_is_reported_not_raised(self):
+        # UnicodeDecodeError is a ValueError, so neither HTTPError nor OSError
+        # catches it, and it would abort a run whose whole job is to say which
+        # stations it could not get.
+        def stub(url, timeout=60):
+            if url == fetch.INDEX_URL:
+                return 200, json.dumps(PAYLOAD)
+            raise UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid start byte")
+
+        records, failed = self._raw(stub)
+        self.assertEqual(records, [])
+        self.assertIn("UnicodeDecodeError", failed["athy"])
+
+    def test_an_index_that_is_not_json_is_reported_not_raised(self):
+        # An HTML error page where the payload should be is a JSONDecodeError.
+        records, failed = self._raw(lambda url, timeout=60: (200, "<html>502</html>"))
+        self.assertEqual(records, [])
+        self.assertIn("JSONDecodeError", failed["(station index)"])
+
+    def _raw(self, stub):
+        original, fetch._get = fetch._get, stub
+        delay, backoff = fetch.DELAY_SECONDS, fetch.BACKOFF_SECONDS
+        fetch.DELAY_SECONDS = fetch.BACKOFF_SECONDS = 0
+        try:
+            return fetch.fetch_stations(log=lambda *a: None, attempts=1)
+        finally:
+            fetch._get, fetch.DELAY_SECONDS, fetch.BACKOFF_SECONDS = original, delay, backoff
+
     def test_a_200_with_an_empty_body_counts_as_a_failure(self):
         # irishrail.ie answering with an empty payload is not a station with no
         # facts; snapshot.load skips empty bodies, so it would vanish silently.

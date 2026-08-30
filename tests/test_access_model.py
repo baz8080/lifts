@@ -310,6 +310,24 @@ class SentenceScopedPatternsStayOnOneLine(unittest.TestCase):
         )
         self.assertIn("Level to platform 1", model.segments(prose))
 
+    def test_a_block_tag_with_attributes_still_breaks_the_line(self):
+        # A CMS paste gives <br class="x">, which missed the block pattern and
+        # was stripped as an ordinary tag, joining two access lines. The merged
+        # segment names a lift and platforms 1 and 2, so platform 1 becomes
+        # lift-served and its notice reads "reached by lift" on a ramp platform:
+        # the false specific that specific-beats-general exists to prevent.
+        merged = '<p>Ramp to platform 1<br class="sep">\nLift to platform 2</p>'
+        self.assertEqual(
+            model.segments(merged), ["Ramp to platform 1", "Lift to platform 2"]
+        )
+        self.assertEqual(model.read_platform_access(merged)[0], frozenset({"2"}))
+
+    def test_a_styled_paragraph_is_still_a_paragraph(self):
+        self.assertEqual(
+            model.segments('<p style="a">Level to platform 1</p><p style="b">Lift to 2</p>'),
+            ["Level to platform 1", "Lift to 2"],
+        )
+
     def test_a_platform_range_is_not_read_as_its_endpoints(self):
         # "1 to 4" as (1, 4) drops the two in the middle and would report them
         # as lift-free. Under-reading sends them to `unknown`, which is safe;

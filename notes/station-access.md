@@ -139,6 +139,22 @@ whatever else broke, the lift is out, so the platforms are lost. The escalator
 branch still withdraws on both, because "an escalator was never step-free" is no
 comfort if a lift went with it.
 
+Two more from the same pass were latent with no instance in the data, and were
+taken anyway because the fix was a token each and the failure would have been
+silent. A block tag carrying an attribute, `<br class="x">` from a CMS paste,
+missed the separator pattern and joined two access lines, which manufactures a
+false *specific* and defeats specific-beats-general from the other side. And a
+body that is not UTF-8, or an index that is an HTML error page, raises a
+`ValueError` that neither `HTTPError` nor `OSError` catches, aborting a run whose
+entire job is to report which stations it could not get.
+
+One was left. `has_lift` tests `denies_lift` before `claims_lift`, so a
+per-platform "no lift on this side" would silence a lift the same page claims
+elsewhere. Fixing it properly means making the denial per-platform, which is a
+modelling decision with no data to design against: Dromod is the only station
+using the phrase and it genuinely has no lift. It fails to `unknown` rather than
+to a false claim. Left until something real turns up.
+
 ## The safe direction
 
 A reader told access is gone when it was not has made one wasted check. A reader

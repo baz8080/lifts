@@ -104,10 +104,18 @@ class Verdict(NamedTuple):
 
 
 def plain(fragment):
-    """Rich-text HTML as plain text, with the block tags kept as separators."""
+    """Rich-text HTML as plain text, with the block tags kept as separators.
+
+    `[^>]*` and not `\\s*/?`: a `<br class="x">` from a CMS paste would miss the
+    pattern, be stripped as an ordinary tag, and join two access lines into one.
+    A merged segment naming a lift and two platforms records a lift at both, so
+    "Ramp to platform 1" plus "Lift to platform 2" would publish "Platform 1 is
+    reached by lift" - the false specific that specific-beats-general exists to
+    prevent, arriving through a different door.
+    """
     if not fragment:
         return ""
-    text = re.sub(r"(?i)<(?:br|/p|/li|/h\d)\s*/?>", "\n", fragment)
+    text = re.sub(r"(?i)<(?:br|/p|/li|/h\d)\b[^>]*>", "\n", fragment)
     text = re.sub(r"<[^>]+>", " ", text)
     text = html_module.unescape(text).replace("\xa0", " ")
     return "\n".join(" ".join(line.split()) for line in text.split("\n"))
