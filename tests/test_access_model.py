@@ -82,6 +82,12 @@ PROSE = {
         "Lift or stairs to platform 2 (southbound)</p>\n"
         "<p>Lifts/stairs/Escalators from the Pearse Street entrance</p>"
     ),
+    # Connolly has escalator notices on record and a page that never mentions one.
+    "CNLLY": (
+        "<ul>\n  <li>Level access to platforms 1, 2, 3 and 4 from ticket office.</li>\n"
+        "  <li>Ramp or stairs to platform 5.</li>\n"
+        "  <li>Lift or stairs to platforms 6 and 7.</li>\n</ul>"
+    ),
     "BLANK": "",
 }
 
@@ -383,18 +389,71 @@ class ReadingThePlatformNumbers(unittest.TestCase):
 
 
 class EscalatorsAreNotStepFree(unittest.TestCase):
-    def test_an_escalator_out_does_not_remove_step_free_access(self):
+    """What is deduced, and what is not claimed.
+
+    The deduction is sound and narrow: an escalator has steps, so it was never a
+    step-free route, so its going out cannot remove one. What does not follow is
+    that the station still *has* step-free access - that is a claim about the
+    station, needs the station's own prose, and was being published for every
+    escalator outage without anything behind it. Connolly's page does not mention
+    an escalator at all.
+    """
+
+    def test_it_states_the_deduction_about_the_escalator(self):
         result = model.verdict(
             station("HZLCH"), "escalator", "The escalator at platform 2 is unavailable."
         )
         self.assertEqual(result.state, "escalator")
-        self.assertIn("not a step-free route", result.detail)
+        self.assertIn("was not a step-free route to begin with", result.detail)
+
+    def test_it_does_not_claim_the_station_still_has_step_free_access(self):
+        result = model.verdict(
+            station("HZLCH"), "escalator", "The escalator at platform 2 is unavailable."
+        )
+        for overclaim in ("step-free access unaffected", "access remains", "still step-free"):
+            self.assertNotIn(overclaim, result.detail.lower())
+
+    def test_it_says_when_the_page_does_not_mention_an_escalator(self):
+        # Connolly has escalator notices on record and a page that never
+        # mentions one, so what the machine serves is not recorded anywhere.
+        result = model.verdict(
+            station("CNLLY"), "escalator", "The Escalator at the main concourse is out."
+        )
+        self.assertIn("does not mention an escalator", result.detail)
+
+    def test_it_stays_quiet_when_the_page_does_mention_one(self):
+        result = model.verdict(
+            station("PERSE"), "escalator", "The escalator at platform 2 is unavailable."
+        )
+        self.assertNotIn("does not mention an escalator", result.detail)
 
     def test_it_still_reports_the_platform(self):
         result = model.verdict(
             station("HZLCH"), "escalator", "The escalator at platform 2 is unavailable."
         )
         self.assertEqual(result.platforms, ("2",))
+
+
+class TheHeadIsHandWrittenAndMayBeWrong(unittest.TestCase):
+    """The whole escalator deduction rests on the word meaning what it says."""
+
+    def test_an_escalator_head_naming_a_lift_is_not_deduced_about(self):
+        result = model.verdict(
+            station("PERSE"), "escalator", "The lift at platform 2 is currently out of service."
+        )
+        self.assertEqual(result.state, "unknown")
+        self.assertIn("names the other machine", result.detail)
+
+    def test_a_lift_head_naming_an_escalator_is_not_either(self):
+        result = model.verdict(
+            station("ATHY"), "lift", "The escalator at platform 2 is out of service."
+        )
+        self.assertEqual(result.state, "unknown")
+
+    def test_an_agreeing_notice_is_unaffected(self):
+        self.assertEqual(
+            model.verdict(station("ATHY"), "lift", "The lift at platform 2 is out.").state, "lost"
+        )
 
 
 if __name__ == "__main__":

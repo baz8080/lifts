@@ -277,7 +277,7 @@ def summary_bits(first_seen, end, ongoing, start, listed_end, lead_days=None):
 ACCESS_LABEL = {
     "lost": "No step-free access",
     "alternative": "Another step-free way",
-    "escalator": "Step-free access unaffected",
+    "escalator": "Not a step-free route",
     "unknown": "Effect on step-free access unknown",
 }
 

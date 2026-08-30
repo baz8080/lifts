@@ -107,24 +107,44 @@ is the real claim and the lift sentence is template.
 
 Dromod carries the one explicit negative: "(no lift at this station)".
 
-## Escalators are not step-free
+## Escalators are not step-free, and what that does and does not prove
 
-An escalator is moving stairs. An escalator outage never removes step-free
-access; it removes a convenience. Only 2 of 147 stations mention an escalator in
-`platformAccess` at all.
+**What is deduced.** An escalator is moving stairs. It was therefore never a
+step-free route, so its going out of service cannot remove one. That is valid,
+and it is all the site says now.
 
-This sits awkwardly beside `site.md` § *An escalator out is a day the station
-was short of a way up*, which counts escalator outages in the grade at the same
-weight as lift outages. **Not settled, and now filed as issue #32.** Measured on
-the August 2026 corpus: Dublin Pearse is graded **F**, the worst band, on the
-strength of an escalator alone, on a page that also tells the reader that
-outage did not remove step-free access. Connolly is C where lifts alone would
-be A, and the national figure is 67% against 70%.
+**What was being claimed and is not proven.** The first version published "this
+did not remove step-free access" for every escalator outage. That is a claim
+about the *station's* access state, not about the escalator, and it needs the
+station's own prose to support it. Nothing checked. The escalator branch returned
+before the `station is None` guard, so it was the only path in the module that
+made a confident claim without consulting the source, while every other path can
+fall back to `unknown`. At Connolly it happened to be true - level access to
+platforms 1 to 4, a ramp to 5, a lift to 6 and 7 - but the code never looked.
 
-The two rules were decided at different times against different questions and
-both look sound in isolation. The issue carries the options; the real question
-under it is what the grade is for, which the escalator case exposed rather than
-caused. Do not try to settle it from `platformAccess`: it mentions an escalator
+**The premise the deduction rests on** is that "escalator" in a hand-written head
+means an escalator. Checked across the corpus: 0 disagreements between head and
+text in 228 messages, and both escalator notices name the machine unambiguously.
+That is a strong prior and not a proof, so `verdict` now returns `unknown` when a
+notice headed as one machine names the other in its text. It has never fired.
+
+**Where the source is silent.** Only 2 of 152 station pages mention an escalator
+at all, and **Connolly's does not** - though we know it has one, because it
+broke. So the prose is demonstrably not a complete inventory of vertical
+circulation, and "no travelator is mentioned anywhere" is close to worthless as
+evidence that none exists. A flat moving walkway *is* step-free, and one called
+an escalator in a notice would break the deduction. None is named in any of the
+152 pages, which is the most that can be said. Where the page does not mention an
+escalator, the verdict now says so rather than implying the machine's role is
+known.
+
+**Still open: the grade.** `site.md` § *An escalator out is a day the station was
+short of a way up* counts escalator outages at the same weight as lift outages,
+so the grade and the station page disagree in public. Issue #32, with the
+numbers: Dublin Pearse is graded F, the worst band, on the strength of an
+escalator alone. The two rules were decided at different times against different
+questions and both look sound alone; the question under them is what the grade is
+for. Do not try to settle it from `platformAccess`, which mentions an escalator
 at 2 of 147 stations.
 
 ## The other platform is often still step-free, and the prose says so

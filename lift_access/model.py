@@ -50,7 +50,9 @@ PLATFORM_RUN = re.compile(
 PLATFORM_SPLIT = re.compile(r"\s*(?:,|and|&|/)\s*", re.IGNORECASE)
 
 LIFT = re.compile(r"\blifts?\b", re.IGNORECASE)
+ESCALATOR = re.compile(r"\bescalators?\b", re.IGNORECASE)
 DENIES_LIFT = re.compile(r"\bno lift\b", re.IGNORECASE)
+OTHER_KIND = {"lift": ESCALATOR, "escalator": LIFT}
 
 # Where the notice itself names the machine's platform. The head says only
 # "Dublin Pearse - Lift out of order"; this has been in `text` all along.
@@ -245,15 +247,35 @@ def verdict(station, kind, text):
     when it is not has made one wasted check, and a reader told the reverse is
     stranded on a platform.
     """
-    if kind == "escalator":
-        return Verdict(
-            "escalator",
-            affected_platforms(text),
-            "An escalator is moving stairs, not a step-free route, so this did not "
-            "remove step-free access.",
+    named = affected_platforms(text)
+
+    # `classify` reads the head, and the head is hand-written. If the text names
+    # the other machine, which one broke is not established, and the verdict
+    # turns on it. Nothing in the corpus does this; the check is here because the
+    # claim below rests on the word meaning what it says.
+    if text and OTHER_KIND[kind].search(plain(text)):
+        return _unknown(
+            named,
+            f"The notice is headed as a {kind} but its text names the other machine, "
+            "so which one was out is not established.",
         )
 
-    named = affected_platforms(text)
+    if kind == "escalator":
+        # The deduction, and only the deduction: an escalator has steps, so it was
+        # never a step-free route, so losing it cannot lose one. That says nothing
+        # about whether the station still has step-free access by some other way,
+        # which is a claim about the station and needs the station's own prose.
+        detail = (
+            "An escalator is moving stairs, so it was not a step-free route to begin "
+            "with and its being out did not remove one."
+        )
+        if station is not None and not ESCALATOR.search(station.platform_access or ""):
+            detail += (
+                f" Irish Rail's page for {station.name} does not mention an escalator, "
+                "so what this one served is not recorded."
+            )
+        return Verdict("escalator", named, detail)
+
     if station is None:
         return _unknown(named, "This station is not in the station snapshot.")
 
