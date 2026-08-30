@@ -126,14 +126,11 @@ def build(outages, now, until, facts=None):
         "escalators": sum(1 for o in live if o.kind == "escalator"),
     }
 
-    # The denominator the site never had. The feed names a station only when
-    # something is wrong with it, so "across 12 stations" reads as the whole
-    # network until it is set against the 152 stations that exist.
-    # Stations where Irish Rail's own page names a step-free way to a platform
-    # that does not use the lift. Two in the country, both hand-reviewed in
-    # lift_access.model.STEP_FREE_ALTERNATIVES - never inferred from the prose.
+    # Hand-reviewed in lift_access, never inferred from the prose.
     step_free = sorted(c for c in stations if _step_free_note(c, facts))
 
+    # The feed names a station only when something is wrong with it, so a count
+    # of them reads as the whole network without this.
     network = None
     if facts:
         tally = facts.tally()
