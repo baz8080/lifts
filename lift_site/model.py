@@ -543,5 +543,11 @@ def national_month(outages, ym, now, until):
         "avail": availability(
             sum(s["observed"] for s in per_station), sum(s["against"] for s in per_station)
         ),
-        "ongoing": len({o.code for o in live if o.ongoing and o.end == hi}),
+        # Still listed when the window closed: the listing outran `hi`, or is
+        # open at the horizon (where its `end` sits exactly on `hi`). A closed
+        # notice with `end == hi` came down at the poll on the boundary, so it
+        # does not count - listings are half-open like every window here.
+        # Requiring `o.ongoing and o.end == hi` alone measured "open at the
+        # horizon, in the horizon's month": 0 for every fully past month.
+        "ongoing": len({o.code for o in live if o.end > hi or (o.ongoing and o.end == hi)}),
     }
