@@ -77,11 +77,10 @@ def _notices(db_path):
     """Every lift and escalator notice on record, for `report` to print.
 
     Four fields: the station's location code; "lift" or "escalator", which
-    `classify` reads off the headline; the headline itself, hand-written by Irish
-    Rail ("Tullamore - Lift out of order") and stored in the feed's `head`
-    column; and the notice body as the feed wrote it, which is the form `verdict`
-    takes. `locationCodes[0]` is the whole station, every lift notice naming
-    exactly one.
+    `classify` reads off the head; the head, which is the feed's own name for the
+    hand-written headline ("Tullamore - Lift out of order"); and the notice body
+    as the feed wrote it, which is the form `verdict` takes. `locationCodes[0]` is the whole
+    station, every lift notice naming exactly one.
     """
     from lift_site.model import classify
 
@@ -93,8 +92,8 @@ def _notices(db_path):
     finally:
         conn.close()
     out = []
-    for codes, headline, text in rows:
-        kind = classify(headline)
+    for codes, head, text in rows:
+        kind = classify(head)
         if not kind:
             continue
         try:
@@ -102,7 +101,7 @@ def _notices(db_path):
         except json.JSONDecodeError:
             continue
         if listed:
-            out.append((listed[0], kind, headline, text))
+            out.append((listed[0], kind, head, text))
     return out
 
 
@@ -128,10 +127,10 @@ def report(args):
     db_path = Path(args.data_dir) / DB_FILENAME
     if db_path.exists():
         print("--- what each notice on record means ---")
-        for code, kind, headline, text in _notices(db_path):
+        for code, kind, head, text in _notices(db_path):
             station = stations.get(code)
             result = model.verdict(station, kind, text)
-            print(f"\n  {code:6} {headline}")
+            print(f"\n  {code:6} {head}")
             print(f"    prose:   {(station.platform_access if station else '(no station)')[:150]}")
             print(f"    notice:  {model.plain(text)[:150]}")
             print(f"    -> {result.state.upper()}: {result.detail}")
