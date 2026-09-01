@@ -74,7 +74,13 @@ def refresh(args):
 
 
 def _notices(db_path):
-    """(code, kind, head, text) for every lift and escalator notice on record."""
+    """Every lift and escalator notice on record, for `report` to print.
+
+    Four fields: the station's location code, `classify`'s "lift" or "escalator",
+    the notice head, and the notice body as the feed wrote it, which is the form
+    `verdict` takes. `locationCodes[0]` is the whole station - every lift notice
+    names exactly one.
+    """
     from lift_site.model import classify
 
     conn = sqlite3.connect(str(db_path))
