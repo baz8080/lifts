@@ -290,9 +290,12 @@ for. That is derivable from the prose today.
 (the same `SENTENCE` split `implicated` uses, so "Level to Platform 3. Ramp
 access from Platform 2 to Platform 3." is two sentences). A sentence
 contributes its platforms iff it mentions `level` or `ramp(s)`, mentions none
-of lift, stairs, steps, footbridge, subway or escalator, does not say "from
-platform" (a between-platforms link says nothing about the street leg - Dún
-Laoghaire), and names at least one platform number. Containment rather than an
+of lift, any stair wording (stairs, staircase, stairway), step in the singular
+or plural (Tipperary's "Low step via wicket gate" is real prose), footbridge,
+subway, escalator or "level crossing" (a place, not an access claim, and it
+would qualify through "level"), does not say "from platform" (a
+between-platforms link says nothing about the street leg - Dún Laoghaire), and
+names at least one platform number. Containment rather than an
 anchored "Level to", because Cork's "Platforms 1, 2, 3 and 4 are level" is
 exactly as direct a statement; the dry run over all 152 stations found no
 sentence that containment reads wrongly. Sentences with no number - Limerick

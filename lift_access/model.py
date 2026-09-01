@@ -59,12 +59,17 @@ DENIES_LIFT = re.compile(r"\bno lift\b", re.IGNORECASE)
 # Cork's predicate form is exactly as direct a statement and an anchor would
 # lose it. The exclusions do the real work: LIFT keeps out the sequences
 # ("lifts and ramps" at Hazelhatch needs both) and Raheny's reviewed "Lift or
-# ramp"; STEPPED keeps out routes with steps in them ("Ramp or stairs to
-# platform 5"); FROM_PLATFORM keeps out between-platform links that say nothing
-# about the street leg (Dún Laoghaire's "Ramp access from Platform 2 to
-# Platform 3").
+# ramp"; STEPPED keeps out routes with steps in them - "Ramp or stairs to
+# platform 5", a staircase or stairway, and the singular step, which is real
+# prose (Tipperary: "Low step via wicket gate from car park"). "Level crossing"
+# is a place, not an access claim, and it would qualify through "level".
+# FROM_PLATFORM keeps out between-platform links that say nothing about the
+# street leg (Dún Laoghaire's "Ramp access from Platform 2 to Platform 3").
 STEP_FREE = re.compile(r"\b(?:level|ramps?)\b", re.IGNORECASE)
-STEPPED = re.compile(r"\b(?:stairs?|steps|footbridge|subway|escalators?)\b", re.IGNORECASE)
+STEPPED = re.compile(
+    r"\b(?:stair\w*|steps?|footbridge|subway|escalators?|level\s+crossing)\b",
+    re.IGNORECASE,
+)
 FROM_PLATFORM = re.compile(r"\bfrom\s+platforms?\b", re.IGNORECASE)
 OTHER_KIND = {"lift": ESCALATOR, "escalator": LIFT}
 SAME_KIND = {"lift": LIFT, "escalator": ESCALATOR}

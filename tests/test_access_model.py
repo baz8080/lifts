@@ -305,6 +305,20 @@ class TheOtherPlatformKeptStepFreeAccess(unittest.TestCase):
         for code in ("HZLCH", "LMRKJ", "DRMOD", "ADMTN", "CLDKN"):
             self.assertEqual(model.step_free_platforms(station(code)), (), code)
 
+    def test_reworded_prose_with_steps_in_it_never_qualifies(self):
+        # The pages are reworded a few times a year, and the singular step is
+        # real prose today (Tipperary: "Low step via wicket gate from car
+        # park"). A staircase has stairs in it, and a level crossing is a
+        # place, not an access claim - it would qualify through "level".
+        for prose in (
+            "Ramp with one step to platform 1",
+            "Level access via the staircase to platform 1",
+            "Stairway and ramp to platform 2",
+            "Access to platform 1 via the level crossing",
+        ):
+            reworded = station("ATHY")._replace(platform_access=prose)
+            self.assertEqual(model.step_free_platforms(reworded), (), prose)
+
     def test_only_a_lost_verdict_carries_the_note(self):
         cases = (
             ("RAHNY", "lift", "The lift at platform 1 is out of service."),

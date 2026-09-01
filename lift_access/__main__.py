@@ -74,7 +74,7 @@ def refresh(args):
 
 
 def _notices(db_path):
-    """(code, kind, text) for every lift and escalator notice on record."""
+    """(code, kind, head, text) for every lift and escalator notice on record."""
     from lift_site.model import classify
 
     conn = sqlite3.connect(str(db_path))

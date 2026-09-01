@@ -3,7 +3,7 @@ name: Refresh station facts
 # What a station has changes when Irish Rail edits a station page, which is a
 # few times a year. Monthly is far more often than that and still nothing next
 # to the collector's 30-minute poll - and this must never run on the Pi or in
-# that loop: it is ~300 requests against two third-party sites.
+# that loop: it is ~150 requests against irishrail.ie.
 on:
   schedule:
     - cron: '20 4 1 * *'
