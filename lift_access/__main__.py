@@ -76,10 +76,11 @@ def refresh(args):
 def _notices(db_path):
     """Every lift and escalator notice on record, for `report` to print.
 
-    Four fields: the station's location code, `classify`'s "lift" or "escalator",
-    the notice head, and the notice body as the feed wrote it, which is the form
-    `verdict` takes. `locationCodes[0]` is the whole station - every lift notice
-    names exactly one.
+    Four fields: the station's location code; "lift" or "escalator", which
+    `classify` reads off the head; the head itself, Irish Rail's hand-written
+    headline ("Tullamore - Lift out of order"); and the notice body as the feed
+    wrote it, which is the form `verdict` takes. `locationCodes[0]` is the whole
+    station, every lift notice naming exactly one.
     """
     from lift_site.model import classify
 
