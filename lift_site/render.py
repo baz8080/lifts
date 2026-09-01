@@ -503,10 +503,7 @@ def _bar_label(cells, ym, kind):
 
 def _kind_cell(kind, tall):
     """What names the strip beside it: a glyph, and the word too where there is
-    room for it. The glyph is hidden from screen readers because it is an image
-    of what the strip's own aria-label already says, and it carries a title so a
-    mouse gets the word. The drill-down's word is left exposed and so is said
-    twice there, which is two syllables against aria-hidden on visible text.
+    room for it.
     """
     icon = f'<i class="kind kind-{kind}" aria-hidden="true"'
     if not tall:
@@ -568,10 +565,7 @@ KIND_SPANS = "".join(
 
 
 def _keys(name, spans):
-    """One named key. A drawn divider between the two would divide them for an
-    eye and not for a screen reader, which hears one run of seven items and is
-    told the kinds are day-cell colours. The name is the divider that does not
-    depend on the two keys sharing a line, and they stop sharing one at 885px."""
+    """One named key. A drawn divider would divide the two for an eye only."""
     return f'<span class="keys" role="group" aria-label="{name}">{spans}</span>'
 
 
