@@ -88,6 +88,20 @@ PROSE = {
         "  <li>Ramp or stairs to platform 5.</li>\n"
         "  <li>Lift or stairs to platforms 6 and 7.</li>\n</ul>"
     ),
+    "DLERY": (
+        "<p>Lift to Platforms 1 &amp; 2</p>\n"
+        "<p>Level to Platform 3. Ramp access from Platform 2 to Platform 3.</p>\n"
+        "<p>To access the lift, you must call via the help point at each landing of the "
+        "lift shaft. Please see lift call operation page for steps to call the lift.</p>"
+    ),
+    # Bray claims a lift generally and calls three platforms level on the same
+    # page. The two claims disagree and neither can be adjudicated from here.
+    "BRAY": (
+        "<p>Level to platform 1, 2 &amp; 3</p>\n"
+        "<p>Use the lift or stairs to travel between platforms</p>\n"
+        "<p>To access the lift, you must call via the help point at each landing of the "
+        "lift shaft. Please see lift call operation page for steps to call the lift.</p>"
+    ),
     "BLANK": "",
 }
 
@@ -203,6 +217,112 @@ class TheTwoExceptions(unittest.TestCase):
     def test_every_entry_names_a_station_and_platform(self):
         for code, platform in model.STEP_FREE_ALTERNATIVES:
             self.assertTrue(code.isupper() and platform)
+
+
+class TheOtherPlatformKeptStepFreeAccess(unittest.TestCase):
+    """The weaker claim, and it must read as one: a *different* platform never
+    needed the lift. Same-platform alternatives stay in STEP_FREE_ALTERNATIVES,
+    and the wording here must never borrow theirs. Issue #31.
+    """
+
+    def test_malahide_platform_one_was_level_throughout(self):
+        result = model.verdict(
+            station("MHIDE"), "lift", "The lift at platform 2 is currently out of service."
+        )
+        self.assertEqual(result.state, "lost")
+        # The parenthetical is quoted, not read: direction labelling was struck
+        # from issue #31 and must not creep back in as anything but a quote.
+        self.assertIn(
+            'Platform 1 needed no lift, so it kept step-free access: '
+            '"Level to platform 1 (City Centre)".',
+            result.detail,
+        )
+        self.assertNotIn("another step-free way", result.detail)
+
+    def test_connolly_keeps_the_four_level_platforms_in_one_plural_sentence(self):
+        result = model.verdict(
+            station("CNLLY"), "lift", "The lift to platforms 6 and 7 is out of service."
+        )
+        self.assertEqual(result.state, "lost")
+        self.assertIn(
+            'Platforms 1, 2, 3 and 4 needed no lift, so they kept step-free access: '
+            '"Level access to platforms 1, 2, 3 and 4 from ticket office".',
+            result.detail,
+        )
+
+    def test_corks_predicate_form_counts(self):
+        # "Platforms 1, 2, 3 and 4 are level" is exactly as direct a statement
+        # as "Level to platform 1"; an anchored pattern would lose it.
+        self.assertEqual(
+            model.step_free_platforms(station("CORK")),
+            tuple((p, "Platforms 1, 2, 3 and 4 are level") for p in ("1", "2", "3", "4")),
+        )
+
+    def test_dun_laoghaire_quotes_the_level_sentence_not_the_link_between_platforms(self):
+        result = model.verdict(
+            station("DLERY"), "lift", "The lift at platform 1 is currently out of service."
+        )
+        self.assertEqual(result.state, "lost")
+        self.assertIn('kept step-free access: "Level to Platform 3".', result.detail)
+        # "Ramp access from Platform 2 to Platform 3" is a between-platforms
+        # link and says nothing about reaching platform 2 from the street.
+        self.assertNotIn("Ramp access", result.detail)
+
+    def test_every_quote_is_a_verbatim_substring_of_the_prose(self):
+        for code in ("MHIDE", "CNLLY", "CORK", "DLERY", "PERSE"):
+            for _platform, sentence in model.step_free_platforms(station(code)):
+                self.assertIn(sentence, station(code).platform_access, code)
+
+    def test_rush_and_lusks_typo_neutralizes_itself(self):
+        # "Level access to platform 1" sits beside "Lift and footbridge to
+        # platform 1". A lift-served platform never gets the note.
+        result = model.verdict(
+            station("RLUSK"), "lift", "The lift on platform 1 is currently out of service."
+        )
+        self.assertEqual(result.state, "lost")
+        self.assertNotIn("kept step-free access", result.detail)
+
+    def test_a_notice_naming_the_level_platform_silences_the_note(self):
+        # Athy's notice names 1 and 2; the page calls 1 level. Two hand-written
+        # sources disagree, and the note must not pick the page's side.
+        result = model.verdict(
+            station("ATHY"), "lift", "Lifts at platforms 1 and 2 are currently out of service."
+        )
+        self.assertEqual(result.state, "lost")
+        self.assertNotIn("kept step-free access", result.detail)
+
+    def test_a_general_lift_claim_beside_a_level_line_gets_no_note(self):
+        result = model.verdict(
+            station("BRAY"), "lift", "The lift at platform 4 is currently out of service."
+        )
+        self.assertEqual(result.state, "lost")
+        self.assertNotIn("kept step-free access", result.detail)
+
+    def test_the_sentences_that_must_not_qualify(self):
+        # Hazelhatch's "lifts and ramps" is a sequence; Limerick Junction's
+        # "Level" and Dromod's "Level to main platform" name no number;
+        # Connolly's "Ramp or stairs" has steps in it.
+        for code in ("HZLCH", "LMRKJ", "DRMOD", "ADMTN", "CLDKN"):
+            self.assertEqual(model.step_free_platforms(station(code)), (), code)
+
+    def test_only_a_lost_verdict_carries_the_note(self):
+        cases = (
+            ("RAHNY", "lift", "The lift at platform 1 is out of service."),
+            ("PTLSE", "lift", "The lift on platform 2 is currently out of service."),
+            ("PERSE", "escalator", "The escalator at platform 2 is unavailable."),
+        )
+        for code, kind, text in cases:
+            result = model.verdict(station(code), kind, text)
+            self.assertNotEqual(result.state, "lost", code)
+            self.assertNotIn("kept step-free access", result.detail, code)
+
+    def test_a_reworded_page_drops_the_note(self):
+        reworded = station("MHIDE")._replace(
+            platform_access="Lift and footbridge to platform 2"
+        )
+        result = model.verdict(reworded, "lift", "The lift at platform 2 is out of service.")
+        self.assertEqual(result.state, "lost")
+        self.assertNotIn("kept step-free access", result.detail)
 
 
 class ASummarySentenceIsNotAPerPlatformClaim(unittest.TestCase):

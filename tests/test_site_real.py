@@ -180,6 +180,32 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
         missing = sorted({o.code for o in self.outages} - set(self.facts.stations))
         self.assertEqual(missing, [], "notice codes with no station in the snapshot")
 
+    def test_the_kept_platform_note_never_overclaims(self):
+        # The weaker claim of issue #31, held to the same one-directional rule:
+        # a platform may be said to have kept step-free access only if its
+        # sentence is on the live page, the notice does not name it, the page
+        # does not put a lift at it, and the station's lift claim is specific.
+        for o in self.outages:
+            station = self.facts.station(o.code)
+            result = self.facts.verdict(o.code, o.kind, o.text)
+            if "kept step-free access" not in result.detail:
+                continue
+            self.assertEqual(result.state, "lost", o.head)
+            self.assertNotIn(access_model.ALL_PLATFORMS, station.lift_platforms, o.head)
+            for platform, sentence in access_model.step_free_platforms(station):
+                if f'"{sentence}"' not in result.detail:
+                    continue
+                self.assertIn(sentence, station.platform_access, o.head)
+                self.assertNotIn(platform, result.platforms, o.head)
+                self.assertNotIn(platform, station.lift_platforms, o.head)
+                self.assertNotIn(platform, access_model.affected_platforms(o.text), o.head)
+
+    def test_only_a_lost_verdict_says_a_platform_kept_access(self):
+        for o in self.outages:
+            result = self.facts.verdict(o.code, o.kind, o.text)
+            if result.state != "lost":
+                self.assertNotIn("kept step-free access", result.detail, o.head)
+
     def test_the_verdict_reaches_the_shard(self):
         months = model.month_list(model.COLLECTION_START, max(self.now, self.until))
         for o in self.outages[:5]:

@@ -52,6 +52,20 @@ PLATFORM_SPLIT = re.compile(r"\s*(?:,|and|&|/)\s*", re.IGNORECASE)
 LIFT = re.compile(r"\blifts?\b", re.IGNORECASE)
 ESCALATOR = re.compile(r"\bescalators?\b", re.IGNORECASE)
 DENIES_LIFT = re.compile(r"\bno lift\b", re.IGNORECASE)
+
+# A sentence naming a platform reached without a lift: "Level to platform 1",
+# "Ramp to platform 1 (City Centre and northbound)", Cork's "Platforms 1, 2, 3
+# and 4 are level". Containment rather than an anchored "Level to", because
+# Cork's predicate form is exactly as direct a statement and an anchor would
+# lose it. The exclusions do the real work: LIFT keeps out the sequences
+# ("lifts and ramps" at Hazelhatch needs both) and Raheny's reviewed "Lift or
+# ramp"; STEPPED keeps out routes with steps in them ("Ramp or stairs to
+# platform 5"); FROM_PLATFORM keeps out between-platform links that say nothing
+# about the street leg (Dún Laoghaire's "Ramp access from Platform 2 to
+# Platform 3").
+STEP_FREE = re.compile(r"\b(?:level|ramps?)\b", re.IGNORECASE)
+STEPPED = re.compile(r"\b(?:stairs?|steps|footbridge|subway|escalators?)\b", re.IGNORECASE)
+FROM_PLATFORM = re.compile(r"\bfrom\s+platforms?\b", re.IGNORECASE)
 OTHER_KIND = {"lift": ESCALATOR, "escalator": LIFT}
 SAME_KIND = {"lift": LIFT, "escalator": ESCALATOR}
 
@@ -252,6 +266,30 @@ def step_free_note(station):
     return None
 
 
+def step_free_platforms(station):
+    """Every (platform, sentence) the prose reaches without a lift, in prose order.
+
+    Read from the stored plain prose rather than kept on Station: the claim can
+    then only ever quote a sentence still on the page, the same expiry property
+    a reviewed STEP_FREE_ALTERNATIVES entry has. This is the weaker of the two
+    claims - a *different* platform never needed the lift - and the caller must
+    keep it out of the reviewed list's wording.
+    """
+    found = []
+    seen = set()
+    for sentence in SENTENCE.split(station.platform_access or ""):
+        if not STEP_FREE.search(sentence):
+            continue
+        if LIFT.search(sentence) or STEPPED.search(sentence) or FROM_PLATFORM.search(sentence):
+            continue
+        quoted = sentence.strip().rstrip(".")
+        for platform in platforms_named(sentence):
+            if platform not in seen:
+                seen.add(platform)
+                found.append((platform, quoted))
+    return tuple(found)
+
+
 def _alternative(station, platform):
     """Is there a reviewed step-free way round the lift, and does the page still say so?
 
@@ -279,6 +317,42 @@ def implicated(pattern, body):
 
 def _unknown(platforms, reason):
     return Verdict("unknown", tuple(platforms), reason)
+
+
+def _still_note(station, serves, platforms):
+    """The platforms that never needed the lift, when a lost verdict can say so.
+
+    `p not in serves` self-neutralizes the Rush and Lusk typo, where "Level
+    access to platform 1" sits beside "Lift and footbridge to platform 1", and
+    keeps the claim off lift-served platforms - those belong to the reviewed
+    list. `p not in platforms` says nothing when the notice itself names the
+    level platform: two hand-written sources disagreeing is a reason to stay
+    quiet, not to pick a side. And a station whose lift claim is general
+    (ALL_PLATFORMS) beside a level line is the same disagreement, so it gets no
+    note at all - Bray says "Lifts to all platforms" and "Level to platform 1,
+    2 & 3" on the same page.
+    """
+    if ALL_PLATFORMS in serves:
+        return ""
+    still = [
+        (p, s) for p, s in step_free_platforms(station)
+        if p not in serves and p not in platforms
+    ]
+    if not still:
+        return ""
+    labels = [p for p, _ in still]
+    quoted = []
+    for _, sentence in still:
+        if sentence not in quoted:
+            quoted.append(sentence)
+    named = labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " and " + labels[-1]
+    subject = (
+        f"Platform {named} needed no lift, so it"
+        if len(labels) == 1
+        else f"Platforms {named} needed no lift, so they"
+    )
+    sources = " and ".join(f'"{sentence}"' for sentence in quoted)
+    return f" {subject} kept step-free access: {sources}."
 
 
 def verdict(station, kind, text):
@@ -412,9 +486,14 @@ def verdict(station, kind, text):
         )
 
     listed = ", ".join(plain_loss)
-    subject = f"Platform {listed} is" if len(plain_loss) == 1 else f"Platforms {listed} are"
+    single = len(plain_loss) == 1
+    subject = f"Platform {listed} is" if single else f"Platforms {listed} are"
     detail = (
         f"{subject} reached by lift, and Irish Rail's page names no other step-free "
-        "way, so step-free access was gone while this was listed."
+        f"way to {'it' if single else 'them'}, so step-free access was gone while "
+        "this was listed."
     )
-    return Verdict("lost", tuple(plain_loss), detail + unlisted_note + stale_note)
+    return Verdict(
+        "lost", tuple(plain_loss), detail + _still_note(station, serves, platforms)
+        + unlisted_note + stale_note
+    )
