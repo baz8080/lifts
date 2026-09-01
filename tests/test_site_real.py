@@ -181,10 +181,9 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
         self.assertEqual(missing, [], "notice codes with no station in the snapshot")
 
     def test_the_kept_platform_note_never_overclaims(self):
-        # The weaker claim of issue #31, held to the same one-directional rule:
-        # a platform may be said to have kept step-free access only if its
-        # sentence is on the live page, the notice does not name it, the page
-        # does not put a lift at it, and the station's lift claim is specific.
+        # Issue #31's weaker claim, held to the same one-directional rule: the
+        # sentence is on the live page, and neither the notice nor the page puts
+        # the platform behind a lift.
         for o in self.outages:
             station = self.facts.station(o.code)
             result = self.facts.verdict(o.code, o.kind, o.text)

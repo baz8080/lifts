@@ -609,8 +609,7 @@ class TestStepFreeChip(SiteModelCase):
 
 class TestTheOtherPlatformNote(SiteModelCase):
     """The note travels inside the verdict sentence, so one build proves both
-    renderers: the static page prints it and the shard carries the same string
-    for the app. Issue #31.
+    the static page and the shard the app reads. Issue #31.
     """
 
     def _build(self):

@@ -54,17 +54,11 @@ ESCALATOR = re.compile(r"\bescalators?\b", re.IGNORECASE)
 DENIES_LIFT = re.compile(r"\bno lift\b", re.IGNORECASE)
 
 # A sentence naming a platform reached without a lift: "Level to platform 1",
-# "Ramp to platform 1 (City Centre and northbound)", Cork's "Platforms 1, 2, 3
-# and 4 are level". Containment rather than an anchored "Level to", because
-# Cork's predicate form is exactly as direct a statement and an anchor would
-# lose it. The exclusions do the real work: LIFT keeps out the sequences
-# ("lifts and ramps" at Hazelhatch needs both) and Raheny's reviewed "Lift or
-# ramp"; STEPPED keeps out routes with steps in them - "Ramp or stairs to
-# platform 5", a staircase or stairway, and the singular step, which is real
-# prose (Tipperary: "Low step via wicket gate from car park"). "Level crossing"
-# is a place, not an access claim, and it would qualify through "level".
-# FROM_PLATFORM keeps out between-platform links that say nothing about the
-# street leg (Dún Laoghaire's "Ramp access from Platform 2 to Platform 3").
+# Cork's "Platforms 1, 2, 3 and 4 are level". The exclusions do the work: a
+# lift in the sentence makes it a sequence, stepped wording makes it not
+# step-free ("level crossing" is a place, and would qualify through "level"),
+# and "from platform" is a between-platform link that says nothing about the
+# street leg. `notes/station-access.md`.
 STEP_FREE = re.compile(r"\b(?:level|ramps?)\b", re.IGNORECASE)
 STEPPED = re.compile(
     r"\b(?:stair\w*|steps?|footbridge|subway|escalators?|level\s+crossing)\b",
@@ -274,11 +268,8 @@ def step_free_note(station):
 def step_free_platforms(station):
     """Every (platform, sentence) the prose reaches without a lift, in prose order.
 
-    Read from the stored plain prose rather than kept on Station: the claim can
-    then only ever quote a sentence still on the page, the same expiry property
-    a reviewed STEP_FREE_ALTERNATIVES entry has. This is the weaker of the two
-    claims - a *different* platform never needed the lift - and the caller must
-    keep it out of the reviewed list's wording.
+    Read from the stored prose rather than kept on Station, so the claim can only
+    ever quote a sentence still on the page.
     """
     found = []
     seen = set()
@@ -327,15 +318,9 @@ def _unknown(platforms, reason):
 def _still_note(station, serves, platforms):
     """The platforms that never needed the lift, when a lost verdict can say so.
 
-    `p not in serves` self-neutralizes the Rush and Lusk typo, where "Level
-    access to platform 1" sits beside "Lift and footbridge to platform 1", and
-    keeps the claim off lift-served platforms - those belong to the reviewed
-    list. `p not in platforms` says nothing when the notice itself names the
-    level platform: two hand-written sources disagreeing is a reason to stay
-    quiet, not to pick a side. And a station whose lift claim is general
-    (ALL_PLATFORMS) beside a level line is the same disagreement, so it gets no
-    note at all - Bray says "Lifts to all platforms" and "Level to platform 1,
-    2 & 3" on the same page.
+    Lift-served platforms belong to the reviewed list. A platform the notice
+    also names is two hand-written sources disagreeing, and so is a general lift
+    claim beside a level line (Bray); stay quiet rather than pick a side.
     """
     if ALL_PLATFORMS in serves:
         return ""

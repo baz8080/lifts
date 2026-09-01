@@ -94,8 +94,7 @@ PROSE = {
         "<p>To access the lift, you must call via the help point at each landing of the "
         "lift shaft. Please see lift call operation page for steps to call the lift.</p>"
     ),
-    # Bray claims a lift generally and calls three platforms level on the same
-    # page. The two claims disagree and neither can be adjudicated from here.
+    # A general lift claim beside a level line: two claims that disagree.
     "BRAY": (
         "<p>Level to platform 1, 2 &amp; 3</p>\n"
         "<p>Use the lift or stairs to travel between platforms</p>\n"
@@ -220,9 +219,8 @@ class TheTwoExceptions(unittest.TestCase):
 
 
 class TheOtherPlatformKeptStepFreeAccess(unittest.TestCase):
-    """The weaker claim, and it must read as one: a *different* platform never
-    needed the lift. Same-platform alternatives stay in STEP_FREE_ALTERNATIVES,
-    and the wording here must never borrow theirs. Issue #31.
+    """A *different* platform never needed the lift, and it must read as one:
+    the wording never borrows STEP_FREE_ALTERNATIVES'. Issue #31.
     """
 
     def test_malahide_platform_one_was_level_throughout(self):
@@ -230,8 +228,7 @@ class TheOtherPlatformKeptStepFreeAccess(unittest.TestCase):
             station("MHIDE"), "lift", "The lift at platform 2 is currently out of service."
         )
         self.assertEqual(result.state, "lost")
-        # The parenthetical is quoted, not read: direction labelling was struck
-        # from issue #31 and must not creep back in as anything but a quote.
+        # The parenthetical is quoted, not read: direction stayed out of scope.
         self.assertIn(
             'Platform 1 needed no lift, so it kept step-free access: '
             '"Level to platform 1 (City Centre)".',
@@ -251,8 +248,7 @@ class TheOtherPlatformKeptStepFreeAccess(unittest.TestCase):
         )
 
     def test_corks_predicate_form_counts(self):
-        # "Platforms 1, 2, 3 and 4 are level" is exactly as direct a statement
-        # as "Level to platform 1"; an anchored pattern would lose it.
+        # An anchored "Level to" would lose the predicate form.
         self.assertEqual(
             model.step_free_platforms(station("CORK")),
             tuple((p, "Platforms 1, 2, 3 and 4 are level") for p in ("1", "2", "3", "4")),
@@ -264,8 +260,7 @@ class TheOtherPlatformKeptStepFreeAccess(unittest.TestCase):
         )
         self.assertEqual(result.state, "lost")
         self.assertIn('kept step-free access: "Level to Platform 3".', result.detail)
-        # "Ramp access from Platform 2 to Platform 3" is a between-platforms
-        # link and says nothing about reaching platform 2 from the street.
+        # A between-platforms link says nothing about the street leg.
         self.assertNotIn("Ramp access", result.detail)
 
     def test_every_quote_is_a_verbatim_substring_of_the_prose(self):
@@ -275,7 +270,7 @@ class TheOtherPlatformKeptStepFreeAccess(unittest.TestCase):
 
     def test_rush_and_lusks_typo_neutralizes_itself(self):
         # "Level access to platform 1" sits beside "Lift and footbridge to
-        # platform 1". A lift-served platform never gets the note.
+        # platform 1", and a lift-served platform never gets the note.
         result = model.verdict(
             station("RLUSK"), "lift", "The lift on platform 1 is currently out of service."
         )
@@ -283,8 +278,7 @@ class TheOtherPlatformKeptStepFreeAccess(unittest.TestCase):
         self.assertNotIn("kept step-free access", result.detail)
 
     def test_a_notice_naming_the_level_platform_silences_the_note(self):
-        # Athy's notice names 1 and 2; the page calls 1 level. Two hand-written
-        # sources disagree, and the note must not pick the page's side.
+        # Athy's notice names 1 and 2; the page calls 1 level. Don't pick a side.
         result = model.verdict(
             station("ATHY"), "lift", "Lifts at platforms 1 and 2 are currently out of service."
         )
@@ -299,17 +293,13 @@ class TheOtherPlatformKeptStepFreeAccess(unittest.TestCase):
         self.assertNotIn("kept step-free access", result.detail)
 
     def test_the_sentences_that_must_not_qualify(self):
-        # Hazelhatch's "lifts and ramps" is a sequence; Limerick Junction's
-        # "Level" and Dromod's "Level to main platform" name no number;
-        # Connolly's "Ramp or stairs" has steps in it.
+        # A sequence, two with no platform number, and one with steps in it.
         for code in ("HZLCH", "LMRKJ", "DRMOD", "ADMTN", "CLDKN"):
             self.assertEqual(model.step_free_platforms(station(code)), (), code)
 
     def test_reworded_prose_with_steps_in_it_never_qualifies(self):
         # The pages are reworded a few times a year, and the singular step is
-        # real prose today (Tipperary: "Low step via wicket gate from car
-        # park"). A staircase has stairs in it, and a level crossing is a
-        # place, not an access claim - it would qualify through "level".
+        # real prose today (Tipperary: "Low step via wicket gate from car park").
         for prose in (
             "Ramp with one step to platform 1",
             "Level access via the staircase to platform 1",
