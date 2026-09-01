@@ -149,6 +149,7 @@ merged with `sort -u`.
 | GTFS, GTFS-R, the NTA developer API, NaPTAN, PTIMS and OSM all carry no station accessibility data, and the GTFS fields Google and Apple read for accessible routing are absent too. Scraping the prose is the last resort, not the lazy option | `notes/station-access.md` § Why scraping prose is the only option |
 | NeTEx and SIRI-FM are the formats that would carry this. Ireland publishes neither, and 2017/1926 only obliges publishing data that already exists. NeTEx appearing is the one thing worth watching for | `notes/station-access.md` § The regulation |
 | The design layer is shared with uisce and esb via `../statusui`, a uv git dependency pinned in `uv.lock` - edit upstream, then `../statusui/rollout.sh` bumps all three sites. Vendored copies were tried first and drifted within a day. `lift_site/site.css` is this site's own | `notes/site.md` § The vendored copy became a pinned dependency; statusui's README |
+| No TFI/NTA API carries Luas lift status - Irish GTFS-R serves TripUpdates and Vehicles only, no Alerts feed. The status lives in prose: luas.ie/travel-updates (with an explicit all-clear) and the RPA forecast `message`/news.ashx endpoints. A Pi-side probe decides the source before any collector is written | `notes/luas.md` |
 
 Decisions go in `notes/`, dated, with the rejected alternatives and their
 numbers. Add a row here when one closes something off - this file carries
