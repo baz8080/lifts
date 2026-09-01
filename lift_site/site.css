@@ -1,65 +1,53 @@
-/* This site's own rules, inlined after statusui's shared base.css in
-   both index.html and the station pages. */
+/* This site's own rules, inlined after statusui's base.css. */
 :root { --row-cols: 170px 1fr 220px 10px; --stats-cols: 120px auto; }
 
-/* station names run long ("Dún Laoghaire Mallin"); the row keeps its columns */
 .cname a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* day cells: 0 nothing listed, 1 out of service, 5 planned works inside their
-   grace, 6 planned works past it, 8 no data, 9 to come.
-   Which kind is out is the bar it is in, not the colour. The legend swatches
-   share these rules so the key can never drift from the bars; b0 needs its own
-   line because only .bar i defaults to --good in base.css. The grade key has
-   no swatches of its own - it carries real chips; see .legend .gradechip. */
+/* day cells: 0 nothing listed, 1 out of service, 5 planned works inside
+   their grace, 6 planned works past it, 8 no data, 9 to come */
 .bar i.b1, .legend i.b1 { background: var(--critical); }
 .bar i.b5, .legend i.b5 { background: var(--maint); }
-/* Works past their grace count exactly as a fault does, but they are not one -
-   amber rather than another red, which a deuteranope could not tell from b1. */
 .bar i.b6, .legend i.b6 { background: var(--warning); }
 .bar i.b8, .bar i.b9, .legend i.b8 { background: var(--cell-empty); }
 .legend i.b0 { background: var(--good); }
 
-/* A station with an escalator notice gets a second strip in the same space, so
-   a working lift is not painted by an escalator (Pearse, August 2026). */
-.bars { display: grid; gap: 3px; }
-.bars.labelled { grid-template-columns: 64px 1fr; column-gap: 8px; align-items: center; }
-.bars > span { font-size: 11px; color: var(--muted); }
-.bars .bar { height: 13px; }
-.bars .bar.tall { height: 18px; }
-/* The shared reflow drops .bar onto its own line by grid area. The pair has to
-   go with it - and the strips inside it must not, or both land on the wrapper's
-   one implicit "bar" line and the escalator is drawn over the lift. */
+/* glyphs: MDI elevator and escalator (Pictogrammers, Apache 2.0), as masks
+   so the path data sits once and both renderers just name a class. See README. */
+.kind {
+  width: 15px; height: 15px; flex: none; background: currentColor;
+  -webkit-mask: var(--kind-icon) center/contain no-repeat;
+  mask: var(--kind-icon) center/contain no-repeat;
+}
+.kind-lift { --kind-icon: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M7,2L11,6H8V10H6V6H3L7,2M17,10L13,6H16V2H18V6H21L17,10M7,12H17A2,2%200%200,1%2019,14V20A2,2%200%200,1%2017,22H7A2,2%200%200,1%205,20V14A2,2%200%200,1%207,12M7,14V20H17V14H7Z'/%3E%3C/svg%3E"); }
+.kind-escalator { --kind-icon: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M20,8H18.95L6.95,20H4A2,2%200%200,1%202,18A2,2%200%200,1%204,16H5.29L7,14.29V10A1,1%200%200,1%208,9H9A1,1%200%200,1%2010,10V11.29L17.29,4H20A2,2%200%200,1%2022,6A2,2%200%200,1%2020,8M8.5,5A1.5,1.5%200%200,1%2010,6.5A1.5,1.5%200%200,1%208.5,8A1.5,1.5%200%200,1%207,6.5A1.5,1.5%200%200,1%208.5,5Z'/%3E%3C/svg%3E"); }
+.legend i.kind { width: 15px; height: 15px; border-radius: 0; }
+.legend .keys { flex-wrap: wrap; gap: 14px; }
+.legend .keys > span { display: inline-flex; align-items: center; gap: 6px; }
+.legend:has(.keys) { column-gap: 28px; }
+.bars { display: grid; grid-template-columns: 15px 1fr; column-gap: 7px; row-gap: 3px; align-items: center; }
+.bars.labelled { grid-template-columns: 84px 1fr; column-gap: 8px; }
+.bars > i.kind { color: var(--muted); }
+.bars > span { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.bars.pair .bar { height: 13px; }
+.bars.pair .bar.tall { height: 18px; }
 @media (max-width: 640px) {
   .bars { grid-area: bar; }
   .bars .bar { grid-area: auto; }
 }
 
-/* Below the shared reflow's width the station name is what suffers: the stats
-   hold their ~195px on the same line, so at 360px "Clondalkin Fonthill" is left
-   with 57px and ellipsis. On a phone the stats take a line of their own, and
-   the counts column stops reserving a fixed width - it exists to line the
-   numerals up down the page, and there is no room to spend on that here. */
 @media (max-width: 480px) {
   :root { --stats-cols: auto auto; }
   .row { grid-template-columns: 1fr; grid-template-areas: "name" "stats" "bar"; }
 }
 
-/* The grade key carries real chips, letter and all, at a size that sits on a
-   legend line beside the 10px day swatches without towering over them. */
 .legend .gradechip { width: 16px; height: 16px; font-size: 10px; border-radius: 4px; }
 
-/* a month card's heading carries its grade chip and the month's availability */
 .card h2, .card h3 { display: flex; align-items: center; gap: 8px; }
 .card h2 .gradechip, .card h3 .gradechip { width: 22px; height: 22px; font-size: 12px; }
 .card .av { margin-left: auto; color: var(--muted); font-weight: 500; font-size: 12.5px; }
 
-/* A run of months with nothing listed is a line, not a card with an empty bar:
-   a year of those is most of a station page, and most of its bytes. */
 .quiet { color: var(--muted); font-size: 13px; padding: 9px 4px; }
 
-/* The app's month strip swaps the view; on a page that already carries every
-   month it is a set of links to them. Same strip, so if esb or uisce grow
-   static month navigation this belongs upstream beside the rest of .months. */
 .months.jumps { margin: 14px 0; }
 .months.jumps a {
   color: var(--ink-2); font-size: 13.5px; padding: 5px 12px; border-radius: 6px;
@@ -67,34 +55,22 @@
 }
 .months.jumps a:hover, .months.jumps a:focus { background: var(--grid); color: var(--ink); }
 
-/* the link to the full list, under a station page's short one - same size as
-   the names above it would read as one more station */
 .card .navmore { margin-top: 10px; font-size: 13px; color: var(--muted); }
 
-/* a month card: bar(s), the readout, then the cases with no rule between */
 .card .bar + .daycap + .case, .card .bars + .daycap + .case { border-top: 0; margin-top: 4px; }
 .case .txt { color: var(--muted); font-size: 12.5px; margin-top: 4px; font-style: italic; }
 .tl { margin-top: 8px; }
 
-/* What a lift being out meant for step-free access. Colour-coded because it is
-   the one line on a case a wheelchair user is reading for, but never colour
-   alone: the label says which state it is. */
 .acc { font-size: 12.5px; margin-top: 6px; padding: 6px 9px; border-radius: 6px; border-left: 3px solid; }
 .acc b { font-weight: 600; }
 .acc-lost { border-color: var(--critical); background: var(--grid); }
 .acc-alternative, .acc-escalator { border-color: var(--good); background: var(--grid); }
 .acc-unknown { border-color: var(--cell-empty); background: var(--grid); color: var(--ink-2); }
 
-/* Irish Rail's own words about the station, quoted on the station page. Every
-   verdict above is derived from these lines, so they are shown rather than
-   summarised - a reader who can see them can see a misreading. */
 .card.access ul { margin: 0; padding-left: 18px; }
 .card.access li { font-size: 13.5px; margin: 3px 0; }
 .card.access .src { color: var(--muted); font-size: 12px; margin-top: 8px; }
 
-/* Marks the two stations where Irish Rail's page names a step-free way to a
-   platform that does not use the lift. Says only that: the access symbol would
-   read as "accessible station", which the reviewed list does not claim. */
 .sfchip {
   font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; flex: none;
   background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good-text);
@@ -102,10 +78,7 @@
 }
 .card.access .sf { font-size: 12.5px; margin-top: 8px; }
 
-/* the two legs of the journey, quoted separately because only one is derived from */
 .card.access h3 { font-size: 12.5px; margin: 10px 0 2px; color: var(--muted); font-weight: 600; }
 .card.access h3:first-of-type { margin-top: 0; }
 
-/* the app shows verdicts without the card that carries their source, so it says
-   where they come from here instead */
 .acccav { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; }

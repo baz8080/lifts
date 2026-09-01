@@ -128,7 +128,34 @@ class PairedBarsCase(StationPageCase):
                escalator(station="Dublin Pearse", code="PERSE"))
 
     def test_the_page_renders_the_pair_the_rule_matches(self):
-        self.assertIn('<div class="bars labelled">', self.page)
+        self.assertIn('<div class="bars labelled pair">', self.page)
+
+    def test_the_glyphs_the_markup_names_are_defined(self):
+        """The renderers emit a class name and nothing else; if the stylesheet
+        stops carrying the mask, both bars go back to saying nothing."""
+        css = _stylesheet(self.page)
+        for kind, word in (("lift", "Lifts"), ("escalator", "Escalators")):
+            # in a bar's gutter, not in the legend, which carries both on every page
+            self.assertIn(f'class="kind kind-{kind}" aria-hidden="true"></i>{word}', self.page)
+            self.assertRegex(css, rf"\.kind-{kind} \{{[^}}]*--kind-icon:\s*url\(")
+        self.assertRegex(css, r"\.kind \{[^}]*mask:\s*var\(--kind-icon\)")
+
+    def test_grouping_the_keys_did_not_strip_the_items_of_their_layout(self):
+        """base.css dresses .legend > span, which is now the group rather than
+        the item, so both levels have to be put back or every swatch loses the
+        gap between it and its word."""
+        css = _stylesheet(self.page)
+        self.assertRegex(statusui.base_css(), r"\.legend > span \{[^}]*display: inline-flex")
+        self.assertRegex(css, r"\.legend \.keys > span \{[^}]*display: inline-flex")
+        self.assertRegex(css, r"\.legend \.keys \{[^}]*gap: 14px")
+
+    def test_a_glyph_in_the_legend_is_not_squashed_to_a_swatch(self):
+        """statusui sizes legend swatches at 10px, which is fine for a square of
+        colour and too small for a shape anyone has to recognise."""
+        css = _stylesheet(self.page)
+        self.assertRegex(statusui.base_css(), r"\.legend i \{[^}]*width: 10px")
+        self.assertRegex(css, r"\.legend i\.kind \{[^}]*width: 15px")
+        self.assertGreater(_specificity(".legend i.kind"), _specificity(".legend i"))
 
     def test_the_shared_reflow_still_places_bars_by_grid_area(self):
         """The premise. If this fails upstream has changed and the release below

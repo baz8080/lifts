@@ -83,13 +83,54 @@ class TestWrite(SiteModelCase):
         self.assertIn("no longer listed", page)
         self.assertIn(f'{render.BASE_URL}/s/rush-and-lusk.html', page)
 
-    def test_the_static_page_labels_the_two_bars_only_where_there_are_two(self):
+    def test_every_bar_says_which_kind_it_carries(self):
+        """Adjacency is the assertion. The legend carries both glyphs on every
+        page, so a bare "the page contains kind-lift" passes with the gutter
+        taken out of the bars entirely - it is the key it finds, not a bar."""
         page = (self.site / "s" / "dublin-connolly.html").read_text(encoding="utf-8")
-        self.assertIn("<span>Lifts</span>", page)
-        self.assertIn("<span>Escalators</span>", page)
+        self.assertIn('></i>Lifts</span><div class="bar tall"', page)
+        self.assertIn('></i>Escalators</span><div class="bar tall"', page)
         self.assertIn("escalator out of service", page)
+        # a station with no escalator notice says "lift" rather than nothing,
+        # and still does not claim an escalator the feed has never mentioned
         athy = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
-        self.assertNotIn("<span>Escalators</span>", athy)
+        self.assertIn('></i>Lifts</span><div class="bar tall"', athy)
+        self.assertNotIn("Escalators</span>", athy)
+        self.assertNotIn("Escalators in", athy)  # no escalator strip, only the key
+
+    def test_the_overview_bar_carries_its_glyph_too(self):
+        """The short bar has no static page to appear on - renderOverview builds
+        it in JS - so the only place its markup can be checked is here."""
+        row = render._bars("0" * 31, None, "2026-08", ())
+        self.assertIn(
+            '<i class="kind kind-lift" aria-hidden="true" title="Lift"></i><div class="bar"',
+            row,
+        )
+        self.assertNotIn("kind-escalator", row)
+        pair = render._bars("0" * 31, "1" * 31, "2026-08", ())
+        self.assertIn(
+            '<i class="kind kind-escalator" aria-hidden="true" title="Escalator"></i>'
+            '<div class="bar"',
+            pair,
+        )
+
+    def test_a_single_bar_reserves_the_same_gutter_as_a_pair(self):
+        """The 64px text label tried in August shortened one row's bar and put
+        its days out of line with the rest. A cell every bar carries cannot."""
+        athy = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
+        self.assertIn('<div class="bars labelled">', athy)
+        # only the pair splits the height; a lone bar keeps the whole of it
+        self.assertNotIn('class="bars labelled pair"', athy)
+        connolly = (self.site / "s" / "dublin-connolly.html").read_text(encoding="utf-8")
+        self.assertIn('<div class="bars labelled pair">', connolly)
+
+    def test_the_kind_key_is_not_the_day_key(self):
+        """Colour says what was listed, shape says which kind. Two keys on one
+        line, and neither may start explaining the other."""
+        self.assertIn("kind-lift", render.KIND_SPANS)
+        self.assertIn("kind-escalator", render.KIND_SPANS)
+        self.assertIn(render.KIND_SPANS, render.LEGEND_HTML)
+        self.assertIn(render.LEGEND_SPANS, render.LEGEND_HTML)
 
     def test_the_static_page_drops_the_listed_end_once_the_notice_is_down(self):
         # Bray's notice is still up at the last poll; Athy's came down with the
@@ -326,6 +367,14 @@ class TestBarLabel(unittest.TestCase):
 
 
 class TestLegend(unittest.TestCase):
+    def test_each_key_carries_its_own_name(self):
+        """The kind key and the day key were divided by a 1px rule and nothing
+        else, which divides them for an eye only: a screen reader heard one run
+        of seven items and was told the kinds were day-cell colours."""
+        for name in ("Which kind each bar carries", "What a day's colour means"):
+            self.assertIn(f'role="group" aria-label="{name}"', render.LEGEND_HTML)
+        self.assertEqual(2, render.LEGEND_HTML.count('class="keys"'))
+
     def test_the_grade_key_says_what_the_model_grades(self):
         self.assertEqual(
             [letter for letter, _ in render.GRADE_LABELS],

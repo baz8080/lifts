@@ -135,6 +135,7 @@ merged with `sort -u`.
 | The scale runs A to F inclusive. E splits the old F band at **50%**, which over a 31-day month is 8 to 15 days listed against F's 16 or more: up to half the month, then more than half. Every A-D cut is unmoved, and the cut lands in a real gap in the data | `notes/site.md` § The scale grew an E |
 | Planned works are excused for their first week and count in full past it, in their own colour once they do | `notes/site.md` § Planned works are excused for a week, § Blue said two opposite things |
 | A bar carries one kind and an escalator notice gets its own strip - separate bars, one pool of graded days | `notes/site.md` § One bar per kind |
+| Every bar names its kind with an MDI glyph in a gutter the same width on every row, and the word too where the bars are tall; the kinds are their own legend key, the day key still names no kind | `notes/site.md` § The bars say which kind |
 | `end` printed as "listed end" while the notice is up, dropped once it comes down; plays no part in any measure | `notes/site.md` § `end` is shown, § Irish Rail's end date goes when the notice does |
 | Windows end at the collection horizon; zero-minute listings count in its month | `notes/site.md` § Windows end |
 | Displayed instants are Dublin wall-clock; build/horizon stamps are UTC | `notes/site.md` § Displayed instants |

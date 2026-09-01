@@ -366,6 +366,10 @@ Rejected: labelling the two strips on an overview row. The label column
 shortened that one station's bar and knocked its days out of line with every
 other row's. The labels stay on the drill-down, where the bars are tall.
 
+**Superseded 2026-09-01.** See "The bars say which kind" below: a label column
+reserved on every row cannot knock one row out of line with the others, and
+what appears in it on an overview row is a glyph rather than a word.
+
 Two layout bugs came out of it, both on phones. statusui's 640px reflow places
 `.bar` by grid area, which inside the new `.bars` wrapper put both strips on
 one implicit line and painted the escalator over the lift; the wrapper takes
@@ -513,3 +517,73 @@ target was the site explaining its own methodology to someone who had not
 asked - the reasoning is above, under The grade is availability, and that is
 where it belongs. And "a notice names a lift in prose" was answering a
 question in the vocabulary of the person who wrote the parser.
+
+## The bars say which kind - 2026-09-01
+
+Issue #28. Two bars, and nothing on the page saying which was which. The
+`aria-label` said it, the day-cell caption said it on hover, and neither is
+visible on a phone at rest. A lone bar was no better off: a station with only a
+lift bar did not say it was a lift bar either, so this was never only about the
+pairs.
+
+Every bar now sits in a `.bars` wrapper whose first column is a fixed 15px, and
+that column carries a glyph: MDI `elevator` for the lift, MDI `escalator` for
+the escalator. On the station page, where the bars are tall, the glyph keeps its
+word beside it in a 78px column.
+
+**This supersedes the label rejection under One bar per kind.** A 64px text
+column was tried on 2026-08-28 and reverted because it appeared on the one
+station that had two bars and shortened that station's bar, putting its day 14
+over every other row's day 15. The column being present on *every* row is the
+whole fix: measured across the August overview, all 15 rows start their days at
+the same x at 980px and at 500px, paired and unpaired alike. Nothing about the
+earlier attempt was wrong except that it was conditional.
+
+A lone tall bar is 40px and a pair is 18 + 3 + 18, so `.bars.pair` and not
+`.bars` carries the height override: wrapping every bar without that would have
+halved the height of every unpaired bar on every station page.
+
+### Merging the two bars again was the other option, and it is still the bug
+
+Reducing the overview to one bar and splitting only on the drill-down was
+considered and rejected for the reason the bars split in the first place: at
+Pearse on 13 August the lift came back and the escalator did not, and a merged
+cell paints a working lift as broken. Which is also what the glyph would have
+had nothing to point at.
+
+### The glyph is aria-hidden
+
+The strip's `aria-label` already opens "Lifts in August 2026: ...". An
+`aria-label` on the glyph beside it would make a screen reader say the kind
+twice for one bar. The glyph carries a `title` on the overview, for a mouse; a
+screen reader gets the kind from the sentence that was already there.
+
+`elevator` over `elevator-passenger`: three shapes rather than five, and at 15px
+the detail is gone and only the silhouette is left, where a box against the
+escalator's diagonal is the largest difference available.
+
+### Shape is a second key, not an extension of the colour key
+
+The day key says what was listed and says nothing about which kind, deliberately
+- there is a test holding it to that. So the kinds are their own key beside it:
+two questions, two keys. `LEGEND_SPANS` stays kind-free and `LEGEND_HTML`
+composes the two, which is also what ships in `data.js`, so the app's legend
+still cannot drift from the static pages'.
+
+Each key is a `role="group"` with a name, because the first attempt divided them
+with a 1px rule and nothing else. That divides them for an eye only: a screen
+reader heard one run of seven items and was told the kinds were day-cell
+colours, which is the confusion the split exists to prevent. The rule is gone
+too, and not only because the names replace it. The two keys stop sharing a line
+at **885px** - a common laptop width, and far above any breakpoint this site
+has - so a rule between them hangs off the end of the first key more often than
+it sits between them. Twenty-eight pixels, twice the gap between items in a key,
+says the same thing at every width. It is scoped with `:has(.keys)` so the grade
+key in the footer keeps its own spacing, and so a browser without `:has` falls
+back to the plain gap rather than to a margin that indents the second key.
+
+The glyphs are CSS masks rather than markup. The path data then lives once, in
+the stylesheet both renderers already inline, and `render._bars` and site.html's
+`bars()` only ever emit a class name - two mirrored functions with one less
+thing to drift on. Cost is about 730 bytes on an initial load of 67 KB.
+Licensing is in the README: MDI is Apache 2.0, as is this repo.
