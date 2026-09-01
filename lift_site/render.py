@@ -549,9 +549,6 @@ LEGEND_SPANS = "".join(
     f'<span><i class="{cls}"></i>{label}</span>' for cls, label in LEGEND_ITEMS
 )
 
-# Which kind a bar carries is a shape, not a colour, so it is its own key: the
-# day key above says what was listed and must go on saying nothing about which
-# kind, or the two read as one code.
 KIND_SPANS = "".join(
     f'<span><i class="kind kind-{kind}" aria-hidden="true"></i>{kind}</span>'
     for kind in ("lift", "escalator")
@@ -559,7 +556,6 @@ KIND_SPANS = "".join(
 
 
 def _keys(name, spans):
-    """One named key. A drawn divider would divide the two for an eye only."""
     return f'<span class="keys" role="group" aria-label="{name}">{spans}</span>'
 
 
@@ -593,9 +589,6 @@ GRADE_SPANS = "<span>Lift and escalator availability</span>" + "".join(
 
 
 def _legend_html():
-    """The kind key and the day key, on one line. The grade key is in the footer
-    under the words that explain it: a third key stacked above the list would
-    read as one key in three parts, and only these two map into a bar."""
     return f'<div class="legend">{LEGEND_HTML}</div>'
 
 

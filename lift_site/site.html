@@ -148,8 +148,6 @@ function barStrip(cells, ym, kind, cls) {
   return '<div class="' + cls + '" role="img" aria-label="' + esc(barLabel(cells, ym, kind)) +
     '">' + bar(cells, ym, kind) + "</div>";
 }
-// What names the strip beside it: a glyph, and the word too where there is
-// room for it. Mirrors render._kind_cell.
 function kindCell(kind, tall) {
   var icon = '<i class="kind kind-' + kind + '" aria-hidden="true"';
   if (!tall) return icon + ' title="' + KIND[kind] + '"></i>';
