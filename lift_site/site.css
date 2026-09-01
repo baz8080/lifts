@@ -19,13 +19,36 @@
 .bar i.b8, .bar i.b9, .legend i.b8 { background: var(--cell-empty); }
 .legend i.b0 { background: var(--good); }
 
+/* The lift and escalator glyphs from Material Design Icons (Pictogrammers,
+   https://pictogrammers.com/library/mdi/, Apache 2.0 - see README). They are
+   masks rather than markup so the path data sits once in the stylesheet both
+   renderers already inline, and render.py and site.html only ever emit a class
+   name: there is nothing for the two of them to drift on. */
+.kind {
+  width: 15px; height: 15px; flex: none; background: currentColor;
+  -webkit-mask: var(--kind-icon) center/contain no-repeat;
+  mask: var(--kind-icon) center/contain no-repeat;
+}
+.kind-lift { --kind-icon: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M7,2L11,6H8V10H6V6H3L7,2M17,10L13,6H16V2H18V6H21L17,10M7,12H17A2,2%200%200,1%2019,14V20A2,2%200%200,1%2017,22H7A2,2%200%200,1%205,20V14A2,2%200%200,1%207,12M7,14V20H17V14H7Z'/%3E%3C/svg%3E"); }
+.kind-escalator { --kind-icon: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M20,8H18.95L6.95,20H4A2,2%200%200,1%202,18A2,2%200%200,1%204,16H5.29L7,14.29V10A1,1%200%200,1%208,9H9A1,1%200%200,1%2010,10V11.29L17.29,4H20A2,2%200%200,1%2022,6A2,2%200%200,1%2020,8M8.5,5A1.5,1.5%200%200,1%2010,6.5A1.5,1.5%200%200,1%208.5,8A1.5,1.5%200%200,1%207,6.5A1.5,1.5%200%200,1%208.5,5Z'/%3E%3C/svg%3E"); }
+/* the legend sizes its swatches at 10px, which is a square of colour, not a
+   shape anyone can read */
+.legend i.kind { width: 15px; height: 15px; border-radius: 0; }
+/* the shape key and the colour key answer different questions, on one line */
+.legend .sep { width: 1px; align-self: stretch; min-height: 14px; background: var(--border); }
+
 /* A station with an escalator notice gets a second strip in the same space, so
-   a working lift is not painted by an escalator (Pearse, August 2026). */
-.bars { display: grid; gap: 3px; }
-.bars.labelled { grid-template-columns: 64px 1fr; column-gap: 8px; align-items: center; }
-.bars > span { font-size: 11px; color: var(--muted); }
-.bars .bar { height: 13px; }
-.bars .bar.tall { height: 18px; }
+   a working lift is not painted by an escalator (Pearse, August 2026). Every
+   bar sits in this wrapper, paired or not, because the gutter has to be the
+   same width on every row or the day cells stop lining up down the page. */
+.bars { display: grid; grid-template-columns: 15px 1fr; column-gap: 7px; row-gap: 3px; align-items: center; }
+.bars.labelled { grid-template-columns: 78px 1fr; column-gap: 8px; }
+.bars > i.kind { color: var(--muted); }
+.bars > span { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+/* two strips share the height one bar has to itself, so a paired row is no
+   taller than any other row */
+.bars.pair .bar { height: 13px; }
+.bars.pair .bar.tall { height: 18px; }
 /* The shared reflow drops .bar onto its own line by grid area. The pair has to
    go with it - and the strips inside it must not, or both land on the wrapper's
    one implicit "bar" line and the escalator is drawn over the lift. */

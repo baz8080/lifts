@@ -148,17 +148,26 @@ function barStrip(cells, ym, kind, cls) {
   return '<div class="' + cls + '" role="img" aria-label="' + esc(barLabel(cells, ym, kind)) +
     '">' + bar(cells, ym, kind) + "</div>";
 }
-// One bar, or a pair in a month the station had an escalator notice. Labelled
-// only where the bars are tall: a label column on an overview row would shorten
-// that one station's bar and knock its days out of line with every other row.
+// What names the strip beside it: a glyph, and the word too where there is room.
+// Hidden from screen readers because the strip's aria-label already opens with
+// the kind. Mirrors render._kind_cell.
+function kindCell(kind, tall) {
+  var icon = '<i class="kind kind-' + kind + '" aria-hidden="true"';
+  if (!tall) return icon + ' title="' + KIND[kind] + '"></i>';
+  return "<span>" + icon + "></i>" + KIND[kind] + "s</span>";
+}
+// One bar, or a pair in a month the station had an escalator notice. Every bar
+// gets a kind cell and every wrapper reserves the same width for it, so one bar
+// and two start their days at the same offset. Mirrors render._bars.
 function bars(cells, esc, ym, tall) {
   var cls = tall ? "bar tall" : "bar";
+  var wrap = tall ? "bars labelled" : "bars";
   var lift = barStrip(cells, ym, "lift", cls);
-  if (!esc) return lift;
+  if (!esc) return '<div class="' + wrap + '">' + kindCell("lift", tall) + lift + "</div>";
   var stairs = barStrip(esc, ym, "escalator", cls);
-  if (!tall) return '<div class="bars">' + lift + stairs + "</div>";
-  return '<div class="bars labelled"><span>Lifts</span>' + lift +
-    "<span>Escalators</span>" + stairs + "</div>";
+  // The pair splits one bar's height between them rather than doubling it.
+  return '<div class="' + wrap + ' pair">' + kindCell("lift", tall) + lift +
+    kindCell("escalator", tall) + stairs + "</div>";
 }
 
 /* --- the grade ------------------------------------------------------------ */

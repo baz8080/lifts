@@ -83,13 +83,38 @@ class TestWrite(SiteModelCase):
         self.assertIn("no longer listed", page)
         self.assertIn(f'{render.BASE_URL}/s/rush-and-lusk.html', page)
 
-    def test_the_static_page_labels_the_two_bars_only_where_there_are_two(self):
+    def test_every_bar_says_which_kind_it_carries(self):
         page = (self.site / "s" / "dublin-connolly.html").read_text(encoding="utf-8")
-        self.assertIn("<span>Lifts</span>", page)
-        self.assertIn("<span>Escalators</span>", page)
+        self.assertIn("Lifts</span>", page)
+        self.assertIn("Escalators</span>", page)
+        self.assertIn('class="kind kind-lift"', page)
+        self.assertIn('class="kind kind-escalator"', page)
         self.assertIn("escalator out of service", page)
+        # a station with no escalator notice says "lift" rather than nothing,
+        # and still does not claim an escalator the feed has never mentioned
         athy = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
-        self.assertNotIn("<span>Escalators</span>", athy)
+        self.assertIn("Lifts</span>", athy)
+        self.assertIn('class="kind kind-lift"', athy)
+        self.assertNotIn("Escalators</span>", athy)
+        self.assertNotIn("Escalators in", athy)  # no escalator strip, only the key
+
+    def test_a_single_bar_reserves_the_same_gutter_as_a_pair(self):
+        """The 64px text label tried in August shortened one row's bar and put
+        its days out of line with the rest. A cell every bar carries cannot."""
+        athy = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
+        self.assertIn('<div class="bars labelled">', athy)
+        # only the pair splits the height; a lone bar keeps the whole of it
+        self.assertNotIn('class="bars labelled pair"', athy)
+        connolly = (self.site / "s" / "dublin-connolly.html").read_text(encoding="utf-8")
+        self.assertIn('<div class="bars labelled pair">', connolly)
+
+    def test_the_kind_key_is_not_the_day_key(self):
+        """Colour says what was listed, shape says which kind. Two keys on one
+        line, and neither may start explaining the other."""
+        self.assertIn("kind-lift", render.KIND_SPANS)
+        self.assertIn("kind-escalator", render.KIND_SPANS)
+        self.assertIn(render.KIND_SPANS, render.LEGEND_HTML)
+        self.assertIn(render.LEGEND_SPANS, render.LEGEND_HTML)
 
     def test_the_static_page_drops_the_listed_end_once_the_notice_is_down(self):
         # Bray's notice is still up at the last poll; Athy's came down with the

@@ -189,7 +189,7 @@ def build(outages, now, until, facts=None):
         "blank": blank,
         "national": national,
         "current": current,
-        "legend": LEGEND_SPANS,
+        "legend": LEGEND_HTML,
         "grades": GRADE_SPANS,
         # The band table travels with the payload so the app derives a letter
         # the same way the static pages do, from the one table in the model.
@@ -501,28 +501,43 @@ def _bar_label(cells, ym, kind):
     return f"{what}: listed on {listed} of {days} watched"
 
 
+def _kind_cell(kind, tall):
+    """What names the strip beside it: a glyph, and the word too where there is
+    room for it. Hidden from screen readers because the strip's own aria-label
+    already opens with the kind, and saying it twice for one bar helps nobody.
+    """
+    icon = f'<i class="kind kind-{kind}" aria-hidden="true"'
+    if not tall:
+        return f'{icon} title="{KIND_LABEL[kind]}"></i>'
+    return f"<span>{icon}></i>{KIND_LABEL[kind]}s</span>"
+
+
 def _bars(cells, esc_cells, ym, partial, tall=False):
     """One bar, or a pair when the station had an escalator notice that month.
 
-    The pair is labelled only on the drill-down, where the bars are tall and
-    there is room. On an overview row the label column would shorten that one
-    station's bar and knock its days out of line with every other row's.
+    Every bar carries a kind cell, and every wrapper reserves the same width for
+    it, so a station with one bar and a station with two start their days at the
+    same offset. That is what the 64px text label tried on 2026-08-28 could not
+    do: it appeared on one row in the page and shortened only that row's bar.
     """
     cls = "bar tall" if tall else "bar"
     lift = (
         f'<div class="{cls}" role="img" aria-label="{html.escape(_bar_label(cells, ym, "lift"))}">'
         f"{_day_cells(cells, ym, partial)}</div>"
     )
+    wrap = "bars labelled" if tall else "bars"
     if not esc_cells:
-        return lift
+        return f'<div class="{wrap}">{_kind_cell("lift", tall)}{lift}</div>'
     esc = (
         f'<div class="{cls}" role="img" '
         f'aria-label="{html.escape(_bar_label(esc_cells, ym, "escalator"))}">'
         f'{_day_cells(esc_cells, ym, partial, "escalator")}</div>'
     )
-    if not tall:
-        return f'<div class="bars">{lift}{esc}</div>'
-    return f'<div class="bars labelled"><span>Lifts</span>{lift}<span>Escalators</span>{esc}</div>'
+    # The pair splits one bar's height between them rather than doubling it.
+    return (
+        f'<div class="{wrap} pair">{_kind_cell("lift", tall)}{lift}'
+        f'{_kind_cell("escalator", tall)}{esc}</div>'
+    )
 
 
 # What each day-cell colour means. The swatches take their colours from the
@@ -540,6 +555,16 @@ LEGEND_ITEMS = (
 LEGEND_SPANS = "".join(
     f'<span><i class="{cls}"></i>{label}</span>' for cls, label in LEGEND_ITEMS
 )
+
+# Which kind a bar carries is a shape, not a colour, so it is its own key: the
+# day key above says what was listed and must go on saying nothing about which
+# kind, or the two read as one code. They share a line, divided.
+KIND_SPANS = "".join(
+    f'<span><i class="kind kind-{kind}" aria-hidden="true"></i>{kind}</span>'
+    for kind in ("lift", "escalator")
+)
+
+LEGEND_HTML = KIND_SPANS + '<span class="sep" aria-hidden="true"></span>' + LEGEND_SPANS
 
 # The grade key, keyed by the letter rather than by a colour swatch. A reader
 # identifies a grade by the letter in the chip - the colour behind it is
@@ -567,10 +592,10 @@ GRADE_SPANS = "<span>Lift and escalator availability</span>" + "".join(
 
 
 def _legend_html():
-    """The day key alone. The grade key is in the footer, under the words that
-    explain it: two legend rows stacked above the list read as one key with two
-    halves, and only the top half maps to anything in a bar."""
-    return f'<div class="legend">{LEGEND_SPANS}</div>'
+    """The kind key and the day key, on one line. The grade key is in the footer
+    under the words that explain it: a third key stacked above the list would
+    read as one key in three parts, and only these two map into a bar."""
+    return f'<div class="legend">{LEGEND_HTML}</div>'
 
 
 def _station_links(codes, data):

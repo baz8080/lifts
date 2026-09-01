@@ -212,3 +212,11 @@ database are untouched by an auth failure.
   miss) for simplicity. If the data shows single-cycle blips causing
   spurious close/reopen pairs, raise it - a message won't be marked closed
   until it's missed that many consecutive successful runs in a row.
+
+## Credits
+
+The lift and escalator glyphs on the day bars are `elevator` and `escalator`
+from [Material Design Icons](https://pictogrammers.com/library/mdi/) by
+Pictogrammers, used under the Apache License 2.0. They are inlined into every
+page as CSS masks; the path data and this credit sit together in
+`lift_site/site.css`.
