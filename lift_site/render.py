@@ -512,13 +512,7 @@ def _kind_cell(kind, tall):
 
 
 def _bars(cells, esc_cells, ym, partial, tall=False):
-    """One bar, or a pair when the station had an escalator notice that month.
-
-    Every bar carries a kind cell, and every wrapper reserves the same width for
-    it, so a station with one bar and a station with two start their days at the
-    same offset. That is what the 64px text label tried on 2026-08-28 could not
-    do: it appeared on one row in the page and shortened only that row's bar.
-    """
+    """One bar, or a pair when the station had an escalator notice that month."""
     cls = "bar tall" if tall else "bar"
     lift = (
         f'<div class="{cls}" role="img" aria-label="{html.escape(_bar_label(cells, ym, "lift"))}">'
