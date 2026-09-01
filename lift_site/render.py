@@ -503,8 +503,10 @@ def _bar_label(cells, ym, kind):
 
 def _kind_cell(kind, tall):
     """What names the strip beside it: a glyph, and the word too where there is
-    room for it. Hidden from screen readers because the strip's own aria-label
-    already opens with the kind, and saying it twice for one bar helps nobody.
+    room for it. The glyph is hidden from screen readers because it is an image
+    of what the strip's own aria-label already says, and it carries a title so a
+    mouse gets the word. The drill-down's word is left exposed and so is said
+    twice there, which is two syllables against aria-hidden on visible text.
     """
     icon = f'<i class="kind kind-{kind}" aria-hidden="true"'
     if not tall:
@@ -558,13 +560,24 @@ LEGEND_SPANS = "".join(
 
 # Which kind a bar carries is a shape, not a colour, so it is its own key: the
 # day key above says what was listed and must go on saying nothing about which
-# kind, or the two read as one code. They share a line, divided.
+# kind, or the two read as one code.
 KIND_SPANS = "".join(
     f'<span><i class="kind kind-{kind}" aria-hidden="true"></i>{kind}</span>'
     for kind in ("lift", "escalator")
 )
 
-LEGEND_HTML = KIND_SPANS + '<span class="sep" aria-hidden="true"></span>' + LEGEND_SPANS
+
+def _keys(name, spans):
+    """One named key. A drawn divider between the two would divide them for an
+    eye and not for a screen reader, which hears one run of seven items and is
+    told the kinds are day-cell colours. The name is the divider that does not
+    depend on the two keys sharing a line, and they stop sharing one at 885px."""
+    return f'<span class="keys" role="group" aria-label="{name}">{spans}</span>'
+
+
+LEGEND_HTML = _keys("Which kind each bar carries", KIND_SPANS) + _keys(
+    "What a day\'s colour means", LEGEND_SPANS
+)
 
 # The grade key, keyed by the letter rather than by a colour swatch. A reader
 # identifies a grade by the letter in the chip - the colour behind it is

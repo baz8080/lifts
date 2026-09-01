@@ -34,15 +34,29 @@
 /* the legend sizes its swatches at 10px, which is a square of colour, not a
    shape anyone can read */
 .legend i.kind { width: 15px; height: 15px; border-radius: 0; }
-/* the shape key and the colour key answer different questions, on one line */
-.legend .sep { width: 1px; align-self: stretch; min-height: 14px; background: var(--border); }
+/* The shape key and the colour key answer different questions, so each is a
+   named group. That makes base.css's .legend > span dress the group rather than
+   the items, and both levels are restored here: the group spaces its items the
+   way .legend spaced them, and the items keep the swatch gap. Two clusters set
+   twice the item gap apart, rather than a drawn rule between them - the keys
+   stop sharing a line at 885px, well above any breakpoint, and a rule that
+   cannot know that is left hanging off the end of the first one. */
+.legend .keys { flex-wrap: wrap; gap: 14px; }
+.legend .keys > span { display: inline-flex; align-items: center; gap: 6px; }
+/* :has, so the grade key in the footer keeps its own spacing, and so a
+   browser without it falls back to the plain item gap rather than to a
+   margin that indents the second key whenever the two keys wrap apart. */
+.legend:has(.keys) { column-gap: 28px; }
 
 /* A station with an escalator notice gets a second strip in the same space, so
    a working lift is not painted by an escalator (Pearse, August 2026). Every
    bar sits in this wrapper, paired or not, because the gutter has to be the
    same width on every row or the day cells stop lining up down the page. */
 .bars { display: grid; grid-template-columns: 15px 1fr; column-gap: 7px; row-gap: 3px; align-items: center; }
-.bars.labelled { grid-template-columns: 78px 1fr; column-gap: 8px; }
+/* 84px, not the 78 that fits: "Escalators" measures 56.6px beside the 15px
+   glyph and its gap, and a column with 1px to spare wraps the word and
+   changes the card's height on any wider resolution of system-ui. */
+.bars.labelled { grid-template-columns: 84px 1fr; column-gap: 8px; }
 .bars > i.kind { color: var(--muted); }
 .bars > span { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
 /* two strips share the height one bar has to itself, so a paired row is no

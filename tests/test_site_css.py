@@ -134,10 +134,20 @@ class PairedBarsCase(StationPageCase):
         """The renderers emit a class name and nothing else; if the stylesheet
         stops carrying the mask, both bars go back to saying nothing."""
         css = _stylesheet(self.page)
-        for kind in ("lift", "escalator"):
-            self.assertIn(f'class="kind kind-{kind}"', self.page)
+        for kind, word in (("lift", "Lifts"), ("escalator", "Escalators")):
+            # in a bar's gutter, not in the legend, which carries both on every page
+            self.assertIn(f'class="kind kind-{kind}" aria-hidden="true"></i>{word}', self.page)
             self.assertRegex(css, rf"\.kind-{kind} \{{[^}}]*--kind-icon:\s*url\(")
         self.assertRegex(css, r"\.kind \{[^}]*mask:\s*var\(--kind-icon\)")
+
+    def test_grouping_the_keys_did_not_strip_the_items_of_their_layout(self):
+        """base.css dresses .legend > span, which is now the group rather than
+        the item, so both levels have to be put back or every swatch loses the
+        gap between it and its word."""
+        css = _stylesheet(self.page)
+        self.assertRegex(statusui.base_css(), r"\.legend > span \{[^}]*display: inline-flex")
+        self.assertRegex(css, r"\.legend \.keys > span \{[^}]*display: inline-flex")
+        self.assertRegex(css, r"\.legend \.keys \{[^}]*gap: 14px")
 
     def test_a_glyph_in_the_legend_is_not_squashed_to_a_swatch(self):
         """statusui sizes legend swatches at 10px, which is fine for a square of

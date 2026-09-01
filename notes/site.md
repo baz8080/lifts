@@ -366,6 +366,10 @@ Rejected: labelling the two strips on an overview row. The label column
 shortened that one station's bar and knocked its days out of line with every
 other row's. The labels stay on the drill-down, where the bars are tall.
 
+**Superseded 2026-09-01.** See "The bars say which kind" below: a label column
+reserved on every row cannot knock one row out of line with the others, and
+what appears in it on an overview row is a glyph rather than a word.
+
 Two layout bugs came out of it, both on phones. statusui's 640px reflow places
 `.bar` by grid area, which inside the new `.bars` wrapper put both strips on
 one implicit line and painted the escalator over the lift; the wrapper takes
@@ -561,10 +565,22 @@ escalator's diagonal is the largest difference available.
 ### Shape is a second key, not an extension of the colour key
 
 The day key says what was listed and says nothing about which kind, deliberately
-- there is a test holding it to that. So the kinds are their own key on the same
-line, divided from it: two questions, two keys, one row. `LEGEND_SPANS` stays
-kind-free and `LEGEND_HTML` composes the two, which is also what ships in
-`data.js`, so the app's legend still cannot drift from the static pages'.
+- there is a test holding it to that. So the kinds are their own key beside it:
+two questions, two keys. `LEGEND_SPANS` stays kind-free and `LEGEND_HTML`
+composes the two, which is also what ships in `data.js`, so the app's legend
+still cannot drift from the static pages'.
+
+Each key is a `role="group"` with a name, because the first attempt divided them
+with a 1px rule and nothing else. That divides them for an eye only: a screen
+reader heard one run of seven items and was told the kinds were day-cell
+colours, which is the confusion the split exists to prevent. The rule is gone
+too, and not only because the names replace it. The two keys stop sharing a line
+at **885px** - a common laptop width, and far above any breakpoint this site
+has - so a rule between them hangs off the end of the first key more often than
+it sits between them. Twenty-eight pixels, twice the gap between items in a key,
+says the same thing at every width. It is scoped with `:has(.keys)` so the grade
+key in the footer keeps its own spacing, and so a browser without `:has` falls
+back to the plain gap rather than to a margin that indents the second key.
 
 The glyphs are CSS masks rather than markup. The path data then lives once, in
 the stylesheet both renderers already inline, and `render._bars` and site.html's
