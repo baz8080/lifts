@@ -304,7 +304,6 @@ class TheOtherPlatformKeptStepFreeAccess(unittest.TestCase):
             "Ramp with one step to platform 1",
             "Level access via the staircase to platform 1",
             "Stairway and ramp to platform 2",
-            "Access to platform 1 via the level crossing",
         ):
             reworded = station("ATHY")._replace(platform_access=prose)
             self.assertEqual(model.step_free_platforms(reworded), (), prose)

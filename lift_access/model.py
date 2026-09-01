@@ -56,14 +56,10 @@ DENIES_LIFT = re.compile(r"\bno lift\b", re.IGNORECASE)
 # A sentence naming a platform reached without a lift: "Level to platform 1",
 # Cork's "Platforms 1, 2, 3 and 4 are level". The exclusions do the work: a
 # lift in the sentence makes it a sequence, stepped wording makes it not
-# step-free ("level crossing" is a place, and would qualify through "level"),
-# and "from platform" is a between-platform link that says nothing about the
-# street leg. `notes/station-access.md`.
+# step-free, and "from platform" is a between-platform link that says nothing
+# about the street leg. `notes/station-access.md`.
 STEP_FREE = re.compile(r"\b(?:level|ramps?)\b", re.IGNORECASE)
-STEPPED = re.compile(
-    r"\b(?:stair\w*|steps?|footbridge|subway|escalators?|level\s+crossing)\b",
-    re.IGNORECASE,
-)
+STEPPED = re.compile(r"\b(?:stair\w*|steps?|footbridge|subway|escalators?)\b", re.IGNORECASE)
 FROM_PLATFORM = re.compile(r"\bfrom\s+platforms?\b", re.IGNORECASE)
 OTHER_KIND = {"lift": ESCALATOR, "escalator": LIFT}
 SAME_KIND = {"lift": LIFT, "escalator": ESCALATOR}

@@ -290,7 +290,7 @@ for. That is derivable from the prose today.
 `implicated` already uses. A sentence contributes its platforms if it says
 `level` or `ramp(s)`, names a platform number, and mentions no lift ("lifts and
 ramps" is a sequence), no stairs, staircase, stairway or step, no footbridge,
-subway, escalator or "level crossing", and no "from platform" (a
+subway or escalator, and no "from platform" (a
 between-platforms link says nothing about the street leg: Dún Laoghaire's "Ramp
 access from Platform 2 to Platform 3").
 
@@ -299,8 +299,8 @@ Only the stair wording excludes a sentence on the 2026-08-30 corpus (Gorey's
 The rest are guards against a rewording, drawn from wording the pages already
 use: 34 stations say step, 39 footbridge, 3 subway (the Irish word for a
 pedestrian underpass - Athlone's "Steps or lift and subway to platforms No. 2
-and 3"), 2 escalator. "Level crossing" appears nowhere and is there because it
-would otherwise qualify through "level".
+and 3"), 2 escalator. "Level crossing" was in the list and came out on
+2026-09-01: it appears nowhere in the prose, so it guarded against nothing.
 
 Containment, not an anchored "Level to": Cork's "Platforms 1, 2, 3 and 4 are
 level" is as direct a statement, and a dry run over all 152 stations found no
