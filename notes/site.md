@@ -643,6 +643,20 @@ time**. The identity key is what makes reissue detection work in the first
 place, and a row per appearance would have duplicated the notice's text and
 start across every stretch for no gain.
 
+### The Pi keeps its database across an upgrade
+
+`install-native.sh` copies files over a running collector and does not
+rebuild, so a Pi that upgrades has `messages` rows and, because
+`CREATE TABLE IF NOT EXISTS` makes it empty, no `listings` at all. Nothing
+published would notice - CI rebuilds from the raw logs on every deploy - but
+the collector's own database would quietly hold open notices with no span
+until each one next closed.
+
+So a notice seen again with no open span to extend opens one, back-dated to
+the `first_seen` the row already carries. That is the best the database can
+say without a replay, it needs nothing from whoever runs the upgrade, and it
+is a no-op once every row has a span.
+
 ### The grace is earned per notice and spent per stretch
 
 Splitting the listing split the planned-works grace with it, and that was wrong

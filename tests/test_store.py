@@ -201,6 +201,21 @@ class TestDiffAndUpdateMessages(StoreTestCase):
             [("2026-08-08T12:00:00Z", "2026-08-08T13:00:00Z", None)],
         )
 
+    def test_a_database_written_before_listings_existed_gains_a_span(self):
+        """An in-place upgrade on the Pi keeps its database, and the new table
+        is created empty. A notice already open then would otherwise have no
+        span at all until it next closed."""
+        item = make_item()
+        from lift_status.parse import derive_identity_key
+
+        self._run([item], observed_at="2026-08-08T12:00:00Z")
+        self.store.conn.execute("DELETE FROM listings")  # the pre-upgrade shape
+        self._run([item], observed_at="2026-08-08T12:30:00Z")
+        self.assertEqual(
+            self._listings(derive_identity_key(item)),
+            [("2026-08-08T12:00:00Z", "2026-08-08T12:30:00Z", None)],
+        )
+
     def test_duplicate_identical_items_are_deduped_not_double_counted(self):
         item = make_item()
         diff = self._run([item, dict(item)])

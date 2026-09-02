@@ -270,7 +270,9 @@ class Store:
         for key, raw_item in present.items():
             n = parse.normalize_item(raw_item)
             existing = self.conn.execute(
-                "SELECT id, status FROM messages WHERE identity_key = ?", (key,)
+                "SELECT id, status, first_seen_run_id, first_seen_at_utc "
+                "FROM messages WHERE identity_key = ?",
+                (key,),
             ).fetchone()
             if existing is None:
                 cur = self.conn.execute(
@@ -318,11 +320,29 @@ class Store:
                     self._open_listing(existing["id"], run_id, observed_at)
                     reopened_count += 1
                 else:
-                    self.conn.execute(
+                    extended = self.conn.execute(
                         "UPDATE listings SET last_seen_at_utc = ? "
                         "WHERE message_id = ? AND closed_at_utc IS NULL",
                         (observed_at, existing["id"]),
-                    )
+                    ).rowcount
+                    if not extended:
+                        # A database written before `listings` existed: the
+                        # table is created empty by the schema, so notices
+                        # already open when the collector was upgraded have
+                        # nowhere to be extended. Open their span at the
+                        # first_seen the row already carries rather than at
+                        # now, which is the best the DB can say without a
+                        # rebuild, and stop the row being invisible until it
+                        # next closes. Harmless once every row has a span.
+                        self._open_listing(
+                            existing["id"], existing["first_seen_run_id"],
+                            existing["first_seen_at_utc"],
+                        )
+                        self.conn.execute(
+                            "UPDATE listings SET last_seen_at_utc = ? "
+                            "WHERE message_id = ? AND closed_at_utc IS NULL",
+                            (observed_at, existing["id"]),
+                        )
 
         raw_grace = os.environ.get("LIFT_STATUS_GRACE_MISSES", "1")
         try:
