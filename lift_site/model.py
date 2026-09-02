@@ -85,8 +85,8 @@ GRADE_BANDS = ((100, "A"), (95, "B"), (90, "C"), (75, "D"), (50, "E"), (0, "F"))
 # in the same poll (the README's "identity drift"). Those are one outage to a
 # reader. A notice that reappears a poll or more later is a separate row: the
 # gap is real information, since it is exactly what the site is measuring.
-# `merge_edits` folds only the same-poll case, and the gap it must not fold
-# arrives here already split, one outage per `listings` span.
+# `merge_edits` folds only the same-poll case; the gap it must not fold
+# arrives already split, one outage per `listings` span.
 
 
 def parse_utc(value):
@@ -198,10 +198,8 @@ class Outage(NamedTuple):
     # is coloured by what was listed *that* day - so a planned-works notice
     # replaced by a fault does not repaint the planned days red.
     segments: tuple = ()
-    # Every stretch this notice was listed for, added up, planned ones only.
-    # A gap splits the listing but must not reset the works grace: a notice
-    # that drops off the feed for one poll a week is still works that ran for
-    # a month, so the grace is earned per notice and spent per span.
+    # The notice's planned time over all its stretches. A gap splits what is
+    # measured; it must not refresh what the grace excuses.
     planned_total: timedelta = timedelta()
 
 
@@ -227,10 +225,8 @@ def observed_until(conn):
 def _outage_from_row(row, until):
     """One listing span as an outage.
 
-    A row here is a `listings` span joined to its notice, not the notice
-    itself: a notice that came back after a gap has one row per stretch it was
-    on the feed, and each is its own outage. Folding them would republish the
-    gap as listed time, which is the one thing this site measures.
+    A row is a span joined to its notice, not the notice: one that came back
+    after a gap has a row per stretch, and each is its own outage.
     """
     kind = classify(row["head"])
     if kind is None:
@@ -327,8 +323,8 @@ def _fold(chain):
 def load_outages(db_path, now):
     """Every stretch a lift/escalator notice was listed, newest first, and the horizon.
 
-    One outage per `listings` span, so a notice that vanished and came back is
-    two outages with the gap between them intact.
+    One outage per `listings` span, so a notice that came back is two outages
+    with the gap intact.
 
     `now` is only used when the run log is empty and there is nothing else to
     end the window at; everything measured stops at the horizon.
@@ -348,8 +344,8 @@ def load_outages(db_path, now):
     finally:
         conn.close()
     outages = [o for o in (_outage_from_row(r, until) for r in rows) if o is not None]
-    # The grace belongs to the notice, not to the stretch: pool each notice's
-    # planned time over all its spans before the spans go their separate ways.
+    # The grace belongs to the notice, not to the stretch, so pool before
+    # the spans go their separate ways.
     pooled = defaultdict(timedelta)
     for o in outages:
         pooled[o.message_id] += o.planned_total

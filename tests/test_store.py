@@ -156,12 +156,8 @@ class TestDiffAndUpdateMessages(StoreTestCase):
         self.assertEqual(msg["reopen_count"], 1)
 
     def test_a_reopen_starts_a_second_listing_rather_than_extending_the_first(self):
-        """The gap is the measurement, so it must survive into the database.
-
-        Portlaoise was published as sixteen days listed when the notice was up
-        for two, either side of a fortnight it was not on the feed at all: one
-        `messages` row spanning both, because identity_key is UNIQUE.
-        """
+        """identity_key is UNIQUE, so both stretches shared one row and the
+        fortnight between them was published as listed time."""
         item = make_item()
         from lift_status.parse import derive_identity_key
 
@@ -189,7 +185,7 @@ class TestDiffAndUpdateMessages(StoreTestCase):
         )
 
     def test_a_miss_inside_the_grace_does_not_split_the_listing(self):
-        """Grace absorbs a flaky poll, so it must not read as a new outage."""
+        """A miss the grace absorbs must not read as a new outage."""
         item = make_item()
         from lift_status.parse import derive_identity_key
 
@@ -206,9 +202,8 @@ class TestDiffAndUpdateMessages(StoreTestCase):
         )
 
     def test_a_database_written_before_listings_existed_gains_a_span(self):
-        """An in-place upgrade on the Pi keeps its database, and the new table
-        is created empty. A notice already open then would otherwise have no
-        span at all until it next closed."""
+        """An upgrade in place keeps the database and creates `listings`
+        empty, leaving notices already open with no span."""
         item = make_item()
         from lift_status.parse import derive_identity_key
 

@@ -74,10 +74,8 @@ class SiteModelCase(unittest.TestCase):
     def drop(self, at, every=timedelta(minutes=30)):
         """Poll the notice away for good, starting at `at`.
 
-        One empty poll no longer closes anything: the collector's grace
-        absorbs a single miss, because a notice back at the next poll is the
-        feed blinking. The outage still ends at `at`, the first poll it was
-        absent from, which is what these tests assert.
+        One empty poll no longer closes anything, but the outage still ends at
+        `at`, the first poll it was absent from.
         """
         for i in range(DEFAULT_GRACE_MISSES):
             self.poll(at + i * every, [])
@@ -206,8 +204,7 @@ class TestMergeEdits(SiteModelCase):
 
     def test_a_reissue_takes_the_earliest_start_and_the_newest_works_flag(self):
         # A corrected start changes the identity key too. The replaced notice
-        # is only a miss at the reissuing poll, so it takes one more to close
-        # and the merge to show; it still closes at the poll it went missing.
+        # is only a miss at the reissuing poll, so the merge takes one more.
         reissued = lift(start="2026-08-01T09:00:00", planned=True)
         self.poll(T0, [lift(start="2026-08-05T09:00:00")])
         self.poll(T0 + timedelta(minutes=30), [reissued])
@@ -227,10 +224,8 @@ class TestMergeEdits(SiteModelCase):
     def test_the_same_notice_coming_back_is_two_outages_with_the_gap_intact(self):
         """The identity key is unchanged, so the collector reopens one row.
 
-        Nothing in the old suite covered this: the reopen test alongside gives
-        the returning notice a corrected start, which makes it a new row. A
-        same-identity return was published as one unbroken listing spanning
-        the gap - Portlaoise as sixteen days when the lift was listed for two.
+        The reopen test alongside gives the returning notice a corrected
+        start, which makes it a new row instead, so nothing covered this.
         """
         self.poll(T0, [lift()])
         self.drop(T0 + timedelta(minutes=30))
@@ -250,8 +245,8 @@ class TestMergeEdits(SiteModelCase):
         self.poll(T0, [lift(planned=True)])
         for day in range(1, 10):
             self.poll(T0 + timedelta(days=day), [lift(planned=True)])
-        self.drop(T0 + timedelta(days=10))  # off the feed for good
-        self.poll(T0 + timedelta(days=10, minutes=30), [lift(planned=True)])
+        self.drop(T0 + timedelta(days=10))
+        self.poll(T0 + timedelta(days=10, hours=1), [lift(planned=True)])
         outages = self.load()
         self.assertEqual(len(outages), 2)
         # The short second stretch would sit inside the grace on its own.
@@ -504,9 +499,8 @@ class TestStationMonth(SiteModelCase):
 
     def test_the_month_headline_counts_stations_and_their_availability(self):
         self.poll(T0, [lift(), escalator(), lift(code="BRAY", station="Bray")])
-        # Two polls without them, both still on the 9th in Dublin: the grace
-        # takes a second miss to close, and a third day watched would change
-        # what this counts.
+        # Two polls without them, both still the 9th in Dublin: a third day
+        # watched would change what this counts.
         self.poll(T0 + timedelta(days=1), [lift()])
         self.poll(T0 + timedelta(days=1, hours=1), [lift()])
         outages = self.load()

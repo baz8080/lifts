@@ -62,9 +62,8 @@ class TestRealCorpus(unittest.TestCase):
         self.assertLessEqual(model.COLLECTION_START, self.until)
 
     def test_every_listing_span_is_on_the_site_exactly_once(self):
-        # Spans, not notices: a notice that vanished and came back is two
-        # listings and must reach the site as two outages, or the gap between
-        # them is republished as time the lift was listed.
+        # Spans, not notices: a notice that came back must reach the site as
+        # two outages, or the gap is republished as listed time.
         rows = self.conn.execute(
             """SELECT l.id AS id, m.head AS head
                FROM listings l JOIN messages m ON m.id = l.message_id"""

@@ -19,11 +19,8 @@ from pathlib import Path
 DB_FILENAME = "lift_status.db"
 RAW_DIRNAME = "raw"
 
-# Consecutive misses before a notice is called closed. Two, not one, because a
-# notice absent from a single poll and back at the next is the feed blinking,
-# not a lift fixed for half an hour: Athy went out for one poll in 1,195 and
-# was published as two outages either side of it. Nothing in the corpus sits
-# between that one poll and the next-shortest real gap of nine.
+# Two, not one: a notice gone from a single poll and back at the next is the
+# feed blinking, not a lift fixed for half an hour. `notes/site.md`.
 DEFAULT_GRACE_MISSES = 2
 
 # Both entry points read this. One name, so `lift_status rebuild` and
@@ -70,12 +67,9 @@ CREATE TABLE IF NOT EXISTS messages (
     FOREIGN KEY (last_seen_run_id) REFERENCES runs(id)
 );
 
--- One row per stretch the notice was continuously on the feed. A notice that
--- vanishes and comes back keeps its `messages` row (identity_key is UNIQUE),
--- so without this the reopen would silently extend the original listing over
--- the gap - and the gap is the one thing the site measures. Portlaoise was
--- published as sixteen days listed when it was two, either side of a
--- fortnight's absence. See notes/site.md.
+-- One row per stretch the notice was continuously on the feed. identity_key
+-- is UNIQUE, so without this a notice that came back would extend its
+-- original row over the gap, and the gap is what the site measures.
 CREATE TABLE IF NOT EXISTS listings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     message_id INTEGER NOT NULL,
@@ -333,14 +327,8 @@ class Store:
                         (observed_at, existing["id"]),
                     ).rowcount
                     if not extended:
-                        # A database written before `listings` existed: the
-                        # table is created empty by the schema, so notices
-                        # already open when the collector was upgraded have
-                        # nowhere to be extended. Open their span at the
-                        # first_seen the row already carries rather than at
-                        # now, which is the best the DB can say without a
-                        # rebuild, and stop the row being invisible until it
-                        # next closes. Harmless once every row has a span.
+                        # An upgrade in place leaves notices already open with
+                        # no span, `listings` having been created empty.
                         self._open_listing(
                             existing["id"], existing["first_seen_run_id"],
                             existing["first_seen_at_utc"],
