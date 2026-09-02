@@ -42,10 +42,10 @@ SITE_HTML = TEMPLATES / "site.html"
 STATION_HTML = TEMPLATES / "station.html"
 SITE_CSS = TEMPLATES / "site.css"
 
-# How far the data may lag the build before the page says so. Pushes land at
-# local midnight and noon, so with jitter and DST a build can legitimately see
-# ~14h-old data, while a dead collector shows 17h+ by the next morning cron.
-STALE_AFTER = timedelta(hours=16)
+# How far the data may lag the build before the page says so. Pushes land every
+# six hours, so with the timer's jitter and one poll interval the newest data can
+# legitimately be ~7h old; a single missed push shows 13h+.
+STALE_AFTER = timedelta(hours=10)
 
 # What a reader downloads before touching anything. Named once: the build
 # prints it, the build warns past it, and the render tests assert it.
@@ -684,19 +684,18 @@ def station_page(code, data, by_month, listed_now=(), facts=None):
     # The page carries every month, so a chip beside the name has to say which
     # month it is the grade for - in the sub line and in its own label.
     graded = f"graded on {month_label(latest)}"
+    # Red says the record is not current. Why it is not is not something the page
+    # can know: a stalled build looks exactly like a stalled collector.
+    observed = html.escape(data["observed"])
+    if data["stale"]:
+        observed = f'<span class="stale">{observed}</span>'
     body = [
         '<a class="back" href="../index.html">← All stations</a>',
         '<div class="chead">',
         _chip(letter, f"Grade {letter} for {month_label(latest)}" if letter else "No grade yet"),
         f"<h1>{html.escape(name)}</h1>{_step_free_chip(code, facts)}</div>",
         f'<div class="sub">Irish Rail station code {html.escape(code)} · {graded}<br>'
-        f'Data to {html.escape(data["observed"])}'
-        + (
-            ' · <span class="stale">collection has stopped</span>'
-            if data["stale"]
-            else ""
-        )
-        + "</div>",
+        f"Data to {observed}</div>",
         _access_html(code, data, facts),
         _legend_html(),
     ]

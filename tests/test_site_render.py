@@ -243,13 +243,16 @@ class TestStaleness(SiteModelCase):
         data, _, _ = render.build(outages, T0 + timedelta(days=3), self.until)
         self.assertTrue(data["stale"])
         page = render.station_page("ATHY", data, render.shard(outages, data["months"], self.until))
-        self.assertIn("collection has stopped", page)
+        self.assertIn(f'Data to <span class="stale">{data["observed"]}</span>', page)
 
     def test_a_fresh_build_does_not(self):
         self.poll(T0, [lift()])
         outages = self.load(now=T0 + timedelta(hours=3))
         data, _, _ = render.build(outages, T0 + timedelta(hours=3), self.until)
         self.assertFalse(data["stale"])
+        page = render.station_page("ATHY", data, render.shard(outages, data["months"], self.until))
+        self.assertIn(f'Data to {data["observed"]}<', page)
+        self.assertNotIn('class="stale"', page)
 
 
 class TestSlugs(unittest.TestCase):

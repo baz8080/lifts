@@ -113,11 +113,18 @@ is a separate outage, because the gap is what the site is measuring.
 
 `notes/site.md` has the decisions and the numbers behind them.
 `.github/workflows/pages.yml` rebuilds the database from
-[`lifts-data`](https://github.com/baz8080/lifts-data) and publishes the site
-daily and on every push to `main`. It needs Pages enabled once, under
-**Settings → Pages → source "GitHub Actions"**. GitHub disables the cron after
-60 days without a commit to *this* repository - the data lands in
-`lifts-data`, which does not count - so re-arm it when the email arrives.
+[`lifts-data`](https://github.com/baz8080/lifts-data) and publishes the site. It
+runs on every push to `main`, twice a day on a fallback cron, and - the trigger
+that actually keeps the page current - whenever `lifts-data` itself is pushed to.
+That last one is a workflow in `lifts-data` calling this workflow's
+`workflow_dispatch`, and it needs a fine-grained token with **Actions: write** on
+this repository stored there as the secret `SITE_BUILD_TOKEN`. Without it the
+dispatch fails visibly on each push and the site falls back to the cron.
+
+Pages needs enabling once, under **Settings → Pages → source "GitHub Actions"**.
+GitHub disables the cron after 60 days without a commit to *this* repository -
+the data lands in `lifts-data`, which does not count - so re-arm it when the
+email arrives. `notes/publish-cadence.md` has why the cron is only the fallback.
 
 ## Running the tests
 
@@ -170,8 +177,8 @@ the systemd units. Then, following the printed instructions:
 
 ### Setting up the data backup
 
-Raw logs back up to a separate repository (`lifts-data`), pushed daily via a
-dedicated deploy key - mirroring the `esb`/`esb-data` pattern:
+Raw logs back up to a separate repository (`lifts-data`), pushed every six hours
+via a dedicated deploy key - mirroring the `esb`/`esb-data` pattern:
 
 1. Create a new (can be public) GitHub repo, e.g. `lifts-data`.
 2. Generate a deploy key with write access:
