@@ -643,6 +643,29 @@ time**. The identity key is what makes reissue detection work in the first
 place, and a row per appearance would have duplicated the notice's text and
 start across every stretch for no gain.
 
+### One missed poll is the feed blinking - grace goes to 2
+
+Splitting the listing made a flaw visible that the reopen had been hiding.
+Athy's lift has been listed continuously since collection began, but it was
+absent from exactly one poll on 21 August and back 29 minutes later. With
+`LIFT_STATUS_GRACE_MISSES` at `1`, that closed and reopened the notice, and
+the site published two outages: one "no longer listed 21 Aug", another
+starting half an hour later. That reads as fixed, then broken again, which is
+the one claim this site must never make.
+
+The default is `2` now. The gaps in the corpus sort into 1, 9, 79, 388 and 672
+polls, so the cut has nothing near it on either side, and the second miss only
+confirms the close: `closed_at_utc` is still `missing_since`, the first poll
+the notice was absent from. The cost is that an outage ending is recognised a
+poll late, which a 30-minute cadence cannot resolve anyway, and that a
+same-poll reissue takes one more poll to merge. Both self-correct at the next
+poll and neither survives a `rebuild`.
+
+Rejected: **setting it in the env** on the Pi and in the workflows. `rebuild`
+replays under whatever value is set when it runs, so the published history and
+the collector would have had to be kept in step by hand, in three places, with
+nothing to catch them drifting.
+
 ### The Pi keeps its database across an upgrade
 
 `install-native.sh` copies files over a running collector and does not

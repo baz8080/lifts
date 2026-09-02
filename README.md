@@ -76,7 +76,7 @@ All accept `--data-dir` (default: `$LIFT_STATUS_DATA_DIR`, or `/data`).
 | `LIFT_STATUS_DATA_DIR` | Storage root (default `/var/lib/lift-status` once installed) |
 | `LIFT_STATUS_API_KEY` | **Required.** The `x-api-key` value, captured from a browser session. Deliberately not stored in this repository |
 | `LIFT_STATUS_ALERT_WEBHOOK` | Where failure alerts are POSTed (an ntfy.sh topic URL works out of the box). An unchanged alert repeats at most daily, so a stuck fault doesn't push every 30 minutes |
-| `LIFT_STATUS_GRACE_MISSES` | Consecutive misses before a message is marked closed (default `1`: close on first miss) |
+| `LIFT_STATUS_GRACE_MISSES` | Consecutive misses before a message is marked closed (default `2`). It still closes at the *first* miss; the second only confirms it |
 
 ## The site
 
@@ -221,12 +221,12 @@ database are untouched by an auth failure.
   needs smarter reprocessing later.
 - **No completion signal from the API**: `end` is recorded but not trusted;
   "fixed" is inferred purely from a message's absence in a later run.
-- **Flapping**: `LIFT_STATUS_GRACE_MISSES` defaults to `1` (close on first
-  miss) for simplicity. If the data shows single-cycle blips causing
-  spurious close/reopen pairs, raise it - a message won't be marked closed
-  until it's missed that many consecutive successful runs in a row. A miss
-  absorbed by the grace extends the open `listings` row rather than starting
-  a new one, so raising it merges blips instead of splitting outages.
+- **Flapping**: `LIFT_STATUS_GRACE_MISSES` defaults to `2`, so a notice gone
+  from one poll and back at the next is treated as the feed blinking rather
+  than as an outage ending. A miss absorbed by the grace extends the open
+  `listings` row instead of starting a new one, and the close is still dated
+  to the first miss, so the grace costs nothing but a poll's delay. Raise it
+  further if longer blips show up.
 
 ## Credits
 

@@ -19,6 +19,13 @@ from pathlib import Path
 DB_FILENAME = "lift_status.db"
 RAW_DIRNAME = "raw"
 
+# Consecutive misses before a notice is called closed. Two, not one, because a
+# notice absent from a single poll and back at the next is the feed blinking,
+# not a lift fixed for half an hour: Athy went out for one poll in 1,195 and
+# was published as two outages either side of it. Nothing in the corpus sits
+# between that one poll and the next-shortest real gap of nine.
+DEFAULT_GRACE_MISSES = 2
+
 # Both entry points read this. One name, so `lift_status rebuild` and
 # `lift_site` with no flags can never look in two different places.
 DEFAULT_DATA_DIR = os.environ.get("LIFT_STATUS_DATA_DIR", "/data")
@@ -344,17 +351,18 @@ class Store:
                             (observed_at, existing["id"]),
                         )
 
-        raw_grace = os.environ.get("LIFT_STATUS_GRACE_MISSES", "1")
+        raw_grace = os.environ.get("LIFT_STATUS_GRACE_MISSES", str(DEFAULT_GRACE_MISSES))
         try:
             grace = max(1, int(raw_grace))
         except ValueError:
             # A typo in the env file must not stop collection dead here, after
             # write_raw and before any alert path.
             print(
-                f"warning: LIFT_STATUS_GRACE_MISSES={raw_grace!r} is not a number; using 1",
+                f"warning: LIFT_STATUS_GRACE_MISSES={raw_grace!r} is not a number; "
+                f"using {DEFAULT_GRACE_MISSES}",
                 file=sys.stderr,
             )
-            grace = 1
+            grace = DEFAULT_GRACE_MISSES
         open_rows = self.conn.execute(
             "SELECT id, identity_key, consecutive_misses, missing_since_at_utc "
             "FROM messages WHERE status = 'open'"

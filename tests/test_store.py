@@ -90,19 +90,20 @@ class TestDiffAndUpdateMessages(StoreTestCase):
         self.assertEqual(msg["status"], "open")
         self.assertEqual(msg["text_raw"], "updated wording")
 
-    def test_absent_message_closes_immediately_default_grace(self):
+    def test_absent_message_closes_after_the_default_grace(self):
+        """Two misses, and it closes at the first of them, not the second."""
         item = make_item()
         from lift_status.parse import derive_identity_key
 
         self._run([item], observed_at="2026-08-08T12:00:00Z")
-        diff = self._run([], observed_at="2026-08-08T12:30:00Z")
-        self.assertEqual(diff["closed"], 1)
+        self.assertEqual(self._run([], observed_at="2026-08-08T12:30:00Z")["closed"], 0)
+        self.assertEqual(self._run([], observed_at="2026-08-08T13:00:00Z")["closed"], 1)
         msg = self._message(derive_identity_key(item))
         self.assertEqual(msg["status"], "closed")
         self.assertEqual(msg["closed_at_utc"], "2026-08-08T12:30:00Z")
 
     def test_grace_period_delays_closure(self):
-        os.environ["LIFT_STATUS_GRACE_MISSES"] = "2"
+        os.environ["LIFT_STATUS_GRACE_MISSES"] = "3"
         try:
             item = make_item()
             from lift_status.parse import derive_identity_key
@@ -115,7 +116,8 @@ class TestDiffAndUpdateMessages(StoreTestCase):
             self.assertEqual(msg["consecutive_misses"], 1)
             self.assertEqual(msg["missing_since_at_utc"], "2026-08-08T12:30:00Z")
 
-            diff2 = self._run([], observed_at="2026-08-08T13:00:00Z")
+            self.assertEqual(self._run([], observed_at="2026-08-08T13:00:00Z")["closed"], 0)
+            diff2 = self._run([], observed_at="2026-08-08T13:30:00Z")
             self.assertEqual(diff2["closed"], 1)
             msg = self._message(derive_identity_key(item))
             self.assertEqual(msg["status"], "closed")
@@ -145,7 +147,8 @@ class TestDiffAndUpdateMessages(StoreTestCase):
         from lift_status.parse import derive_identity_key
 
         self._run([item], observed_at="2026-08-08T12:00:00Z")
-        self._run([], observed_at="2026-08-08T12:30:00Z")  # closes
+        self._run([], observed_at="2026-08-08T12:30:00Z")
+        self._run([], observed_at="2026-08-08T13:00:00Z")  # closes
         self._run([item], observed_at="2026-08-09T09:00:00Z")  # reopens, new incident
         msg = self._message(derive_identity_key(item))
         self.assertEqual(msg["status"], "open")
@@ -163,7 +166,8 @@ class TestDiffAndUpdateMessages(StoreTestCase):
         from lift_status.parse import derive_identity_key
 
         self._run([item], observed_at="2026-08-08T12:00:00Z")
-        self._run([], observed_at="2026-08-08T12:30:00Z")  # closes
+        self._run([], observed_at="2026-08-08T12:30:00Z")
+        self._run([], observed_at="2026-08-08T13:00:00Z")  # closes
         self._run([item], observed_at="2026-08-22T09:00:00Z")  # back after a fortnight
         self.assertEqual(
             self._listings(derive_identity_key(item)),

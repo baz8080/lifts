@@ -96,7 +96,7 @@ LIFT_STATUS_API_KEY=
 # How many consecutive misses before a message is marked closed. Default 1
 # (close on first miss). Raise this only if the data shows real flapping -
 # see the README for the tradeoff.
-#LIFT_STATUS_GRACE_MISSES=1
+#LIFT_STATUS_GRACE_MISSES=2
 ENVEOF
     chmod 600 "$ENV_FILE"
 fi
