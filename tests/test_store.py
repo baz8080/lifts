@@ -36,6 +36,16 @@ class StoreTestCase(unittest.TestCase):
         ).fetchone()
         return dict(row) if row else None
 
+    def _listings(self, key):
+        return [
+            (r["opened_at_utc"], r["last_seen_at_utc"], r["closed_at_utc"])
+            for r in self.store.conn.execute(
+                """SELECT l.* FROM listings l JOIN messages m ON m.id = l.message_id
+                   WHERE m.identity_key = ? ORDER BY l.opened_at_utc, l.id""",
+                (key,),
+            )
+        ]
+
 
 class TestWriteRaw(StoreTestCase):
     def test_writes_one_jsonl_line(self):
@@ -141,6 +151,55 @@ class TestDiffAndUpdateMessages(StoreTestCase):
         self.assertEqual(msg["status"], "open")
         self.assertIsNone(msg["closed_at_utc"])
         self.assertEqual(msg["reopen_count"], 1)
+
+    def test_a_reopen_starts_a_second_listing_rather_than_extending_the_first(self):
+        """The gap is the measurement, so it must survive into the database.
+
+        Portlaoise was published as sixteen days listed when the notice was up
+        for two, either side of a fortnight it was not on the feed at all: one
+        `messages` row spanning both, because identity_key is UNIQUE.
+        """
+        item = make_item()
+        from lift_status.parse import derive_identity_key
+
+        self._run([item], observed_at="2026-08-08T12:00:00Z")
+        self._run([], observed_at="2026-08-08T12:30:00Z")  # closes
+        self._run([item], observed_at="2026-08-22T09:00:00Z")  # back after a fortnight
+        self.assertEqual(
+            self._listings(derive_identity_key(item)),
+            [
+                ("2026-08-08T12:00:00Z", "2026-08-08T12:00:00Z", "2026-08-08T12:30:00Z"),
+                ("2026-08-22T09:00:00Z", "2026-08-22T09:00:00Z", None),
+            ],
+        )
+
+    def test_a_notice_seen_again_while_still_open_extends_its_listing(self):
+        item = make_item()
+        from lift_status.parse import derive_identity_key
+
+        self._run([item], observed_at="2026-08-08T12:00:00Z")
+        self._run([item], observed_at="2026-08-08T12:30:00Z")
+        self.assertEqual(
+            self._listings(derive_identity_key(item)),
+            [("2026-08-08T12:00:00Z", "2026-08-08T12:30:00Z", None)],
+        )
+
+    def test_a_miss_inside_the_grace_does_not_split_the_listing(self):
+        """Grace absorbs a flaky poll, so it must not read as a new outage."""
+        item = make_item()
+        from lift_status.parse import derive_identity_key
+
+        os.environ["LIFT_STATUS_GRACE_MISSES"] = "2"
+        try:
+            self._run([item], observed_at="2026-08-08T12:00:00Z")
+            self._run([], observed_at="2026-08-08T12:30:00Z")  # one miss, still open
+            self._run([item], observed_at="2026-08-08T13:00:00Z")
+        finally:
+            del os.environ["LIFT_STATUS_GRACE_MISSES"]
+        self.assertEqual(
+            self._listings(derive_identity_key(item)),
+            [("2026-08-08T12:00:00Z", "2026-08-08T13:00:00Z", None)],
+        )
 
     def test_duplicate_identical_items_are_deduped_not_double_counted(self):
         item = make_item()

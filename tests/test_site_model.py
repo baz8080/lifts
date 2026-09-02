@@ -209,6 +209,42 @@ class TestMergeEdits(SiteModelCase):
         self.assertEqual(len(outages), 2)
         self.assertEqual([o.ongoing for o in outages], [True, False])  # newest first
 
+    def test_the_same_notice_coming_back_is_two_outages_with_the_gap_intact(self):
+        """The identity key is unchanged, so the collector reopens one row.
+
+        Nothing in the old suite covered this: the reopen test alongside gives
+        the returning notice a corrected start, which makes it a new row. A
+        same-identity return was published as one unbroken listing spanning
+        the gap - Portlaoise as sixteen days when the lift was listed for two.
+        """
+        self.poll(T0, [lift()])
+        self.poll(T0 + timedelta(minutes=30), [])
+        back = T0 + timedelta(days=14)
+        self.poll(back, [lift()])
+        outages = self.load()
+        self.assertEqual(len(outages), 2)
+        newest, oldest = outages
+        self.assertEqual(oldest.first_seen, T0)
+        self.assertEqual(oldest.end, T0 + timedelta(minutes=30))
+        self.assertFalse(oldest.ongoing)
+        self.assertEqual(newest.first_seen, back)
+        self.assertTrue(newest.ongoing)
+
+    def test_a_gap_splits_the_listing_without_refreshing_the_works_grace(self):
+        """Works that blink off the feed are still works that ran for a month."""
+        self.poll(T0, [lift(planned=True)])
+        for day in range(1, 10):
+            self.poll(T0 + timedelta(days=day), [lift(planned=True)])
+        self.poll(T0 + timedelta(days=10), [])  # off the feed for one poll
+        self.poll(T0 + timedelta(days=10, minutes=30), [lift(planned=True)])
+        outages = self.load()
+        self.assertEqual(len(outages), 2)
+        # The short second stretch would sit inside the grace on its own.
+        self.assertLess(outages[0].end - outages[0].first_seen, model.PLANNED_GRACE)
+        for o in outages:
+            self.assertGreater(o.planned_total, model.PLANNED_GRACE)
+            self.assertTrue(all(counts for _, _, counts in model.day_marks(o, T0, NOW)))
+
     def test_a_reissue_merges_past_a_second_notice_still_up_at_the_station(self):
         # Two lifts listed at one station; one notice is reworded. The other,
         # still open, sorts between the closed notice and its replacement -

@@ -85,7 +85,8 @@ GRADE_BANDS = ((100, "A"), (95, "B"), (90, "C"), (75, "D"), (50, "E"), (0, "F"))
 # in the same poll (the README's "identity drift"). Those are one outage to a
 # reader. A notice that reappears a poll or more later is a separate row: the
 # gap is real information, since it is exactly what the site is measuring.
-# `merge_edits` folds only the same-poll case.
+# `merge_edits` folds only the same-poll case, and the gap it must not fold
+# arrives here already split, one outage per `listings` span.
 
 
 def parse_utc(value):
@@ -178,7 +179,8 @@ class Outage(NamedTuple):
     watched on the days between and the notice was not there.
     """
 
-    id: int  # the first message row it was built from
+    id: int  # the listings span it was built from; the first one, once merged
+    message_id: int  # the notice the span belongs to; spans of one notice share it
     code: str
     station: str
     kind: str  # 'lift' | 'escalator'
@@ -196,6 +198,11 @@ class Outage(NamedTuple):
     # is coloured by what was listed *that* day - so a planned-works notice
     # replaced by a fault does not repaint the planned days red.
     segments: tuple = ()
+    # Every stretch this notice was listed for, added up, planned ones only.
+    # A gap splits the listing but must not reset the works grace: a notice
+    # that drops off the feed for one poll a week is still works that ran for
+    # a month, so the grace is earned per notice and spent per span.
+    planned_total: timedelta = timedelta()
 
 
 def observed_until(conn):
@@ -218,22 +225,30 @@ def observed_until(conn):
 
 
 def _outage_from_row(row, until):
+    """One listing span as an outage.
+
+    A row here is a `listings` span joined to its notice, not the notice
+    itself: a notice that came back after a gap has one row per stretch it was
+    on the feed, and each is its own outage. Folding them would republish the
+    gap as listed time, which is the one thing this site measures.
+    """
     kind = classify(row["head"])
     if kind is None:
         return None
     code, station = station_of(row)
-    first_seen = parse_utc(row["first_seen_at_utc"])
+    first_seen = parse_utc(row["opened_at_utc"])
     # An unparseable start falls back to when the notice was first listed.
     start = parse_utc(row["start_utc"]) or first_seen
-    ongoing = row["status"] == "open"
+    ongoing = row["closed_at_utc"] is None
     end = until if ongoing else parse_utc(row["closed_at_utc"])
     if end is None:
-        # A closed row always has closed_at_utc; guard anyway rather than
+        # A closed span always has closed_at_utc; guard anyway rather than
         # publish an outage with no end.
         end = parse_utc(row["last_seen_at_utc"])
     planned = is_planned(row["text_raw"])
     return Outage(
         id=row["id"],
+        message_id=row["message_id"],
         code=code,
         station=station,
         kind=kind,
@@ -247,6 +262,7 @@ def _outage_from_row(row, until):
         text=row["text_raw"],
         updates=(),
         segments=((first_seen, end, planned),),
+        planned_total=(end - first_seen) if planned else timedelta(),
     )
 
 
@@ -304,11 +320,15 @@ def _fold(chain):
         text=last.text,
         updates=tuple((o.first_seen, o.head, o.text) for o in chain[1:]),
         segments=tuple(seg for o in chain for seg in o.segments),
+        planned_total=sum((o.planned_total for o in chain), timedelta()),
     )
 
 
 def load_outages(db_path, now):
-    """Every lift/escalator notice as an outage, newest first, and the horizon.
+    """Every stretch a lift/escalator notice was listed, newest first, and the horizon.
+
+    One outage per `listings` span, so a notice that vanished and came back is
+    two outages with the gap between them intact.
 
     `now` is only used when the run log is empty and there is nothing else to
     end the window at; everything measured stops at the horizon.
@@ -318,13 +338,22 @@ def load_outages(db_path, now):
     try:
         until = observed_until(conn) or now
         rows = conn.execute(
-            """SELECT id, head, text_raw, start_utc, end_utc, location_codes, event_stops,
-                      first_seen_at_utc, last_seen_at_utc, status, closed_at_utc
-               FROM messages ORDER BY first_seen_at_utc, id"""
+            """SELECT l.id AS id, l.message_id AS message_id,
+                      l.opened_at_utc, l.last_seen_at_utc, l.closed_at_utc,
+                      m.head, m.text_raw, m.start_utc, m.end_utc,
+                      m.location_codes, m.event_stops
+               FROM listings l JOIN messages m ON m.id = l.message_id
+               ORDER BY l.opened_at_utc, l.id"""
         ).fetchall()
     finally:
         conn.close()
     outages = [o for o in (_outage_from_row(r, until) for r in rows) if o is not None]
+    # The grace belongs to the notice, not to the stretch: pool each notice's
+    # planned time over all its spans before the spans go their separate ways.
+    pooled = defaultdict(timedelta)
+    for o in outages:
+        pooled[o.message_id] += o.planned_total
+    outages = [o._replace(planned_total=pooled[o.message_id]) for o in outages]
     return merge_edits(outages), until
 
 
@@ -392,21 +421,17 @@ def day_marks(o, lo, hi):
     """(date, planned, counts) per day the notice was listed inside [lo, hi).
 
     `counts` is False only for planned works that ran inside `PLANNED_GRACE`
-    in total - every planned segment of the outage added up, because works
-    reissued every few days are still works that ran for a month and
-    `merge_edits` exists because Irish Rail reissue. Only the planned segments:
+    in total - every planned stretch of the notice added up, because works
+    reissued every few days, or dropped from the feed for an afternoon, are
+    still works that ran for a month. Only the planned stretches:
     a fault that replaces the works and runs for a fortnight is the fault's
     fault, and must not retract the grace the works had earned. It is a
     property of the notice rather than of the month, too, so a fortnight of
     works spanning a month end counts in both halves.
     """
-    works = sum(
-        (seg_end - seg_start for seg_start, seg_end, seg_planned in o.segments if seg_planned),
-        timedelta(),
-    )
     last = len(o.segments) - 1
     for i, (seg_start, seg_end, seg_planned) in enumerate(o.segments):
-        counts = not seg_planned or works > PLANNED_GRACE
+        counts = not seg_planned or o.planned_total > PLANNED_GRACE
         for day in _span_days(seg_start, seg_end, lo, hi, o.ongoing and i == last):
             yield day, seg_planned, counts
 

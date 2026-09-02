@@ -63,6 +63,25 @@ CREATE TABLE IF NOT EXISTS messages (
     FOREIGN KEY (last_seen_run_id) REFERENCES runs(id)
 );
 
+-- One row per stretch the notice was continuously on the feed. A notice that
+-- vanishes and comes back keeps its `messages` row (identity_key is UNIQUE),
+-- so without this the reopen would silently extend the original listing over
+-- the gap - and the gap is the one thing the site measures. Portlaoise was
+-- published as sixteen days listed when it was two, either side of a
+-- fortnight's absence. See notes/site.md.
+CREATE TABLE IF NOT EXISTS listings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    message_id INTEGER NOT NULL,
+    opened_run_id INTEGER NOT NULL,
+    opened_at_utc TEXT NOT NULL,
+    last_seen_at_utc TEXT NOT NULL,
+    closed_at_utc TEXT,
+    FOREIGN KEY (message_id) REFERENCES messages(id),
+    FOREIGN KEY (opened_run_id) REFERENCES runs(id)
+);
+
+CREATE INDEX IF NOT EXISTS listings_message_idx ON listings(message_id);
+
 CREATE TABLE IF NOT EXISTS unidentifiable_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     run_id INTEGER NOT NULL,
@@ -193,6 +212,7 @@ class Store:
         caller's transaction, so a failed rebuild takes the wipe back with it.
         """
         self.conn.execute("DELETE FROM unidentifiable_items")
+        self.conn.execute("DELETE FROM listings")
         self.conn.execute("DELETE FROM messages")
         self.conn.execute("DELETE FROM runs")
 
@@ -200,10 +220,18 @@ class Store:
         """How much history the wipe above would destroy."""
         return sum(
             self.conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-            for table in ("runs", "messages", "unidentifiable_items")
+            for table in ("runs", "messages", "listings", "unidentifiable_items")
         )
 
     # -- message lifecycle ---------------------------------------------
+
+    def _open_listing(self, message_id: int, run_id: int, observed_at: str) -> None:
+        self.conn.execute(
+            """INSERT INTO listings (
+                message_id, opened_run_id, opened_at_utc, last_seen_at_utc, closed_at_utc
+            ) VALUES (?, ?, ?, ?, NULL)""",
+            (message_id, run_id, observed_at, observed_at),
+        )
 
     def diff_and_update_messages(self, run_id: int, observed_at: str, items: list) -> dict:
         """Apply one run's items against current message state.
@@ -245,7 +273,7 @@ class Store:
                 "SELECT id, status FROM messages WHERE identity_key = ?", (key,)
             ).fetchone()
             if existing is None:
-                self.conn.execute(
+                cur = self.conn.execute(
                     """INSERT INTO messages (
                         identity_key, head, text_raw, start_raw, start_utc, end_raw, end_utc,
                         location_codes, products, event_stops, tz_ambiguous,
@@ -262,6 +290,7 @@ class Store:
                         run_id, observed_at, run_id, observed_at,
                     ),
                 )
+                self._open_listing(cur.lastrowid, run_id, observed_at)
                 new_count += 1
             else:
                 was_closed = existing["status"] == "closed"
@@ -286,7 +315,14 @@ class Store:
                     ),
                 )
                 if was_closed:
+                    self._open_listing(existing["id"], run_id, observed_at)
                     reopened_count += 1
+                else:
+                    self.conn.execute(
+                        "UPDATE listings SET last_seen_at_utc = ? "
+                        "WHERE message_id = ? AND closed_at_utc IS NULL",
+                        (observed_at, existing["id"]),
+                    )
 
         raw_grace = os.environ.get("LIFT_STATUS_GRACE_MISSES", "1")
         try:
@@ -313,6 +349,11 @@ class Store:
                     """UPDATE messages SET status = 'closed', consecutive_misses = ?,
                        missing_since_at_utc = ?, closed_at_utc = ? WHERE id = ?""",
                     (misses, missing_since, missing_since, row["id"]),
+                )
+                self.conn.execute(
+                    "UPDATE listings SET closed_at_utc = ? "
+                    "WHERE message_id = ? AND closed_at_utc IS NULL",
+                    (missing_since, row["id"]),
                 )
                 closed_count += 1
             else:

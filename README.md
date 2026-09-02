@@ -51,6 +51,12 @@ just checked at runtime.
 - `lift_status.db` - a derived SQLite database, entirely rebuildable from the
   raw log via `rebuild`. Never back this up; back up `raw/` instead.
 
+`messages` holds one row per notice, keyed by identity, and `listings` one row
+per stretch that notice was continuously on the feed. A notice that vanishes
+and comes back keeps its `messages` row and gains a second `listings` row: the
+gap between them is what the site measures, so it cannot live in a row that
+spans it.
+
 ## CLI
 
 ```
@@ -218,7 +224,9 @@ database are untouched by an auth failure.
 - **Flapping**: `LIFT_STATUS_GRACE_MISSES` defaults to `1` (close on first
   miss) for simplicity. If the data shows single-cycle blips causing
   spurious close/reopen pairs, raise it - a message won't be marked closed
-  until it's missed that many consecutive successful runs in a row.
+  until it's missed that many consecutive successful runs in a row. A miss
+  absorbed by the grace extends the open `listings` row rather than starting
+  a new one, so raising it merges blips instead of splitting outages.
 
 ## Credits
 
