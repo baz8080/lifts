@@ -20,11 +20,47 @@ next regeneration, and until then the other real-corpus tests cover them.
 from __future__ import annotations
 
 import json
+import sqlite3
 from pathlib import Path
 
 from . import model
 
 PATH = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "access-golden.json"
+
+
+def notices(db_path):
+    """Every lift and escalator notice on record, in the form `build` and `report` take.
+
+    Four fields: the station's location code; "lift" or "escalator", which
+    `classify` reads off the head; the head, which is the feed's own name for the
+    hand-written headline ("Tullamore - Lift out of order"); and the notice body
+    as the feed wrote it, which is the form `verdict` takes. `locationCodes[0]`
+    is the whole station, every lift notice naming exactly one.
+
+    An empty body is stored as NULL and `verdict` reads None and "" alike, so it
+    is "" here: the tuples get sorted, and None will not sort beside a string.
+    """
+    from lift_site.model import classify
+
+    conn = sqlite3.connect(str(db_path))
+    try:
+        rows = conn.execute(
+            "SELECT location_codes, head, text_raw FROM messages ORDER BY head"
+        ).fetchall()
+    finally:
+        conn.close()
+    out = []
+    for codes, head, text in rows:
+        kind = classify(head)
+        if not kind:
+            continue
+        try:
+            listed = json.loads(codes)
+        except json.JSONDecodeError:
+            continue
+        if listed:
+            out.append((listed[0], kind, head, text or ""))
+    return out
 
 
 def build(facts, notices):
@@ -64,6 +100,14 @@ def _key(verdict):
     return verdict["code"], verdict["kind"], verdict["text"]
 
 
+def _moved(label, before, after):
+    return [
+        f"{label}: {field}: {before.get(field)!r} -> {after.get(field)!r}"
+        for field in sorted(set(before) | set(after))
+        if before.get(field) != after.get(field)
+    ]
+
+
 def differences(stored, current):
     """Where two golden documents disagree, one line each, for a test message.
 
@@ -79,11 +123,7 @@ def differences(stored, current):
         if before is None or after is None:
             out.append(f"station {code}: {'added' if before is None else 'dropped'}")
             continue
-        for field in sorted(set(before) | set(after)):
-            if before.get(field) != after.get(field):
-                out.append(
-                    f"station {code}: {field}: {before.get(field)!r} -> {after.get(field)!r}"
-                )
+        out.extend(_moved(f"station {code}", before, after))
     old_verdicts = {_key(v): v for v in stored.get("verdicts", [])}
     new_verdicts = {_key(v): v for v in current.get("verdicts", [])}
     for k in sorted(old_verdicts):
@@ -91,11 +131,7 @@ def differences(stored, current):
         if after is None:
             out.append(f"notice {k[0]} {k[1]}: dropped")
             continue
-        for field in ("state", "leg", "platforms", "detail"):
-            if before.get(field) != after.get(field):
-                out.append(
-                    f"notice {k[0]} {k[1]}: {field}: {before.get(field)!r} -> {after.get(field)!r}"
-                )
+        out.extend(_moved(f"notice {k[0]} {k[1]}", before, after))
     return out
 
 

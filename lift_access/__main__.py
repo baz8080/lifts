@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import sqlite3
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -73,38 +72,6 @@ def refresh(args):
     return 0
 
 
-def _notices(db_path):
-    """Every lift and escalator notice on record, for `report` to print.
-
-    Four fields: the station's location code; "lift" or "escalator", which
-    `classify` reads off the head; the head, which is the feed's own name for the
-    hand-written headline ("Tullamore - Lift out of order"); and the notice body
-    as the feed wrote it, which is the form `verdict` takes. `locationCodes[0]`
-    is the whole station, every lift notice naming exactly one.
-    """
-    from lift_site.model import classify
-
-    conn = sqlite3.connect(str(db_path))
-    try:
-        rows = conn.execute(
-            "SELECT location_codes, head, text_raw FROM messages ORDER BY head"
-        ).fetchall()
-    finally:
-        conn.close()
-    out = []
-    for codes, head, text in rows:
-        kind = classify(head)
-        if not kind:
-            continue
-        try:
-            listed = json.loads(codes)
-        except json.JSONDecodeError:
-            continue
-        if listed:
-            out.append((listed[0], kind, head, text))
-    return out
-
-
 def report(args):
     """Every verdict beside the prose it was read from.
 
@@ -133,7 +100,7 @@ def report(args):
     db_path = Path(args.data_dir) / DB_FILENAME
     if db_path.exists():
         print("--- what each notice on record means ---")
-        for code, kind, head, text in _notices(db_path):
+        for code, kind, head, text in golden.notices(db_path):
             station = stations.get(code)
             result = model.verdict(station, kind, text)
             print(f"\n  {code:6} {head}")
@@ -167,7 +134,7 @@ def write_golden(args):
     if not facts or not db_path.exists():
         print("golden needs both a station snapshot and a rebuilt database", file=sys.stderr)
         return 1
-    document = golden.build(facts, _notices(db_path))
+    document = golden.build(facts, golden.notices(db_path))
     before = json.loads(golden.PATH.read_text(encoding="utf-8")) if golden.PATH.exists() else {}
     golden.PATH.write_text(golden.dumps(document), encoding="utf-8")
     changes = golden.differences(before, document)

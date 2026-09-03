@@ -21,7 +21,6 @@ from pathlib import Path
 
 from lift_access import fetch, golden, snapshot
 from lift_access import model as access_model
-from lift_access.__main__ import _notices
 from lift_site import model, render
 from lift_status.store import DB_FILENAME
 
@@ -293,12 +292,9 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
                         self.assertNotIn("overlapped this one", detail, code)
 
     def test_the_golden_file_is_what_the_derivation_says_today(self):
-        # Every level line, entrance sentence and verdict across the corpus, as
-        # a tracked file, so a regex or a sentence that moves one shows up as a
-        # diff in the PR that moved it. Two regressions on 2026-09-03 were
-        # caught by an ad hoc version of this and by nothing else here.
+        # Why a tracked file and not an assertion: lift_access/golden.py.
         stored = json.loads(golden.PATH.read_text(encoding="utf-8"))
-        current = golden.build(self.facts, _notices(DB_PATH))
+        current = golden.build(self.facts, golden.notices(DB_PATH))
         changes = golden.differences(stored, current)
         self.assertEqual(
             changes,

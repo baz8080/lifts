@@ -79,6 +79,14 @@ class TheDifferenceReporter(unittest.TestCase):
         self.assertEqual(golden.differences(self.stored, self.current),
                          ["snapshot: None -> irishrail-20261001.jsonl"])
 
+    def test_a_field_a_verdict_grew_or_lost_is_reported_like_a_station_field(self):
+        self.verdict("PERSE")["quoted"] = "Lift or stairs to platform 2"
+        del self.verdict("CNLLY")["leg"]
+        self.assertEqual(golden.differences(self.stored, self.current), [
+            "notice CNLLY escalator: leg: 'entrance' -> None",
+            "notice PERSE lift: quoted: None -> 'Lift or stairs to platform 2'",
+        ])
+
     def test_a_dropped_station_is_one_line(self):
         del self.current["stations"]["PERSE"]
         self.assertEqual(golden.differences(self.stored, self.current),
@@ -94,6 +102,14 @@ class TheDocumentSurvivesTheFile(unittest.TestCase):
         parsed = json.loads(golden.dumps(built))
         self.assertEqual(parsed, built)
         self.assertEqual(golden.differences(parsed, built), [])
+
+    def test_a_notice_with_no_body_sorts_beside_one_with_a_body(self):
+        built = golden.build(facts(), [
+            ("PERSE", "lift", "Pearse - Lift out of order", PEARSE),
+            ("PERSE", "lift", "Pearse - Lift out of order", ""),
+        ])
+        self.assertEqual([v["text"] for v in built["verdicts"]], ["", PEARSE])
+        self.assertEqual(golden.differences(json.loads(golden.dumps(built)), built), [])
 
     def test_the_document_pins_a_verdict_and_the_prose_it_rests_on(self):
         built = document()
