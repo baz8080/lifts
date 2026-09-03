@@ -605,3 +605,38 @@ class TestStepFreeChip(SiteModelCase):
     def test_the_app_chips_the_row_and_the_detail_head(self):
         markup = (Path(render.TEMPLATES) / "site.html").read_text(encoding="utf-8")
         self.assertEqual(markup.count("stepFreeChip("), 3)  # definition, row, detail
+
+
+class TestTheOtherPlatformNote(SiteModelCase):
+    """The note travels inside the verdict sentence, so one build proves both
+    the static page and the shard the app reads. Issue #31.
+    """
+
+    def _build(self):
+        # Two polls: a notice first seen at the only poll sits on a zero-width
+        # observed window and lands in no month's shard.
+        item = lift(text="The lift at platform 2 is currently out of service.")
+        self.poll(T0, [item])
+        self.poll(T0 + timedelta(hours=1), [item])
+        prose = "<p>Level to platform 1<br>Lift to platform 2</p>"
+        lift_platforms, claims, denies = access_model.read_platform_access(prose)
+        station = access_model.Station(
+            code="ATHY", name="Athy", slug="athy", latitude=None, longitude=None,
+            platform_access=access_model.plain(prose), ticket_office_access="",
+            lift_platforms=lift_platforms, claims_lift=claims, denies_lift=denies,
+        )
+        site = self.dir / "site"
+        data = render.write(site, self.load(), NOW, self.until, snapshot.Facts({"ATHY": station}))
+        page = (site / "s" / f"{data['slugs']['ATHY']}.html").read_text(encoding="utf-8")
+        shard = (site / "h" / "ATHY.js").read_text(encoding="utf-8")
+        return page, json.loads(shard.split("= ", 1)[1].rstrip(";\n"))
+
+    def test_the_page_and_the_shard_carry_the_same_sentence(self):
+        note = 'Platform 1 needed no lift, so it kept step-free access: "Level to platform 1".'
+        page, shard = self._build()
+        self.assertIn("acc-lost", page)
+        self.assertIn(html_mod.escape(note), page)
+        records = next(iter(shard["2026-08"]))
+        state, sentence = records[13]
+        self.assertEqual(state, "lost")
+        self.assertIn(note, sentence)

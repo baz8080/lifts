@@ -52,6 +52,15 @@ PLATFORM_SPLIT = re.compile(r"\s*(?:,|and|&|/)\s*", re.IGNORECASE)
 LIFT = re.compile(r"\blifts?\b", re.IGNORECASE)
 ESCALATOR = re.compile(r"\bescalators?\b", re.IGNORECASE)
 DENIES_LIFT = re.compile(r"\bno lift\b", re.IGNORECASE)
+
+# A sentence naming a platform reached without a lift: "Level to platform 1",
+# Cork's "Platforms 1, 2, 3 and 4 are level". The exclusions do the work: a
+# lift in the sentence makes it a sequence, stepped wording makes it not
+# step-free, and "from platform" is a between-platform link that says nothing
+# about the street leg. `notes/station-access.md`.
+STEP_FREE = re.compile(r"\b(?:level|ramps?)\b", re.IGNORECASE)
+STEPPED = re.compile(r"\b(?:stair\w*|steps?|footbridge|subway|escalators?)\b", re.IGNORECASE)
+FROM_PLATFORM = re.compile(r"\bfrom\s+platforms?\b", re.IGNORECASE)
 OTHER_KIND = {"lift": ESCALATOR, "escalator": LIFT}
 SAME_KIND = {"lift": LIFT, "escalator": ESCALATOR}
 
@@ -252,6 +261,27 @@ def step_free_note(station):
     return None
 
 
+def step_free_platforms(station):
+    """Every (platform, sentence) the prose reaches without a lift, in prose order.
+
+    Read from the stored prose rather than kept on Station, so the claim can only
+    ever quote a sentence still on the page.
+    """
+    found = []
+    seen = set()
+    for sentence in SENTENCE.split(station.platform_access or ""):
+        if not STEP_FREE.search(sentence):
+            continue
+        if LIFT.search(sentence) or STEPPED.search(sentence) or FROM_PLATFORM.search(sentence):
+            continue
+        quoted = sentence.strip().rstrip(".")
+        for platform in platforms_named(sentence):
+            if platform not in seen:
+                seen.add(platform)
+                found.append((platform, quoted))
+    return tuple(found)
+
+
 def _alternative(station, platform):
     """Is there a reviewed step-free way round the lift, and does the page still say so?
 
@@ -279,6 +309,36 @@ def implicated(pattern, body):
 
 def _unknown(platforms, reason):
     return Verdict("unknown", tuple(platforms), reason)
+
+
+def _still_note(station, serves, platforms):
+    """The platforms that never needed the lift, when a lost verdict can say so.
+
+    Lift-served platforms belong to the reviewed list. A platform the notice
+    also names is two hand-written sources disagreeing, and so is a general lift
+    claim beside a level line (Bray); stay quiet rather than pick a side.
+    """
+    if ALL_PLATFORMS in serves:
+        return ""
+    still = [
+        (p, s) for p, s in step_free_platforms(station)
+        if p not in serves and p not in platforms
+    ]
+    if not still:
+        return ""
+    labels = [p for p, _ in still]
+    quoted = []
+    for _, sentence in still:
+        if sentence not in quoted:
+            quoted.append(sentence)
+    named = labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " and " + labels[-1]
+    subject = (
+        f"Platform {named} needed no lift, so it"
+        if len(labels) == 1
+        else f"Platforms {named} needed no lift, so they"
+    )
+    sources = " and ".join(f'"{sentence}"' for sentence in quoted)
+    return f" {subject} kept step-free access: {sources}."
 
 
 def verdict(station, kind, text):
@@ -412,9 +472,14 @@ def verdict(station, kind, text):
         )
 
     listed = ", ".join(plain_loss)
-    subject = f"Platform {listed} is" if len(plain_loss) == 1 else f"Platforms {listed} are"
+    single = len(plain_loss) == 1
+    subject = f"Platform {listed} is" if single else f"Platforms {listed} are"
     detail = (
         f"{subject} reached by lift, and Irish Rail's page names no other step-free "
-        "way, so step-free access was gone while this was listed."
+        f"way to {'it' if single else 'them'}, so step-free access was gone while "
+        "this was listed."
     )
-    return Verdict("lost", tuple(plain_loss), detail + unlisted_note + stale_note)
+    return Verdict(
+        "lost", tuple(plain_loss), detail + _still_note(station, serves, platforms)
+        + unlisted_note + stale_note
+    )

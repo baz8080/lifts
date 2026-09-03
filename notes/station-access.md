@@ -235,8 +235,9 @@ at 2 of 147 stations.
 
 ## The other platform is often still step-free, and the prose says so
 
-Not yet built. Recorded because it is the largest unclaimed win here and it is
-bigger than the exception list by an order of magnitude.
+Built 2026-09-01 (issue #31); the rule is at the end of this section. Recorded
+first because it was the largest unclaimed win here, bigger than the exception
+list by an order of magnitude.
 
 A lift out does not strand a station, it strands a *platform*. The other
 platform is frequently at street or car park level and needs no lift at all,
@@ -282,6 +283,45 @@ The archive-shaped version of the same fact needs no labelling at all: "the
 lift to platform 2 was out for twelve days, and platform 1 was level
 throughout" bounds how bad the outage was, which is exactly what an archive is
 for. That is derivable from the prose today.
+
+### The rule, as built (2026-09-01)
+
+`step_free_platforms(station)` splits the prose on `SENTENCE`, the split
+`implicated` already uses. A sentence contributes its platforms if it says
+`level` or `ramp(s)`, names a platform number, and mentions no lift ("lifts and
+ramps" is a sequence), no stairs, staircase, stairway or step, no footbridge,
+subway or escalator, and no "from platform" (a
+between-platforms link says nothing about the street leg: Dún Laoghaire's "Ramp
+access from Platform 2 to Platform 3").
+
+Only the stair wording excludes a sentence on the 2026-08-30 corpus (Gorey's
+"Level, stairs only to platform 2", Connolly's "Ramp or stairs to platform 5").
+The rest are guards against a rewording, drawn from wording the pages already
+use: 34 stations say step, 39 footbridge, 3 subway (the Irish word for a
+pedestrian underpass - Athlone's "Steps or lift and subway to platforms No. 2
+and 3"), 2 escalator. "Level crossing" was in the list and came out on
+2026-09-01: it appears nowhere in the prose, so it guarded against nothing.
+
+Containment, not an anchored "Level to": Cork's "Platforms 1, 2, 3 and 4 are
+level" is as direct a statement, and a dry run over all 152 stations found no
+sentence it reads wrongly. Sentences naming no number drop out - Limerick
+Junction's bare "Level", Dromod's "Level to main platform", Garryduff's "Ramp to
+Southbound platform" - which is consistent with direction staying out of scope.
+
+The note fires only on the plain-loss branch of `verdict`, and is withheld
+wherever the two hand-written sources disagree: at a lift-served platform, which
+neutralises Rush and Lusk's typo ("Level access to platform 1" beside "Lift and
+footbridge to platform 1"); at a platform the notice itself names (Athy's names
+1 and 2 where the page calls 1 level); and at a general lift claim, which gets
+no note at all (Bray, Lansdowne Road, Longford, Dalkey).
+
+The wording - "Platform 1 needed no lift, so it kept step-free access: 'Level to
+platform 1'." - is deliberately not the exception list's "another step-free
+way", which means the *same* platform stays reachable. Five lost verdicts gain
+it on the corpus as of 2026-09-01 (Pearse, Dún Laoghaire, Malahide,
+Portarlington, Tullamore); Athy's and Skerries' notices name the level platform
+themselves. It is re-derived from the live prose at every build, so a reworded
+page withdraws it.
 
 ## When it says "unknown"
 
