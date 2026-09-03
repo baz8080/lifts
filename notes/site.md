@@ -587,3 +587,118 @@ the stylesheet both renderers already inline, and `render._bars` and site.html's
 `bars()` only ever emit a class name - two mirrored functions with one less
 thing to drift on. Cost is about 730 bytes on an initial load of 67 KB.
 Licensing is in the README: MDI is Apache 2.0, as is this repo.
+
+## A notice that came back was published as never having left - 2026-09-02
+
+Midleton read oddly: a planned-works block running from the day collection
+began to the end of August, then gone. That one turned out to be real, and the
+page already said so. Chasing it found a different notice broken.
+
+Portlaoise was published as **16 days listed, F, 29% available**. The lift was
+listed for 20 hours from 10 August, absent from **672 consecutive successful
+polls** over the next fortnight, then listed again for 22 hours from 25 August.
+Two short outages a fortnight apart, published as one continuous sixteen-day
+one. It grades **D, 83%** now. Thurles was 17 days and F; it was two hours in
+August, eight days of nothing, then nine days, and grades E. Clondalkin
+Fonthill, the Dublin Pearse escalator and Athy had the same shape, smaller.
+
+### The gap fell out between the collector and the site
+
+`identity_key` is `UNIQUE` on `messages`, which is what makes a notice the same
+notice across polls. So when one comes back, `diff_and_update_messages` had
+nowhere to put the second appearance but the row already there: it cleared
+`closed_at_utc`, bumped `reopen_count` and left `first_seen_at_utc` alone. The
+site then read one row as one listing, `first_seen` to `closed_at`, and the
+absence in the middle vanished.
+
+`reopen_count` recorded that this had happened - six times in the first month,
+five of them lift or escalator notices - but nothing downstream read it, and no
+test covered it. The one test that looked like it did,
+`test_a_notice_that_comes_back_a_poll_later_is_a_separate_outage`, gives the
+returning notice a corrected start, which changes the identity key and so makes
+a genuinely new row. The same-identity return, which is the common case, was
+never exercised.
+
+This was never a raw-log problem. Every gap is in the JSONL exactly as
+collected, which is the whole point of the invariant: the fix is a `rebuild`,
+not a correction anyone has to write down.
+
+### One row per stretch, not one per notice
+
+A `listings` table now holds one row per stretch a notice was continuously on
+the feed: `opened_at_utc`, `last_seen_at_utc`, `closed_at_utc`. A reopen opens
+a new row instead of reviving the old one, and the site builds one outage per
+row. `messages` keeps its own `first_seen`/`closed_at`, which still answer "when
+did we first ever see this notice" - a different question, and not the one the
+bars ask.
+
+Rejected: **deriving the gaps in the site** by walking runs against
+`last_seen_at_utc`. It would have kept the schema still, but it puts the
+collector's knowledge in the renderer and needs a scan of every run per notice.
+The collector is the thing that watches the feed; when a notice stopped being
+on it is the collector's fact to record.
+
+Also rejected: **dropping `UNIQUE` and inserting a fresh `messages` row each
+time**. The identity key is what makes reissue detection work in the first
+place, and a row per appearance would have duplicated the notice's text and
+start across every stretch for no gain.
+
+### One missed poll is the feed blinking - grace goes to 2
+
+Splitting the listing made a flaw visible that the reopen had been hiding.
+Athy's lift has been listed continuously since collection began, but it was
+absent from exactly one poll on 21 August and back 29 minutes later. With
+`LIFT_STATUS_GRACE_MISSES` at `1`, that closed and reopened the notice, and
+the site published two outages: one "no longer listed 21 Aug", another
+starting half an hour later. That reads as fixed, then broken again, which is
+the one claim this site must never make.
+
+The default is `2` now. The gaps in the corpus sort into 1, 9, 79, 388 and 672
+polls, so the cut has nothing near it on either side, and the second miss only
+confirms the close: `closed_at_utc` is still `missing_since`, the first poll
+the notice was absent from. The cost is that an outage ending is recognised a
+poll late, which a 30-minute cadence cannot resolve anyway, and that a
+same-poll reissue takes one more poll to merge. Both self-correct at the next
+poll and neither survives a `rebuild`.
+
+Rejected: **setting it in the env** on the Pi and in the workflows. `rebuild`
+replays under whatever value is set when it runs, so the published history and
+the collector would have had to be kept in step by hand, in three places, with
+nothing to catch them drifting.
+
+### The Pi keeps its database across an upgrade
+
+`install-native.sh` copies files over a running collector and does not
+rebuild, so a Pi that upgrades has `messages` rows and, because
+`CREATE TABLE IF NOT EXISTS` makes it empty, no `listings` at all. Nothing
+published would notice - CI rebuilds from the raw logs on every deploy - but
+the collector's own database would hold open notices that no longer reach
+the site at all, having no span to be read through.
+
+So a notice with no open span gets one, back-dated to the `first_seen` its row
+already carries. That is the best the database can say without a replay, it
+needs nothing from whoever runs the upgrade, and it is a no-op once every row
+has a span.
+
+Both paths need it, which the first cut got wrong: it back-dated only when a
+notice was seen again, so one that went away and never came back was closed
+with no span and vanished from the site rather than being briefly wrong. A
+span is ensured wherever the collector is about to extend or close one.
+
+### The grace is earned per notice and spent per stretch
+
+Splitting the listing split the planned-works grace with it, and that was wrong
+in the other direction. The Dublin Pearse escalator dropped off the feed for
+four hours on 26 August after thirteen days up. As two outages it read as
+thirteen days plus a fresh four-day stretch, and the four days fell inside the
+week's grace and stopped counting: 20% available became 41%, on a notice
+nothing had changed about.
+
+So `Outage` carries `planned_total`, the notice's planned listed time pooled
+over all its stretches before they separate, and `day_marks` spends the grace
+against that. A gap now splits what is measured without refreshing what is
+excused. Pearse is back to 20%, which is the number it should have had all
+along, and works that blink off the feed for an afternoon cannot farm a new
+grace week by doing it. This is the same reasoning `merge_edits` already rests
+on - works reissued every few days are still works that ran for a month - so
+the two now say it the same way.

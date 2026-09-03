@@ -61,10 +61,15 @@ class TestRealCorpus(unittest.TestCase):
         self.assertEqual(self.until, model.parse_utc(row["t"]))
         self.assertLessEqual(model.COLLECTION_START, self.until)
 
-    def test_every_lift_or_escalator_notice_is_on_the_site_exactly_once(self):
-        rows = self.conn.execute("SELECT id, head FROM messages").fetchall()
+    def test_every_listing_span_is_on_the_site_exactly_once(self):
+        # Spans, not notices: a notice that came back must reach the site as
+        # two outages, or the gap is republished as listed time.
+        rows = self.conn.execute(
+            """SELECT l.id AS id, m.head AS head
+               FROM listings l JOIN messages m ON m.id = l.message_id"""
+        ).fetchall()
         wanted = {r["id"] for r in rows if model.classify(r["head"])}
-        # Merged reissues carry the id of their first notice; the rest of the
+        # Merged reissues carry the id of their first span; the rest of the
         # chain is inside `updates`. Count the ids the outages account for.
         seen = []
         for o in self.outages:
@@ -72,7 +77,7 @@ class TestRealCorpus(unittest.TestCase):
         self.assertEqual(len(seen), len(set(seen)))
         # Every outage on the site came from a notice that is a lift/escalator.
         self.assertTrue(set(seen) <= wanted)
-        # And every such notice is either an outage or folded into one.
+        # And every such span is either an outage or folded into one.
         folded = sum(len(o.updates) for o in self.outages)
         self.assertEqual(len(seen) + folded, len(wanted))
 

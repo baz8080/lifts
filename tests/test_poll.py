@@ -126,6 +126,7 @@ class TestApplyResponseFailuresLeaveMessagesUntouched(PollTestCase):
         self._seed_two_open_messages()
         with Store(self.data_dir) as store:
             poll.apply_response(store, "r2", utc_now_iso(), 200, "[]", None)
+            poll.apply_response(store, "r3", utc_now_iso(), 200, "[]", None)
         self.assertEqual(self._open_count(), 0)
 
 

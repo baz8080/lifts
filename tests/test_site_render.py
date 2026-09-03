@@ -26,7 +26,9 @@ class TestWrite(SiteModelCase):
         super().setUp()
         self.poll(T0, [lift(), escalator(), lift(station="Rush and Lusk", code="RLUSK")])
         self.poll(T0 + timedelta(hours=1), [lift(), escalator()])
-        self.poll(T0 + timedelta(days=1), [lift(planned=True, station="Bray", code="BRAY")])
+        bray = lift(planned=True, station="Bray", code="BRAY")
+        self.poll(T0 + timedelta(days=1), [bray])
+        self.poll(T0 + timedelta(days=1, hours=1), [bray])  # second miss closes the rest
         outages = self.load()
         self.site = self.dir / "site"
         self.data = render.write(self.site, outages, NOW, self.until)
@@ -272,12 +274,12 @@ class TestMonthSections(SiteModelCase):
     def setUp(self):
         super().setUp()
         self.poll(T0, [lift()])
-        self.poll(T0 + timedelta(hours=1), [])
+        self.drop(T0 + timedelta(hours=1))
         october = datetime(2026, 10, 5, 10, 0, tzinfo=UTC)
         # a notice of its own, not August's coming back: a reopened notice
         # still publishes its gap as listed (notes/site.md, Open)
         self.poll(october, [lift(start="2026-10-01T09:00:00")])
-        self.poll(october + timedelta(days=1), [])
+        self.drop(october + timedelta(days=1))
         self.now = datetime(2026, 11, 10, 12, 0, tzinfo=UTC)
         outages = self.load(now=self.now)
         self.site = self.dir / "site"

@@ -129,7 +129,9 @@ merged with `sort -u`.
 | The listing interval is measured; Irish Rail's start is shown, not measured | `notes/site.md` § The measured interval |
 | Stations keyed by location code, named from the newest notice | `notes/site.md` § Rows are stations |
 | Escalators included and tagged, never excluded (their own bar since 2026-08-28) | `notes/site.md` § Escalators, § One bar per kind |
-| Same-poll reissues merge; a gap of a poll or more is a new outage | `notes/site.md` § Notices reissued |
+| Same-poll reissues merge; a gap of a poll or more is a new outage. The collector records one `listings` row per stretch a notice was on the feed, because a reopen used to revive the `messages` row and republish the gap as listed time | `notes/site.md` § Notices reissued, § A notice that came back was published as never having left |
+| A notice absent from a single poll is the feed blinking, not an outage ending: `DEFAULT_GRACE_MISSES` is 2, and the close is still dated to the first miss | `notes/site.md` § One missed poll is the feed blinking |
+| The planned-works grace is earned per notice, pooled over all its stretches (`Outage.planned_total`), and spent per stretch - so a gap splits what is measured without refreshing what is excused | `notes/site.md` § The grace is earned per notice and spent per stretch |
 | Planned works is what the notice text says | `notes/site.md` § Planned works |
 | Stations are graded on availability - days watched with no lift *or escalator* notice - on this site's own scale, there being no Irish or EU target; overview sorts by listed-now, then availability. **Not** step-free-access availability: an escalator is never a step-free route, so the grade means "something was reported out" | `notes/site.md` § The grade is availability, § An escalator out is a day the station was short of a way up |
 | The scale runs A to F inclusive. E splits the old F band at **50%**, which over a 31-day month is 8 to 15 days listed against F's 16 or more: up to half the month, then more than half. Every A-D cut is unmoved, and the cut lands in a real gap in the data | `notes/site.md` § The scale grew an E |
