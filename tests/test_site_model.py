@@ -539,6 +539,25 @@ class TestStationMonth(SiteModelCase):
         self.assertEqual(n["avail"], 33)
         self.assertEqual(n["ongoing"], 1)
 
+    def test_a_past_month_counts_the_stations_listed_when_it_ended(self):
+        """Issue #36: the "still out when the month ended" tile read 0 for
+        every past month, because the predicate could only be true in the
+        horizon's month. Athy runs into September and stays up, Tullamore runs
+        into September and closes there, Bray closes inside August: two
+        stations were listed when August ended."""
+        aug = [lift(), lift(code="TMORE", station="Tullamore"), lift(code="BRAY", station="Bray")]
+        self.poll(T0, aug)
+        self.poll(T0 + timedelta(days=2), aug[:2])
+        self.poll(datetime(2026, 9, 1, 9, 0, tzinfo=UTC), aug[:1])
+        self.poll(datetime(2026, 9, 2, tzinfo=UTC), aug[:1])
+        now = datetime(2026, 9, 3, tzinfo=UTC)
+        outages = self.load(now=now)
+        n = model.national_month(outages, "2026-08", now, self.until)
+        self.assertEqual(n["stations"], 3)
+        self.assertEqual(n["ongoing"], 2)
+        # and September's own count is only what is still up at the horizon
+        self.assertEqual(model.national_month(outages, "2026-09", now, self.until)["ongoing"], 1)
+
 
 class TestPartialDays(unittest.TestCase):
     def test_the_first_and_last_days_are_flagged(self):
