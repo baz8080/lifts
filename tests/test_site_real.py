@@ -12,6 +12,7 @@ from __future__ import annotations
 import calendar
 import json
 import os
+import re
 import sqlite3
 import tempfile
 import unittest
@@ -221,6 +222,54 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
             result = self.facts.verdict(o.code, o.kind, o.text)
             if result.state != "lost":
                 self.assertNotIn("kept step-free access", result.detail, o.head)
+
+    def test_every_escalator_verdict_names_who_lost_a_way_up(self):
+        # Issue #33: the deduction alone read as nothing happened.
+        for o in self.outages:
+            if o.kind == "escalator":
+                detail = self.facts.verdict(o.code, o.kind, o.text).detail
+                self.assertIn("did lose a way up", detail, o.head)
+                self.assertIn("Irish Rail's page", detail, o.head)
+
+    def test_every_quoted_sentence_is_on_the_live_page(self):
+        # Both legs now: the #31 check above reads only platformAccess.
+        for o in self.outages:
+            station = self.facts.station(o.code)
+            detail = self.facts.verdict(o.code, o.kind, o.text).detail
+            prose = " ".join(f"{station.platform_access} {station.ticket_office_access}".split())
+            for quote in re.findall(r'"([^"]+)"', detail):
+                self.assertIn(" ".join(quote.split()), prose, o.head)
+
+    def test_an_entrance_lift_is_lost_only_where_the_page_puts_a_lift_there(self):
+        for o in self.outages:
+            result = self.facts.verdict(o.code, o.kind, o.text)
+            if o.kind == "lift" and result.leg == access_model.ENTRANCE_LEG:
+                station = self.facts.station(o.code)
+                self.assertEqual(
+                    result.state == "lost", access_model.entrance_lift(station), o.head
+                )
+
+    def test_no_verdict_says_a_lift_remained(self):
+        for o in self.outages:
+            detail = self.facts.verdict(o.code, o.kind, o.text).detail.lower()
+            for phrase in ("still had", "remains", "was working", "available", "unaffected"):
+                self.assertNotIn(phrase, detail, o.head)
+
+    def test_the_overlap_flag_is_set_from_the_stations_own_rows(self):
+        # Zero overlaps on the corpus: Pearse's lift came down at the poll its
+        # escalator went up. The flag exists for the day that stops being true.
+        months = model.month_list(model.COLLECTION_START, max(self.now, self.until))
+        by_code = {}
+        for o in self.outages:
+            by_code.setdefault(o.code, []).append(o)
+        for code, outages in by_code.items():
+            if not any(o.kind == "escalator" for o in outages):
+                continue
+            by_month = render.shard(outages, months, self.until, self.facts)
+            for rows in by_month.values():
+                for record in rows:
+                    if record[1] == "escalator":
+                        self.assertNotIn("overlapped this one", record[13][1], code)
 
     def test_the_verdict_reaches_the_shard(self):
         months = model.month_list(model.COLLECTION_START, max(self.now, self.until))

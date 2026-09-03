@@ -106,6 +106,12 @@ def _notices(db_path):
 
 
 def report(args):
+    """Every verdict beside the prose it was read from.
+
+    Prints the entrance prose too where the verdict read it: an escalator notice
+    or a lift notice that names the way in. It has no listings, so it never sets
+    `lift_listed_too`; that is the site build's knowledge, not the snapshot's.
+    """
     facts = snapshot.load(args.data_dir)
     if not facts:
         print(f"no station snapshot under {Path(args.data_dir) / SNAPSHOT_DIR}\n"
@@ -132,6 +138,10 @@ def report(args):
             result = model.verdict(station, kind, text)
             print(f"\n  {code:6} {head}")
             print(f"    prose:   {(station.platform_access if station else '(no station)')[:150]}")
+            if station and (kind == "escalator" or result.leg == model.ENTRANCE_LEG):
+                entry = " / ".join(station.ticket_office_access.split("\n"))
+                print(f"    entry:   {' '.join(entry.split())[:150]}")
+                print(f"    leg:     {result.leg or 'not named'}")
             print(f"    notice:  {model.plain(text)[:150]}")
             print(f"    -> {result.state.upper()}: {result.detail}")
 

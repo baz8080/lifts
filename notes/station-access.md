@@ -209,6 +209,9 @@ does not mention an escalator" at the one station where that line rendered, and
 it was false. The escalator check now reads both fields and the station page
 quotes both, labelled, because a lift or an escalator can be on either leg.
 
+**Settled 2026-09-03: both legs.** The paragraph below stood until then; § *The
+entrance leg, and who an escalator served* has what replaced it.
+
 **The derivation still models only the platform leg**, and that is a real limit
 rather than a tidy one: a lift outage at a station entrance would be reasoned
 about against prose that describes a different part of the building. No notice
@@ -337,9 +340,138 @@ discrepancy worth not papering over:
 | Portlaoise | prose puts the lift at platform 1; the notice says platform 2 |
 | Carlow | prose puts the lift at platform 2; the notice says platform 1 |
 
+A lift notice that names the way in is unknown where `ticketOfficeAccess` puts
+no lift there, or is blank. No notice on the corpus is of that shape.
+
 A notice naming more platforms than the page accounts for keeps what it knows
 rather than forfeiting everything: Athy's notice names 1 and 2, the page has a
 lift at 2 and calls 1 level, and platform 2 is still knowable.
+
+## The entrance leg, and who an escalator served - 2026-09-03
+
+Issue #33, the two follow-ups #30 left. Built on the corpus to 3 September:
+28 notices, three of them escalators (Pearse, Connolly, Tara Street).
+
+### Which leg a notice is about is read from its own text
+
+`leg_named` reads the notice: a platform number or the word "platform" is the
+platform leg; failing that, `concourse`, `entrance`, `booking hall`, `ticket
+office`, `ticket hall`, `car park` or `street level` is the entrance leg; a
+notice naming neither is unlocated. A platform wins over an entrance word,
+because `platformAccess` starts at the ticket office: "the lift from the
+concourse to platform 2" is that field's leg.
+
+Over the 24 distinct notice texts on record: 19 platform, 1 entrance (Connolly's
+"at the main concourse"), 4 unlocated (Malahide's "at Malahide Station",
+Docklands' "The lift is currently out of service", Tullamore, and Clonsilla's
+"on P2", which nothing here reads as a platform). No false entrance hits. The
+entrance list is built from one real example and the vocabulary of
+`ticketOfficeAccess` itself; a notice saying "main hall" or "foyer" falls to
+unlocated, which is the reading the site had before.
+
+### What `ticketOfficeAccess` has in it
+
+All 152 stations carry the field. 9 are blank (the Northern Ireland stations),
+26 say there is no ticket office, 89 say level, 21 say ramp. **Four name a
+lift**: Connolly ("Escalator, lift or stairs from Amiens Street and from LUAS
+stop. / Level access from car park. / Via main concourse."), Clondalkin ("Level
+or via lift"), Docklands ("Lift to ticket office") and Grand Canal Dock
+("Through main entrance building into the booking hall on platform 2 via stairs
+or lift"). **One names an escalator**: Connolly. The field is literally how to
+reach the ticket office, so "No ticket office" says nothing about the door, and
+is read as the page naming no lift there.
+
+Two shapes caught in the dry run. Kilcoole's field is the two words "Not level",
+which a filter that only looks for the word would quote as a level way in;
+`NOT_LEVEL` excludes it. Grand Canal Dock's lift sentence names platform 2 on
+its way to naming the lift, so the entrance picker takes the first lift sentence
+whatever platforms it mentions; there is one way in.
+
+### A lift notice on the entrance leg
+
+Read against `ticketOfficeAccess` and nothing else, before the platform-leg lift
+claim is consulted, because a page can put a lift on the way in and claim none
+to the platforms. Where the field names a lift: **lost**, quoting the sentence,
+"so step-free access into the station was gone while this was listed", plus a
+level or ramped sentence from the same field when there is one that names no
+lift and nothing stepped (Connolly's "Level access from car park"). Where it
+names none, or is blank: **unknown**, saying which. Clondalkin's "Level or via
+lift" comes out lost, the Hazelhatch reading: the module does not parse
+connectives, and the quote lets a reader see the page's own words. The entrance
+note is worded "needed no lift" and never "kept step-free access", which the
+real-corpus guard from #31 reads against `lift_platforms`.
+
+No lift notice on record names the way in, so this is machinery for a notice
+that has not arrived, built because the escalator sentence below could not be
+written honestly without it.
+
+### Who an escalator outage affected
+
+The deduction stays and is all that is *known*: an escalator has steps, so it
+was never a step-free route, so losing it cannot lose one. The sentence now goes
+on to say who did lose something - "Anyone who finds a flight of stairs hard,
+or has a buggy, a suitcase or a stick, did lose a way up" - and then what the
+page puts on the same leg, because a lift to the platforms says nothing about
+the way in:
+
+| notice | leg | what the page puts there |
+|---|---|---|
+| Pearse, "at platform 2" | platform | "Lift or stairs to platform 2 (southbound)" |
+| Tara Street, "at platform 2" | platform | "Both platforms can be accessed by lifts, stairs or escalator" |
+| Connolly, "at the main concourse" | entrance | "Escalator, lift or stairs from Amiens Street and from LUAS stop", and "Level access from car park" |
+
+The lift sentence is picked specific-before-general, as `read_platform_access`
+reads the page, which is what keeps Pearse's summary "Via ramps, stairs,
+escalators, and lifts." out of the quote. A platform the page reaches without a
+lift gets its level line instead; a platform with neither gets "names no lift
+or level way to platform N, so nothing on it says there was another way up",
+and a station whose page claims no lift at all says so by name. That last is
+the only-powered-way-up shape, which no station has and
+`tests/test_site_real.py` still guards for the grade. An unlocated escalator
+notice says the notice does not say where the escalator is.
+
+Every sentence says what the page *names*. None says a lift was working, which
+the page cannot know; a real-corpus test forbids "still had", "remains",
+"available" and "working" in every verdict.
+
+### The one thing the site knows that the page does not
+
+A lift notice at the same station listed while the escalator was. Quoting "the
+page puts a lift on the way to platform 2 as well" under a row that shows that
+lift out would be the page contradicting itself, so `render.shard`, the one
+place that holds all of a station's outages, sets `lift_listed_too` and the
+sentence becomes "..., but a lift notice at this station overlapped this one,
+so that lift was out for some or all of the time". Half-open intervals: Pearse's
+lift came down at the poll its escalator went up (13 August, 10:30Z), which is
+touching, not overlapping, and there are zero overlaps on the corpus. Station-
+wide rather than per platform, because coarser only ever withholds a claim.
+`report` has no listings and never sets it.
+
+### On the page
+
+The label reads "A way up lost, not step-free access" in place of "Not a
+step-free route", which read as nothing happened. The box loses its green
+border for a neutral one: neither the red of a loss nor the green of a way
+round. The access card's caveat says which list each leg is read against.
+
+### Rejected
+
+- **Parsing "or" as a choice on the entrance leg.** The module refuses
+  connectives everywhere else for a reason that holds here: "Level or via lift"
+  may well be a choice, but nothing distinguishes it from a sequence in the
+  text, and the safe reading costs one wasted check.
+- **A hand-reviewed list of entrance alternatives**, like `STEP_FREE_ALTERNATIVES`.
+  Four fields name a lift and none has had a notice; nothing to review yet.
+- **A fifth verdict state** for an escalator with no other way up. The label
+  carries the distinction the reader needs, and the grade rule for that case is
+  settled in `site.md` and guarded.
+- **Weighting the grade** for the people an escalator serves. #43 settled the
+  grade as the lift bar's; this is the page saying who is off it.
+
+A future notice of the shape "lift at the Townsend Street entrance" at Tara
+Street would read as the entrance leg against a field that does not mention that
+entrance (the stairs-only line sits in `platformAccess`) and come out unknown.
+That is the safe direction.
 
 ## The sources, and the ones that are closed
 

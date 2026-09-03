@@ -825,3 +825,9 @@ the site is built to run without. It is not a signal to loosen the test.
 Issue #33, saying who an escalator outage did affect, stays open, and it is
 what makes dropping escalators from the letter honest rather than a dodge: the
 group an escalator serves is off the grade and, for now, off the page.
+
+**Settled 2026-09-03.** #33 landed the same day: every escalator verdict now
+says who lost a way up and what Irish Rail's page puts on the same leg, and a
+lift notice that names the way in is read against `ticketOfficeAccess`.
+`notes/station-access.md` § *The entrance leg, and who an escalator served*.
+The only-powered-way-up rule above is unchanged and still guarded.
