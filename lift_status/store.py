@@ -226,12 +226,28 @@ class Store:
 
     # -- message lifecycle ---------------------------------------------
 
-    def _open_listing(self, message_id: int, run_id: int, observed_at: str) -> None:
+    def _open_listing(self, message_id, run_id, opened_at, last_seen=None) -> None:
         self.conn.execute(
             """INSERT INTO listings (
                 message_id, opened_run_id, opened_at_utc, last_seen_at_utc, closed_at_utc
             ) VALUES (?, ?, ?, ?, NULL)""",
-            (message_id, run_id, observed_at, observed_at),
+            (message_id, run_id, opened_at, last_seen or opened_at),
+        )
+
+    def _ensure_listing(self, row) -> None:
+        """Back-date a span for a notice open since before `listings` existed.
+
+        An upgrade in place creates the table empty, so notices already open
+        have no span to extend or to close.
+        """
+        if self.conn.execute(
+            "SELECT 1 FROM listings WHERE message_id = ? AND closed_at_utc IS NULL",
+            (row["id"],),
+        ).fetchone():
+            return
+        self._open_listing(
+            row["id"], row["first_seen_run_id"], row["first_seen_at_utc"],
+            row["last_seen_at_utc"],
         )
 
     def diff_and_update_messages(self, run_id: int, observed_at: str, items: list) -> dict:
@@ -271,7 +287,7 @@ class Store:
         for key, raw_item in present.items():
             n = parse.normalize_item(raw_item)
             existing = self.conn.execute(
-                "SELECT id, status, first_seen_run_id, first_seen_at_utc "
+                "SELECT id, status, first_seen_run_id, first_seen_at_utc, last_seen_at_utc "
                 "FROM messages WHERE identity_key = ?",
                 (key,),
             ).fetchone()
@@ -321,23 +337,12 @@ class Store:
                     self._open_listing(existing["id"], run_id, observed_at)
                     reopened_count += 1
                 else:
-                    extended = self.conn.execute(
+                    self._ensure_listing(existing)
+                    self.conn.execute(
                         "UPDATE listings SET last_seen_at_utc = ? "
                         "WHERE message_id = ? AND closed_at_utc IS NULL",
                         (observed_at, existing["id"]),
-                    ).rowcount
-                    if not extended:
-                        # An upgrade in place leaves notices already open with
-                        # no span, `listings` having been created empty.
-                        self._open_listing(
-                            existing["id"], existing["first_seen_run_id"],
-                            existing["first_seen_at_utc"],
-                        )
-                        self.conn.execute(
-                            "UPDATE listings SET last_seen_at_utc = ? "
-                            "WHERE message_id = ? AND closed_at_utc IS NULL",
-                            (observed_at, existing["id"]),
-                        )
+                    )
 
         raw_grace = os.environ.get("LIFT_STATUS_GRACE_MISSES", str(DEFAULT_GRACE_MISSES))
         try:
@@ -352,7 +357,8 @@ class Store:
             )
             grace = DEFAULT_GRACE_MISSES
         open_rows = self.conn.execute(
-            "SELECT id, identity_key, consecutive_misses, missing_since_at_utc "
+            "SELECT id, identity_key, consecutive_misses, missing_since_at_utc, "
+            "first_seen_run_id, first_seen_at_utc, last_seen_at_utc "
             "FROM messages WHERE status = 'open'"
         ).fetchall()
         for row in open_rows:
@@ -366,6 +372,7 @@ class Store:
                        missing_since_at_utc = ?, closed_at_utc = ? WHERE id = ?""",
                     (misses, missing_since, missing_since, row["id"]),
                 )
+                self._ensure_listing(row)
                 self.conn.execute(
                     "UPDATE listings SET closed_at_utc = ? "
                     "WHERE message_id = ? AND closed_at_utc IS NULL",

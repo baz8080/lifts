@@ -316,7 +316,12 @@ def _fold(chain):
         text=last.text,
         updates=tuple((o.first_seen, o.head, o.text) for o in chain[1:]),
         segments=tuple(seg for o in chain for seg in o.segments),
-        planned_total=sum((o.planned_total for o in chain), timedelta()),
+        # By notice, not by span: `load_outages` already pooled each notice's
+        # spans, and a chain can hold two of them (A reissued as B, then back
+        # to A) which would count A's total twice.
+        planned_total=sum(
+            {o.message_id: o.planned_total for o in chain}.values(), timedelta()
+        ),
     )
 
 

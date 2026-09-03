@@ -215,6 +215,21 @@ class TestDiffAndUpdateMessages(StoreTestCase):
             [("2026-08-08T12:00:00Z", "2026-08-08T12:30:00Z", None)],
         )
 
+    def test_a_notice_that_predates_listings_gets_a_span_when_it_closes(self):
+        """Back-dating only on the seen-again path lost the notice entirely:
+        closed with no span, it reaches nothing that reads through one."""
+        item = make_item()
+        from lift_status.parse import derive_identity_key
+
+        self._run([item], observed_at="2026-08-08T12:00:00Z")
+        self.store.conn.execute("DELETE FROM listings")  # the pre-upgrade shape
+        self._run([], observed_at="2026-08-08T12:30:00Z")
+        self._run([], observed_at="2026-08-08T13:00:00Z")  # closes
+        self.assertEqual(
+            self._listings(derive_identity_key(item)),
+            [("2026-08-08T12:00:00Z", "2026-08-08T12:00:00Z", "2026-08-08T12:30:00Z")],
+        )
+
     def test_duplicate_identical_items_are_deduped_not_double_counted(self):
         item = make_item()
         diff = self._run([item, dict(item)])

@@ -255,6 +255,22 @@ class TestMergeEdits(SiteModelCase):
             self.assertGreater(o.planned_total, model.PLANNED_GRACE)
             self.assertTrue(all(counts for _, _, counts in model.day_marks(o, T0, NOW)))
 
+    def test_a_notice_reissued_and_reverted_counts_its_works_once(self):
+        """A chain can hold two spans of one notice, and the grace is pooled
+        per notice, so summing per span counted the reverted one twice."""
+        works = lift(planned=True)
+        reissued = lift(planned=True, head="Athy - Lifts out of order")
+        for i in range(4):
+            self.poll(T0 + timedelta(hours=12 * i), [works])
+        for i in range(4, 8):
+            self.poll(T0 + timedelta(hours=12 * i), [reissued])
+        for i in range(8, 12):
+            self.poll(T0 + timedelta(hours=12 * i), [works])
+        (o,) = self.load(now=T0 + timedelta(days=7))
+        self.assertEqual(len(o.segments), 3)
+        self.assertEqual(o.planned_total, o.end - o.first_seen)
+        self.assertLess(o.planned_total, model.PLANNED_GRACE)
+
     def test_a_reissue_merges_past_a_second_notice_still_up_at_the_station(self):
         # Two lifts listed at one station; one notice is reworded. The other,
         # still open, sorts between the closed notice and its replacement -

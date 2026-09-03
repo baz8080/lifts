@@ -672,13 +672,18 @@ nothing to catch them drifting.
 rebuild, so a Pi that upgrades has `messages` rows and, because
 `CREATE TABLE IF NOT EXISTS` makes it empty, no `listings` at all. Nothing
 published would notice - CI rebuilds from the raw logs on every deploy - but
-the collector's own database would quietly hold open notices with no span
-until each one next closed.
+the collector's own database would hold open notices that no longer reach
+the site at all, having no span to be read through.
 
-So a notice seen again with no open span to extend opens one, back-dated to
-the `first_seen` the row already carries. That is the best the database can
-say without a replay, it needs nothing from whoever runs the upgrade, and it
-is a no-op once every row has a span.
+So a notice with no open span gets one, back-dated to the `first_seen` its row
+already carries. That is the best the database can say without a replay, it
+needs nothing from whoever runs the upgrade, and it is a no-op once every row
+has a span.
+
+Both paths need it, which the first cut got wrong: it back-dated only when a
+notice was seen again, so one that went away and never came back was closed
+with no span and vanished from the site rather than being briefly wrong. A
+span is ensured wherever the collector is about to extend or close one.
 
 ### The grace is earned per notice and spent per stretch
 
