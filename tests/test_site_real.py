@@ -177,13 +177,15 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
     def test_an_escalator_notice_only_lands_where_the_page_claims_a_lift(self):
         # An escalator that is the only powered way up is the one escalator
         # outage that should knock the grade, and no station has been of that
-        # shape. notes/site.md § The grade is lift availability.
+        # shape. notes/site.md § The grade is lift availability. A station
+        # missing from the snapshot is "unknown", not "no", and is the previous
+        # test's failure rather than this one's.
         for o in self.outages:
             if o.kind != "escalator":
                 continue
-            self.assertEqual(
+            self.assertNotEqual(
                 self.facts.has_lift(o.code),
-                "yes",
+                "no",
                 f"{o.station} ({o.code}) has an escalator notice and a page that claims no "
                 "lift: the only-powered-way-up case. Build the rule in "
                 "lift_site.model.station_month rather than loosening this test.",

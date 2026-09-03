@@ -765,6 +765,21 @@ least available. Tara Street sits at the top today with an A beside its red
 escalator strip, which is the correct shape for a station whose lift is fine
 and whose escalator is out.
 
+### The denominator is still the stations named
+
+The headline averages over the stations the feed named that month, whatever
+kind of notice named them, so a station with only an escalator notice is in it
+at 100% lift-available. Review asked whether that pads the number. It moves it:
+narrowing to stations with a lift notice gives 75% instead of 76% for August
+(20 stations, Connolly out) and 53% instead of 61% for September so far (5
+stations, Tara Street out). Kept as is, because the tile says "across the
+stations named this month" and the overview lists exactly those stations, so
+the headline is the sum of the rows a reader can see; a station shown on the
+list at 100% and missing from the number above it would be the page
+disagreeing with itself. The denominator that was refused on 2026-08-28 was
+"every station on the network", which the feed never names. A station it did
+name is not invented.
+
 ### The numbers
 
 | month | station | shipped | lifts only |
@@ -801,8 +816,9 @@ Irish Rail page does not claim a lift. Stairs only is a real loss for the
 people an escalator serves: anyone who can manage a flight with difficulty, or
 has a buggy, a suitcase or a stick. No station in the corpus is of that shape;
 Pearse, Connolly and Tara Street all claim a lift. So the rule is written here
-and not coded. `tests/test_site_real.py` fails the day an escalator notice
-appears at a station whose page claims no lift, and that failure is the signal
+and not coded. `tests/test_site_real.py`, which CI runs against the checked-out
+corpus and snapshot, fails the day an escalator notice appears at a station
+whose page claims no lift, and that failure is the signal
 to build the rule in `station_month`, which will then need the station facts
 the site is built to run without. It is not a signal to loosen the test.
 
