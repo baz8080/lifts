@@ -69,7 +69,9 @@ SAME_KIND = {"lift": LIFT, "escalator": ESCALATOR}
 # operator wording and the clearest statement of what happened, so forfeiting it
 # loses the notices that say so outright. A sentence carrying outage wording is
 # never a redirection: "use the stairs as the lift is out of service" names both.
-SENTENCE = re.compile(r"(?<=[.!;])\s+|\n")
+# Not after "No.", which is a platform label (Athlone's "platforms No. 2 and 3")
+# and not the end of a sentence.
+SENTENCE = re.compile(r"(?<=[.!;])(?<!\b[Nn]o\.)\s+|\n")
 REDIRECTION = re.compile(
     r"\b(?:use|using|via|take|taking)\s+(?:the\s+|a\s+|our\s+)?(?:lifts?|escalators?)\b",
     re.IGNORECASE,
@@ -92,6 +94,23 @@ AFFECTED = re.compile(
     re.IGNORECASE,
 )
 
+# Which leg of the journey a notice is about, read from its own text. A platform
+# number or the word wins over an entrance word, because `platformAccess` starts
+# at the ticket office: "the lift from the concourse to platform 2" is that
+# field's leg. "at the main concourse" (Connolly) is the only entrance form on
+# record; the rest of the list is the vocabulary of ticketOfficeAccess itself.
+PLATFORM_LEG = "platform"
+ENTRANCE_LEG = "entrance"
+PLATFORM_WORD = re.compile(r"\bplatforms?\b", re.IGNORECASE)
+ENTRANCE = re.compile(
+    r"\b(?:concourse|entrances?|booking hall|ticket (?:office|hall)|car park|street level)\b",
+    re.IGNORECASE,
+)
+# Kilcoole's ticketOfficeAccess is the two words "Not level", and "No ramp" would
+# read the same way. A "No" before a number is a platform label: Carrigaloe's
+# "platform No 2", Dalkey's "platform No 1", Athlone's "platforms No. 2 and 3".
+NEGATED = re.compile(r"\b(?:no|not)\b(?!\.?\s*\d)", re.IGNORECASE)
+
 # The complete list of places where Irish Rail's own prose names a step-free way
 # round a lift, for the same platform. Two stations, checked by hand against the
 # sentence quoted beside each. **Adding an entry is a human decision in a diff.**
@@ -113,9 +132,10 @@ class Station(NamedTuple):
     longitude: str | None
     platform_access: str  # the prose, as published, for quoting back to a reader
     # How you get from the street to the concourse. A separate leg of the
-    # journey, and the derivation does not model it: `platform_access` starts at
-    # the ticket office. Read here only so the page can quote it and so the
-    # escalator check can see Connolly's, which is named nowhere else.
+    # journey: `platform_access` starts at the ticket office, so a notice that
+    # names the way in ("at the main concourse") is read against this one. It is
+    # the field literally about reaching the ticket office, so "No ticket office"
+    # says nothing about the door.
     ticket_office_access: str
     lift_platforms: frozenset  # platforms the prose puts a lift at; may be {ALL_PLATFORMS}
     claims_lift: bool
@@ -126,6 +146,7 @@ class Verdict(NamedTuple):
     state: str  # 'lost' | 'alternative' | 'escalator' | 'unknown'
     platforms: tuple
     detail: str
+    leg: str | None = None  # PLATFORM_LEG | ENTRANCE_LEG | None when the notice says neither
 
 
 def plain(fragment):
@@ -247,6 +268,18 @@ def affected_platforms(text):
     return tuple(found)
 
 
+def leg_named(text):
+    """Which leg of the journey the notice puts the machine on, or None."""
+    if not text:
+        return None
+    body = plain(text)
+    if affected_platforms(body) or PLATFORM_WORD.search(body):
+        return PLATFORM_LEG
+    if ENTRANCE.search(body):
+        return ENTRANCE_LEG
+    return None
+
+
 def step_free_note(station):
     """The sentence behind a station's step-free chip, or None.
 
@@ -261,6 +294,34 @@ def step_free_note(station):
     return None
 
 
+def _sentences(prose):
+    """The prose one sentence at a time, boilerplate gone, in a quotable form.
+
+    One splitter for every picker below, so the lift line, the level line and
+    the reviewed quote cannot disagree about where a sentence ends.
+    """
+    return [
+        sentence.strip().rstrip(".")
+        for sentence in SENTENCE.split(strip_boilerplate(prose or ""))
+        if sentence.strip()
+    ]
+
+
+def _level_sentences(prose):
+    """The sentences that name a level or ramped way and nothing stepped."""
+    return tuple(
+        sentence
+        for sentence in _sentences(prose)
+        if STEP_FREE.search(sentence)
+        and not (
+            LIFT.search(sentence)
+            or STEPPED.search(sentence)
+            or FROM_PLATFORM.search(sentence)
+            or NEGATED.search(sentence)
+        )
+    )
+
+
 def step_free_platforms(station):
     """Every (platform, sentence) the prose reaches without a lift, in prose order.
 
@@ -269,17 +330,71 @@ def step_free_platforms(station):
     """
     found = []
     seen = set()
-    for sentence in SENTENCE.split(station.platform_access or ""):
-        if not STEP_FREE.search(sentence):
-            continue
-        if LIFT.search(sentence) or STEPPED.search(sentence) or FROM_PLATFORM.search(sentence):
-            continue
-        quoted = sentence.strip().rstrip(".")
+    for sentence in _level_sentences(station.platform_access):
         for platform in platforms_named(sentence):
             if platform not in seen:
                 seen.add(platform)
-                found.append((platform, quoted))
+                found.append((platform, sentence))
     return tuple(found)
+
+
+def entrance_step_free(station):
+    """The sentence naming a level or ramped way in, or None.
+
+    No platform number is asked for on this leg: "Level access from car park" is
+    as direct a statement as "Level to platform 1", and the way in has no number.
+    """
+    sentences = _level_sentences(station.ticket_office_access)
+    return sentences[0] if sentences else None
+
+
+def lift_sentence(prose, platforms=None, general_ok=False):
+    """The sentence that puts a lift where the notice put its machine, or None.
+
+    With no platforms, the first sentence naming a lift: the way in has one
+    place, and Grand Canal Dock's names platform 2 on its way to saying so.
+    Otherwise the first lift sentence naming one of the platforms, and a lift
+    sentence naming none only if the caller says the page speaks generally -
+    specific beats general, as in `read_platform_access`, which is what keeps
+    Pearse's "Via ramps, stairs, escalators, and lifts." out of the quote.
+    """
+    general = None
+    for sentence in _sentences(prose):
+        if not LIFT.search(sentence) or DENIES_LIFT.search(sentence):
+            continue
+        if platforms is None:
+            return sentence
+        named = platforms_named(sentence)
+        if named and set(named) & set(platforms):
+            return sentence
+        if not named and general is None:
+            general = sentence
+    return general if general_ok else None
+
+
+def entrance_lift_sentence(station):
+    """The sentence putting a lift on the way in, from either field, or None.
+
+    ticketOfficeAccess first. Then platformAccess, where Pearse keeps its
+    "Lifts/stairs/Escalators from the Pearse Street entrance": a lift the page
+    does name must not be reported as one it does not.
+    """
+    quoted = lift_sentence(station.ticket_office_access)
+    if quoted:
+        return quoted
+    for sentence in _sentences(station.platform_access):
+        if (
+            LIFT.search(sentence)
+            and not DENIES_LIFT.search(sentence)
+            and leg_named(sentence) == ENTRANCE_LEG
+        ):
+            return sentence
+    return None
+
+
+def entrance_lift(station):
+    """Does Irish Rail's page put a lift on the way into the station?"""
+    return entrance_lift_sentence(station) is not None
 
 
 def _alternative(station, platform):
@@ -327,21 +442,191 @@ def _still_note(station, serves, platforms):
     if not still:
         return ""
     labels = [p for p, _ in still]
-    quoted = []
-    for _, sentence in still:
-        if sentence not in quoted:
-            quoted.append(sentence)
-    named = labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " and " + labels[-1]
+    named = _join(labels)
     subject = (
         f"Platform {named} needed no lift, so it"
         if len(labels) == 1
         else f"Platforms {named} needed no lift, so they"
     )
-    sources = " and ".join(f'"{sentence}"' for sentence in quoted)
-    return f" {subject} kept step-free access: {sources}."
+    return f" {subject} kept step-free access: {_quoted(s for _, s in still)}."
 
 
-def verdict(station, kind, text):
+def _quoted(sentences):
+    """'"a" and "b"', each sentence once however many platforms it covers."""
+    unique = []
+    for sentence in sentences:
+        if sentence not in unique:
+            unique.append(sentence)
+    return " and ".join(f'"{sentence}"' for sentence in unique)
+
+
+def _join(labels):
+    """"1", "1 and 2", "1, 2 and 3"."""
+    return labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " and " + labels[-1]
+
+
+def _platform_phrase(platforms):
+    if not platforms:
+        return "the platforms"
+    return f"platform{'s' if len(platforms) > 1 else ''} {_join(list(platforms))}"
+
+
+def _escalator_verdict(station, named, leg, lift_listed_too):
+    """The deduction, then what the page puts on the leg the notice named.
+
+    The deduction is all that is *known*: an escalator has steps, so it was never
+    a step-free route, so losing it cannot lose one. Who did lose something is
+    the people an escalator serves, and whether they had another way up is a
+    claim about the station that needs the station's own prose - on the same
+    leg, because a lift to the platforms says nothing about the way in. Every
+    sentence below quotes what the page names or says it names nothing; none
+    says a lift was working, which the page cannot know and the site only ever
+    knows in the negative (`lift_listed_too`).
+    """
+    parts = [
+        "An escalator is moving stairs, so it was not a step-free route to begin with "
+        "and its being out did not remove one. Anyone who finds a flight of stairs "
+        "hard, or has a buggy, a suitcase or a stick, did lose a way up."
+    ]
+    if station is not None:
+        # The flag is station-wide, so it says a lift notice was up and no more:
+        # which lift is not established, and "that lift was out" would be.
+        overlapped = ", though a lift notice at this station overlapped this one."
+        if leg == PLATFORM_LEG:
+            where = _platform_phrase(named)
+            serves = station.lift_platforms
+            lift = lift_sentence(
+                station.platform_access,
+                named or tuple(sorted(serves - {ALL_PLATFORMS})),
+                general_ok=ALL_PLATFORMS in serves,
+            )
+            # A level platform has no level change for an escalator to make, so
+            # a level line at the notice's platform is the two sources
+            # disagreeing, and the rule for that is to say so, not pick a side.
+            level = [
+                (p, sentence)
+                for p, sentence in step_free_platforms(station)
+                if p in named and p not in serves
+            ]
+            level_platforms = {p for p, _ in level}
+            # Every named platform gets one of three sentences: the lift the page
+            # puts there, the level line it disagrees with, or that it has
+            # neither. `covered` is what the first two accounted for.
+            covered = set(level_platforms)
+            if lift:
+                # Phrased from the platforms the quoted sentence names, not the
+                # notice's: Athy's "Lift to platform 2" beside a notice naming 1
+                # and 2 must not put a lift on the way to the level platform. A
+                # general claim (Bray's "Use the lift or stairs") is not put on
+                # the way to a platform the same page calls level either.
+                served = platforms_named(lift)
+                if served:
+                    at = tuple(p for p in named if p in served) or served
+                else:
+                    at = tuple(p for p in named if p not in level_platforms)
+                if at or not named:
+                    covered.update(at)
+                    parts.append(
+                        f"Irish Rail's page puts a lift on the way to {_platform_phrase(at)} "
+                        "as well" + (overlapped if lift_listed_too else f': "{lift}".')
+                    )
+            if level:
+                at = _platform_phrase(tuple(p for p, _ in level))
+                it = "it" if len(level) == 1 else "them"
+                parts.append(
+                    f"Irish Rail's page calls {at} level: {_quoted(s for _, s in level)}, "
+                    f"so the notice and the page disagree about {it}."
+                )
+            silent = tuple(p for p in named if p not in covered)
+            if silent or (not named and len(parts) == 1):
+                where = _platform_phrase(silent)
+                if station.claims_lift:
+                    parts.append(
+                        f"Irish Rail's page names no lift or level way to {where}, so "
+                        "nothing on it says there was another way up."
+                    )
+                else:
+                    parts.append(
+                        f"Irish Rail's page names no lift at {station.name}"
+                        + (f" and no level way to {where}" if named else "")
+                        + ", so nothing on it says there was another way up."
+                    )
+        elif leg == ENTRANCE_LEG:
+            lift = entrance_lift_sentence(station)
+            level = entrance_step_free(station)
+            if lift:
+                parts.append(
+                    "Irish Rail's page puts a lift on the way into the station as well"
+                    + (overlapped if lift_listed_too else f': "{lift}".')
+                )
+            if level:
+                parts.append(f'Irish Rail\'s page names a level way into the station: "{level}".')
+            if not lift and not level:
+                parts.append(
+                    "Irish Rail's page names no lift or level way into the station, so "
+                    "nothing on it says there was another way up."
+                )
+        else:
+            parts.append(
+                "The notice does not say where the escalator is, so which way it served "
+                "cannot be read against the page."
+            )
+        # Both fields: Connolly's escalator is named only in ticketOfficeAccess,
+        # and Connolly is one of the three stations that has escalator notices.
+        if not ESCALATOR.search(
+            f"{station.platform_access or ''}\n{station.ticket_office_access or ''}"
+        ):
+            parts.append(f"Irish Rail's page for {station.name} does not mention an escalator.")
+    return Verdict("escalator", named, " ".join(parts))
+
+
+def _entrance_verdict(station, named):
+    """A lift notice that puts the lift on the way in, read against that leg.
+
+    Five pages put a lift there (Connolly, Clondalkin, Docklands, Grand Canal
+    Dock in ticketOfficeAccess; Pearse in platformAccess). Clondalkin's "Level
+    or via lift" is read as a loss like Hazelhatch's "lifts and ramps": the
+    module does not parse connectives, and the quote lets a reader see the
+    page's own words.
+
+    Pearse's way-in field says "Level, through main entrance to the booking
+    hall" and its platformAccess "Lifts/stairs/Escalators from the Pearse Street
+    entrance". Reading only the first reported a lift the page names as one it
+    does not; reading the notice on the platform leg instead published the ramp
+    platform as kept, from a booking hall the notice's lift may be the way to.
+
+    Returns None, for the caller to read the notice on the platform leg, only
+    where the page's one lift sentence with an entrance word also names a
+    platform ("Lift from the concourse to platform 2"): the page itself puts
+    that lift on the platform leg, and the platform reading is the right one.
+    """
+    entry = station.ticket_office_access or ""
+    quoted = entrance_lift_sentence(station)
+    if not quoted and any(
+        LIFT.search(s) and ENTRANCE.search(s) and not DENIES_LIFT.search(s)
+        for s in _sentences(station.platform_access)
+    ):
+        return None
+    if quoted:
+        detail = (
+            "The notice puts the lift on the way into the station, and Irish Rail's "
+            f'page puts a lift there too: "{quoted}", so step-free access into the '
+            "station was gone while this was listed."
+        )
+        level = entrance_step_free(station)
+        if level:
+            detail += f' Irish Rail\'s page also names a way in that needed no lift: "{level}".'
+        return Verdict("lost", (), detail)
+    return _unknown(
+        named,
+        "The notice puts the lift on the way into the station, and Irish Rail's page "
+        f"for {station.name} "
+        + ("names no lift on the way in" if entry.strip() else "says nothing about the way in")
+        + ", so what it served is not recorded.",
+    )
+
+
+def verdict(station, kind, text, lift_listed_too=False):
     """What one notice means for step-free access at one station.
 
     The default is that a lift out removes step-free access to the platforms that
@@ -349,7 +634,16 @@ def verdict(station, kind, text):
     is the error worth engineering against: a reader who is told access is gone
     when it is not has made one wasted check, and a reader told the reverse is
     stranded on a platform.
+
+    `lift_listed_too` is the one thing the site knows that the page does not: a
+    lift notice at the same station was listed while this one was. Only the
+    escalator sentence reads it, and only to withhold a lift the page names.
     """
+    leg = leg_named(text)
+    return _verdict(station, kind, text, leg, lift_listed_too)._replace(leg=leg)
+
+
+def _verdict(station, kind, text, leg, lift_listed_too):
     named = affected_platforms(text)
 
     # `classify` reads the head, and the head is hand-written. A text naming only
@@ -374,28 +668,17 @@ def verdict(station, kind, text):
             )
 
     if kind == "escalator":
-        # The deduction, and only the deduction: an escalator has steps, so it was
-        # never a step-free route, so losing it cannot lose one. That says nothing
-        # about whether the station still has step-free access by some other way,
-        # which is a claim about the station and needs the station's own prose.
-        detail = (
-            "An escalator is moving stairs, so it was not a step-free route to begin "
-            "with and its being out did not remove one."
-        )
-        # Both fields: Connolly's escalator is named only in ticketOfficeAccess,
-        # and Connolly is one of the two stations that has escalator notices.
-        named_here = station is not None and ESCALATOR.search(
-            f"{station.platform_access or ''}\n{station.ticket_office_access or ''}"
-        )
-        if station is not None and not named_here:
-            detail += (
-                f" Irish Rail's page for {station.name} does not mention an escalator, "
-                "so what this one served is not recorded."
-            )
-        return Verdict("escalator", named, detail)
+        return _escalator_verdict(station, named, leg, lift_listed_too)
 
     if station is None:
         return _unknown(named, "This station is not in the station snapshot.")
+
+    # Before `has_lift`, which reads the platform leg: a page can put a lift on
+    # the way in and claim none to the platforms.
+    if leg == ENTRANCE_LEG:
+        result = _entrance_verdict(station, named)
+        if result is not None:
+            return result
 
     if has_lift(station) != "yes":
         return _unknown(

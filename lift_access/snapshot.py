@@ -39,8 +39,8 @@ class Facts:
         station = self.stations.get(code)
         return model.has_lift(station) if station else "unknown"
 
-    def verdict(self, code, kind, text):
-        return model.verdict(self.stations.get(code), kind, text)
+    def verdict(self, code, kind, text, lift_listed_too=False):
+        return model.verdict(self.stations.get(code), kind, text, lift_listed_too)
 
     def tally(self):
         """How many stations have a lift, of those in the snapshot."""

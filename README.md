@@ -108,7 +108,9 @@ drawn on the bar and left out of the total.
 Planned works are excused for their first week and count in full past it, in
 their own colour once they do.
 Escalator notices keep their own bar and are off the total: an escalator is
-never a step-free route, so its going out removes a convenience and not access.
+never a step-free route, so its going out removes a way up for anyone who finds
+stairs hard, and not a step-free route; each escalator outage on a station page
+says so, and what Irish Rail's page puts on the same leg.
 The grade is named for what it counts and not "step-free availability", because
 a lift out knocks it even where Irish Rail's page names a ramp round the lift,
 and so does an outage the site cannot read either way. The one escalator outage

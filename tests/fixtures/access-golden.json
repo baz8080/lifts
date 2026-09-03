@@ -1,0 +1,2061 @@
+{
+ "snapshot": "irishrail-20260901.jsonl",
+ "stations": {
+  "ADMTN": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Adamstown",
+   "step_free_platforms": []
+  },
+  "ARHAN": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Ardrahan",
+   "step_free_platforms": []
+  },
+  "ARKLW": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Arklow",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to Platform 1 for Southbound services"
+    ]
+   ]
+  },
+  "ASHTN": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Ashtown",
+   "step_free_platforms": []
+  },
+  "ATHRY": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Athenry",
+   "step_free_platforms": []
+  },
+  "ATHY": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Athy",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1"
+    ]
+   ]
+  },
+  "ATLNE": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [
+    "2",
+    "3"
+   ],
+   "name": "Athlone",
+   "step_free_platforms": [
+    [
+     "1",
+     "Ramp to platform No.1"
+    ]
+   ]
+  },
+  "ATMON": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Attymon",
+   "step_free_platforms": []
+  },
+  "BALNA": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Ballina",
+   "step_free_platforms": []
+  },
+  "BBRDG": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Broombridge",
+   "step_free_platforms": []
+  },
+  "BBRGN": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Via ramp from car park",
+   "lift_platforms": [
+    "1"
+   ],
+   "name": "Balbriggan",
+   "step_free_platforms": [
+    [
+     "2",
+     "Level access to platform 2"
+    ]
+   ]
+  },
+  "BBRHY": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Ballybrophy",
+   "step_free_platforms": []
+  },
+  "BFSTC": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Belfast Grand Central",
+   "step_free_platforms": []
+  },
+  "BHILL": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Via ramp",
+   "lift_platforms": [],
+   "name": "Birdhill",
+   "step_free_platforms": []
+  },
+  "BMOTE": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Ballymote",
+   "step_free_platforms": []
+  },
+  "BOYLE": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Boyle",
+   "step_free_platforms": []
+  },
+  "BRAY": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Bray (Daly)",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1, 2 & 3"
+    ],
+    [
+     "2",
+     "Level to platform 1, 2 & 3"
+    ],
+    [
+     "3",
+     "Level to platform 1, 2 & 3"
+    ]
+   ]
+  },
+  "BROCK": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Blackrock",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level access to Platform 1 via station entrance (for services to City centre & Northbound)"
+    ]
+   ]
+  },
+  "BSLOE": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Ballinasloe",
+   "step_free_platforms": []
+  },
+  "BTEER": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Banteer",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to Platform No. 1"
+    ]
+   ]
+  },
+  "BTSTN": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Through main entrance building in to the booking hall on Platform 1 via ramp",
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Booterstown",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform No. 1, city centre & northbound via station entrance"
+    ]
+   ]
+  },
+  "BYHNS": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Ballyhaunis",
+   "step_free_platforms": []
+  },
+  "BYSDE": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Bayside",
+   "step_free_platforms": []
+  },
+  "CAHIR": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Cahir",
+   "step_free_platforms": []
+  },
+  "CCONL": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Castleconnell",
+   "step_free_platforms": []
+  },
+  "CGLOE": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Carrigaloe",
+   "step_free_platforms": [
+    [
+     "2",
+     "Via the main gate (top of ramp) to platform No 2 (Northbound)"
+    ]
+   ]
+  },
+  "CGTWL": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Carrigtwohill",
+   "step_free_platforms": []
+  },
+  "CHORC": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "First Floor level access",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Park West and Cherry Orchard",
+   "step_free_platforms": []
+  },
+  "CJRDN": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Cloughjordan",
+   "step_free_platforms": []
+  },
+  "CKOSH": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Carrick-on-Shannon",
+   "step_free_platforms": []
+  },
+  "CKOSR": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Carrick-on-Suir",
+   "step_free_platforms": []
+  },
+  "CLARA": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Clara",
+   "step_free_platforms": []
+  },
+  "CLBAR": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Castlebar",
+   "step_free_platforms": []
+  },
+  "CLDKN": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": "Level or via lift",
+   "entrance_step_free": null,
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Clondalkin and Fonthill",
+   "step_free_platforms": []
+  },
+  "CLMEL": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Clonmel",
+   "step_free_platforms": []
+  },
+  "CLMRS": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Claremorris",
+   "step_free_platforms": []
+  },
+  "CLSLA": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Clonsilla",
+   "step_free_platforms": []
+  },
+  "CMINE": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Coolmine",
+   "step_free_platforms": []
+  },
+  "CNLLY": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": "Escalator, lift or stairs from Amiens Street and from LUAS stop",
+   "entrance_step_free": "Level access from car park",
+   "lift_platforms": [
+    "6",
+    "7"
+   ],
+   "name": "Dublin Connolly",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level access to platforms 1, 2, 3 and 4 from ticket office"
+    ],
+    [
+     "2",
+     "Level access to platforms 1, 2, 3 and 4 from ticket office"
+    ],
+    [
+     "3",
+     "Level access to platforms 1, 2, 3 and 4 from ticket office"
+    ],
+    [
+     "4",
+     "Level access to platforms 1, 2, 3 and 4 from ticket office"
+    ]
+   ]
+  },
+  "CNOCK": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Ramp to platform",
+   "lift_platforms": [],
+   "name": "Castleknock",
+   "step_free_platforms": [
+    [
+     "1",
+     "Platform 1 (Dublin bound) is level"
+    ]
+   ]
+  },
+  "COBH": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Via ramp from public road, assistance will be required",
+   "lift_platforms": [],
+   "name": "Cobh",
+   "step_free_platforms": []
+  },
+  "COLNY": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Collooney",
+   "step_free_platforms": []
+  },
+  "CORK": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse from 07:00hrs - 18:30hrs",
+   "lift_platforms": [
+    "5A",
+    "5B",
+    "6"
+   ],
+   "name": "Cork (Kent)",
+   "step_free_platforms": [
+    [
+     "1",
+     "Platforms 1, 2, 3 and 4 are level"
+    ],
+    [
+     "2",
+     "Platforms 1, 2, 3 and 4 are level"
+    ],
+    [
+     "3",
+     "Platforms 1, 2, 3 and 4 are level"
+    ],
+    [
+     "4",
+     "Platforms 1, 2, 3 and 4 are level"
+    ]
+   ]
+  },
+  "CRGHW": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Craughwell",
+   "step_free_platforms": []
+  },
+  "CRLOW": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Ramp to ticket office",
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Carlow",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1"
+    ]
+   ]
+  },
+  "CSREA": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Castlerea",
+   "step_free_platforms": []
+  },
+  "CTARF": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Clontarf Road",
+   "step_free_platforms": []
+  },
+  "CVILL": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [
+    "2",
+    "3"
+   ],
+   "name": "Charleville",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1"
+    ]
+   ]
+  },
+  "DBATE": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance 05:45hrs - 14:30hrs Mon-Fri",
+   "lift_platforms": [],
+   "name": "Donabate",
+   "step_free_platforms": []
+  },
+  "DBYNE": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance",
+   "lift_platforms": [],
+   "name": "Dunboyne",
+   "step_free_platforms": []
+  },
+  "DCDRA": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Drumcondra",
+   "step_free_platforms": []
+  },
+  "DCKLS": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": "Lift to ticket office",
+   "entrance_step_free": null,
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Docklands",
+   "step_free_platforms": []
+  },
+  "DDALK": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from main station entrance",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Dundalk (Clarke)",
+   "step_free_platforms": []
+  },
+  "DGHDA": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "On level in main hall of station",
+   "lift_platforms": [
+    "2",
+    "3"
+   ],
+   "name": "Drogheda (MacBride)",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to Platform 1 from Main Hall"
+    ]
+   ]
+  },
+  "DLERY": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Via ramp from Crofton Road",
+   "lift_platforms": [
+    "1",
+    "2"
+   ],
+   "name": "Dun Laoghaire (Mallin)",
+   "step_free_platforms": [
+    [
+     "3",
+     "Level to Platform 3"
+    ]
+   ]
+  },
+  "DLKEY": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Dalkey",
+   "step_free_platforms": [
+    [
+     "1",
+     "Ramp to platform No 1 (for northbound routes and city centre)"
+    ]
+   ]
+  },
+  "DRMOD": {
+   "claims_lift": false,
+   "denies_lift": true,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Yes - Level from station entrance",
+   "lift_platforms": [],
+   "name": "Dromod",
+   "step_free_platforms": []
+  },
+  "ECRTY": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from entrance",
+   "lift_platforms": [],
+   "name": "Enniscorthy",
+   "step_free_platforms": []
+  },
+  "ENFLD": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Enfield",
+   "step_free_platforms": []
+  },
+  "ENNIS": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Ennis",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level access to platform 1"
+    ]
+   ]
+  },
+  "ETOWN": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance via waiting room",
+   "lift_platforms": [],
+   "name": "Edgeworthstown",
+   "step_free_platforms": []
+  },
+  "FFORE": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Farranfore",
+   "step_free_platforms": []
+  },
+  "FOTA": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Fota",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level via ramp to Platform 1 for Cobh services"
+    ]
+   ]
+  },
+  "FXFRD": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Foxford",
+   "step_free_platforms": []
+  },
+  "GALWY": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Galway (Ceannt)",
+   "step_free_platforms": []
+  },
+  "GCDK": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": "Through main entrance building into the booking hall on platform 2 via stairs or lift",
+   "entrance_step_free": null,
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Grand Canal Dock",
+   "step_free_platforms": []
+  },
+  "GHANE": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Glounthaune",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1 (Southbound and Cobh)"
+    ]
+   ]
+  },
+  "GLGRY": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Glenageary",
+   "step_free_platforms": []
+  },
+  "GOREY": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Gorey",
+   "step_free_platforms": []
+  },
+  "GORT": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Gort",
+   "step_free_platforms": []
+  },
+  "GRGRD": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Clongriffin",
+   "step_free_platforms": []
+  },
+  "GSTNS": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [],
+   "name": "Greystones",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1 (northbound)"
+    ]
+   ]
+  },
+  "GSTON": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Gormanston",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1"
+    ]
+   ]
+  },
+  "HAFLD": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Hansfield",
+   "step_free_platforms": []
+  },
+  "HOWTH": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Via electric gate and ramp from road",
+   "lift_platforms": [],
+   "name": "Howth",
+   "step_free_platforms": []
+  },
+  "HSTON": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Dublin Heuston",
+   "step_free_platforms": []
+  },
+  "HTOWN": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Harmonstown",
+   "step_free_platforms": []
+  },
+  "HWTHJ": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Howth Junction and Donaghmede",
+   "step_free_platforms": []
+  },
+  "HZLCH": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level On platform 5",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Hazelhatch and Celbridge",
+   "step_free_platforms": []
+  },
+  "KBRCK": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Kilbarrack",
+   "step_free_platforms": []
+  },
+  "KCOCK": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Kilcock",
+   "step_free_platforms": []
+  },
+  "KCOOL": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Kilcoole",
+   "step_free_platforms": []
+  },
+  "KDARE": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Kildare",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1"
+    ]
+   ]
+  },
+  "KILNY": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Killiney",
+   "step_free_platforms": []
+  },
+  "KKNNY": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Kilkenny (MacDonagh)",
+   "step_free_platforms": []
+  },
+  "KLRNY": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "1",
+    "2"
+   ],
+   "name": "Killarney",
+   "step_free_platforms": []
+  },
+  "KLSTR": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Killester",
+   "step_free_platforms": []
+  },
+  "Kishoge": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "lift_platforms": [
+    "1",
+    "2"
+   ],
+   "name": "Kishoge",
+   "step_free_platforms": []
+  },
+  "LBURN": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Lisburn",
+   "step_free_platforms": []
+  },
+  "LDWNE": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Lansdowne Road",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1 (Northbound and City Centre)"
+    ],
+    [
+     "2",
+     "Ramp and gate to platform 2 (Southbound)"
+    ]
+   ]
+  },
+  "LFORD": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Longford",
+   "step_free_platforms": [
+    [
+     "1",
+     "Ramp via the car park to platform 1"
+    ],
+    [
+     "2",
+     "Level off the public footpath to platform 2"
+    ]
+   ]
+  },
+  "LMRCK": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Limerick (Colbert)",
+   "step_free_platforms": []
+  },
+  "LMRKJ": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Via steep ramp from car park",
+   "lift_platforms": [],
+   "name": "Limerick Junction",
+   "step_free_platforms": []
+  },
+  "LSLND": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Little Island",
+   "step_free_platforms": [
+    [
+     "1",
+     "Ramp via the car park to platform 1"
+    ],
+    [
+     "2",
+     "Level off the public footpath to platform 2"
+    ]
+   ]
+  },
+  "LTOWN": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [
+    "1"
+   ],
+   "name": "Laytown",
+   "step_free_platforms": [
+    [
+     "2",
+     "Ramp from roadway to platform 2"
+    ]
+   ]
+  },
+  "LURGN": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Lurgan",
+   "step_free_platforms": []
+  },
+  "LXCON": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Leixlip (Confey)",
+   "step_free_platforms": [
+    [
+     "2",
+     "Level to platform 2"
+    ]
+   ]
+  },
+  "LXLSA": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Leixlip (Louisa Bridge)",
+   "step_free_platforms": [
+    [
+     "1",
+     "Platform 1 to City Centre via ramp"
+    ]
+   ]
+  },
+  "M3WAY": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "M3 Parkway",
+   "step_free_platforms": []
+  },
+  "MDLTN": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [
+    "1",
+    "2"
+   ],
+   "name": "Midleton",
+   "step_free_platforms": []
+  },
+  "MHIDE": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Malahide",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1 (City Centre)"
+    ]
+   ]
+  },
+  "MLGAR": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Yes, ramp at front entrance",
+   "lift_platforms": [],
+   "name": "Mullingar",
+   "step_free_platforms": []
+  },
+  "MLLOW": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Access from main car park level",
+   "lift_platforms": [],
+   "name": "Mallow",
+   "step_free_platforms": []
+  },
+  "MLSRT": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Millstreet",
+   "step_free_platforms": []
+  },
+  "MNEBG": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Muine Bheag (Bagenalstown)",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1"
+    ]
+   ]
+  },
+  "MNLAJ": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Manulla Junction",
+   "step_free_platforms": []
+  },
+  "MONVN": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Monasterevin",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1 (Northbound)"
+    ]
+   ]
+  },
+  "MYNTH": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Maynooth",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level from main hall to Platform 1"
+    ]
+   ]
+  },
+  "NBRGE": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Newbridge",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1"
+    ]
+   ]
+  },
+  "NEWRY": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Newry",
+   "step_free_platforms": []
+  },
+  "NNAGH": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Nenagh",
+   "step_free_platforms": []
+  },
+  "ORNMR": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Oranmore",
+   "step_free_platforms": []
+  },
+  "PDOWN": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Portadown",
+   "step_free_platforms": []
+  },
+  "PELTN": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Pelletstown",
+   "step_free_platforms": []
+  },
+  "PERSE": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": "Lifts/stairs/Escalators from the Pearse Street entrance",
+   "entrance_step_free": "Level, through main entrance to the booking hall",
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Dublin Pearse",
+   "step_free_platforms": [
+    [
+     "1",
+     "Ramp to platform 1 (City Centre and northbound)"
+    ]
+   ]
+  },
+  "PHNPK": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Navan Road Parkway",
+   "step_free_platforms": []
+  },
+  "PMNCK": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Portmarnock",
+   "step_free_platforms": []
+  },
+  "PTLSE": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "1"
+   ],
+   "name": "Portlaoise",
+   "step_free_platforms": [
+    [
+     "2",
+     "Level to platform 2"
+    ]
+   ]
+  },
+  "PTRTN": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Portarlington",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1"
+    ]
+   ]
+  },
+  "RAHNY": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "1"
+   ],
+   "name": "Raheny",
+   "step_free_platforms": [
+    [
+     "2",
+     "Ramp to platform 2 (Northbound)"
+    ]
+   ]
+  },
+  "RBROK": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Rushbrooke",
+   "step_free_platforms": [
+    [
+     "2",
+     "Via ramp and main gate to platform 2"
+    ]
+   ]
+  },
+  "RCREA": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Roscrea",
+   "step_free_platforms": []
+  },
+  "RDRUM": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Rathdrum",
+   "step_free_platforms": []
+  },
+  "RLEPT": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Rosslare Europort",
+   "step_free_platforms": []
+  },
+  "RLSTD": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Rosslare Strand",
+   "step_free_platforms": []
+  },
+  "RLUSK": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [
+    "1"
+   ],
+   "name": "Rush and Lusk",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level access to platform 1"
+    ]
+   ]
+  },
+  "RMORE": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from Station Car Park",
+   "lift_platforms": [],
+   "name": "Rathmore",
+   "step_free_platforms": []
+  },
+  "RSCMN": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Roscommon",
+   "step_free_platforms": []
+  },
+  "SALNS": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level access",
+   "lift_platforms": [],
+   "name": "Sallins and Naas",
+   "step_free_platforms": []
+  },
+  "SCOVE": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Sandycove and Glasthule",
+   "step_free_platforms": []
+  },
+  "SEAPT": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level access",
+   "lift_platforms": [
+    "1",
+    "2"
+   ],
+   "name": "Seapoint",
+   "step_free_platforms": []
+  },
+  "SHILL": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Salthill and Monkstown",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1"
+    ]
+   ]
+  },
+  "SIDNY": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Through the main entrance building in to the booking hall on platform 1 via ramp",
+   "lift_platforms": [],
+   "name": "Sydney Parade",
+   "step_free_platforms": []
+  },
+  "SKILL": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Via ramp",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Shankill",
+   "step_free_platforms": []
+  },
+  "SKRES": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Skerries",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1"
+    ]
+   ]
+  },
+  "SLIGO": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Via ramp from car park",
+   "lift_platforms": [],
+   "name": "Sligo (MacDiarmada)",
+   "step_free_platforms": []
+  },
+  "SMONT": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Via ramp on the south platform side of station",
+   "lift_platforms": [],
+   "name": "Sandymount",
+   "step_free_platforms": []
+  },
+  "SUTTN": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Via ramp from car park",
+   "lift_platforms": [],
+   "name": "Sutton",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1 (City Centre and southbound)"
+    ]
+   ]
+  },
+  "SXMBR": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Sixmilebridge",
+   "step_free_platforms": []
+  },
+  "TARA": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level access via Georges Quay entrance",
+   "lift_platforms": [
+    "*"
+   ],
+   "name": "Tara Street",
+   "step_free_platforms": []
+  },
+  "THRLS": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "1",
+    "2"
+   ],
+   "name": "Thurles",
+   "step_free_platforms": []
+  },
+  "THTWN": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Thomastown",
+   "step_free_platforms": []
+  },
+  "TIPRY": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Steep ramp from car park",
+   "lift_platforms": [],
+   "name": "Tipperary",
+   "step_free_platforms": []
+  },
+  "TMORE": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Tullamore",
+   "step_free_platforms": [
+    [
+     "1",
+     "Level to platform 1"
+    ]
+   ]
+  },
+  "TPMOR": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Templemore",
+   "step_free_platforms": []
+  },
+  "TRLEE": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Tralee (Casement)",
+   "step_free_platforms": []
+  },
+  "WBROK": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Woodbrook",
+   "step_free_platforms": []
+  },
+  "WFORD": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Waterford (Plunkett)",
+   "step_free_platforms": []
+  },
+  "WLAWN": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": null,
+   "lift_platforms": [],
+   "name": "Woodlawn",
+   "step_free_platforms": []
+  },
+  "WLOW": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Wicklow",
+   "step_free_platforms": []
+  },
+  "WPORT": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Westport",
+   "step_free_platforms": []
+  },
+  "WXFRD": {
+   "claims_lift": false,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level",
+   "lift_platforms": [],
+   "name": "Wexford (O Hanrahan)",
+   "step_free_platforms": []
+  }
+ },
+ "verdicts": [
+  {
+   "code": "ATHY",
+   "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed. The notice also names platform 1, which the page does not list a lift at.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "Lifts at platforms 1 and 2 are currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "BBRHY",
+   "detail": "Platform 1 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1"
+   ],
+   "state": "lost",
+   "text": "Lift at platform 1 is currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "BSLOE",
+   "detail": "Platform 1 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1"
+   ],
+   "state": "lost",
+   "text": "The lift at platform 1 is out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "CLDKN",
+   "detail": "Platform 4 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "4"
+   ],
+   "state": "lost",
+   "text": "The lift at platform 4 is currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "CLSLA",
+   "detail": "The notice names no platform, and Irish Rail's page puts a lift on the way to every platform here, so no platform had step-free access.",
+   "kind": "lift",
+   "leg": null,
+   "platforms": [],
+   "state": "lost",
+   "text": "The lift on P2 is out of service currently. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "CNLLY",
+   "detail": "An escalator is moving stairs, so it was not a step-free route to begin with and its being out did not remove one. Anyone who finds a flight of stairs hard, or has a buggy, a suitcase or a stick, did lose a way up. Irish Rail's page puts a lift on the way into the station as well: \"Escalator, lift or stairs from Amiens Street and from LUAS stop\". Irish Rail's page names a level way into the station: \"Level access from car park\".",
+   "kind": "escalator",
+   "leg": "entrance",
+   "platforms": [],
+   "state": "escalator",
+   "text": "The Escalator at the main concourse is currently out of service. Iarnród Éireann Irish Rail apologise for any inconvenience caused."
+  },
+  {
+   "code": "CRLOW",
+   "detail": "The notice names platform 1, which Irish Rail's page for Carlow does not list a lift at.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1"
+   ],
+   "state": "unknown",
+   "text": "The lift on platform 1 is currently out of order. Iarnród Éireann apologise or any inconvenience caused."
+  },
+  {
+   "code": "CTARF",
+   "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "Lifts at platform 2 is currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "DCKLS",
+   "detail": "The notice names no platform, and Irish Rail's page puts a lift on the way to every platform here, so no platform had step-free access.",
+   "kind": "lift",
+   "leg": null,
+   "platforms": [],
+   "state": "lost",
+   "text": "The lift is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "DLERY",
+   "detail": "Platform 1 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed. Platform 3 needed no lift, so it kept step-free access: \"Level to Platform 3\".",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1"
+   ],
+   "state": "lost",
+   "text": "The lift at platform 1 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "GCDK",
+   "detail": "Platform 3 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "3"
+   ],
+   "state": "lost",
+   "text": "The lift at platform 3 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "GSTNS",
+   "detail": "Irish Rail's page for Greystones does not mention a lift, so which platforms this one serves is not recorded.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "unknown",
+   "text": "The lift on platform 2 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "GSTNS",
+   "detail": "Irish Rail's page for Greystones does not mention a lift, so which platforms this one serves is not recorded.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1",
+    "2"
+   ],
+   "state": "unknown",
+   "text": "The lifts at platform 1 and 2 are temporarily unavailable due to planned works. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "HWTHJ",
+   "detail": "Platform 1 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1"
+   ],
+   "state": "lost",
+   "text": "The lift on platform 1 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "HZLCH",
+   "detail": "Platforms 2, 3 are reached by lift, and Irish Rail's page names no other step-free way to them, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2",
+    "3"
+   ],
+   "state": "lost",
+   "text": "The lift to Platform 2 and 3 is currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "LMRKJ",
+   "detail": "Irish Rail's page for Limerick Junction does not mention a lift, so which platforms this one serves is not recorded.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1",
+    "4"
+   ],
+   "state": "unknown",
+   "text": "The lifts at platform 1 and 4 are temporarily unavailable due to planned works. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "MDLTN",
+   "detail": "Platforms 1, 2 are reached by lift, and Irish Rail's page names no other step-free way to them, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1",
+    "2"
+   ],
+   "state": "lost",
+   "text": "The lifts at platform 1 and 2 are temporarily unavailable due to planned works. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "MHIDE",
+   "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed. Platform 1 needed no lift, so it kept step-free access: \"Level to platform 1 (City Centre)\".",
+   "kind": "lift",
+   "leg": null,
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "The lifts at Malahide Station are currently out of service. Iarnród Éireann Irish Rail apologises for the inconvenience caused."
+  },
+  {
+   "code": "PERSE",
+   "detail": "An escalator is moving stairs, so it was not a step-free route to begin with and its being out did not remove one. Anyone who finds a flight of stairs hard, or has a buggy, a suitcase or a stick, did lose a way up. Irish Rail's page puts a lift on the way to platform 2 as well: \"Lift or stairs to platform 2 (southbound)\".",
+   "kind": "escalator",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "escalator",
+   "text": "The escalator at platform 2 is temporarily unavailable due to planned works. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "PERSE",
+   "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed. Platform 1 needed no lift, so it kept step-free access: \"Ramp to platform 1 (City Centre and northbound)\".",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "The lift at platform 2 is temporarily unavailable due to planned works. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "PTLSE",
+   "detail": "The notice names platform 2, which Irish Rail's page for Portlaoise does not list a lift at.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "unknown",
+   "text": "The lift on platform 2 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "PTRTN",
+   "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed. Platform 1 needed no lift, so it kept step-free access: \"Level to platform 1\".",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "The lift on platform 2 at Portarlington is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "RLUSK",
+   "detail": "The notice names platform 2, which Irish Rail's page for Rush and Lusk does not list a lift at.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "unknown",
+   "text": "The lift on platform 2 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "SKRES",
+   "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed. The notice also names platform 1, which the page does not list a lift at.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "The lifts at platforms  1 and 2 are currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "TARA",
+   "detail": "An escalator is moving stairs, so it was not a step-free route to begin with and its being out did not remove one. Anyone who finds a flight of stairs hard, or has a buggy, a suitcase or a stick, did lose a way up. Irish Rail's page puts a lift on the way to platform 2 as well: \"Both platforms can be accessed by lifts, stairs or escalator\".",
+   "kind": "escalator",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "escalator",
+   "text": "The Escalator at platform 2 is currently out of service. Iarnród Éireann Irish Rail apologise for any inconvenience caused."
+  },
+  {
+   "code": "THRLS",
+   "detail": "Platforms 1, 2 are reached by lift, and Irish Rail's page names no other step-free way to them, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1",
+    "2"
+   ],
+   "state": "lost",
+   "text": "The lift on Platform 1 and 2 are out of service. Iarnród Éireann Irish Rail apologise for any inconvenience caused."
+  },
+  {
+   "code": "TMORE",
+   "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed. Platform 1 needed no lift, so it kept step-free access: \"Level to platform 1\".",
+   "kind": "lift",
+   "leg": null,
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "Lifts are temporarily unavailable due to planned works. Iarnród Éireann Irish Rail apologise for the inconvenience caused.<br>currently out of service."
+  }
+ ]
+}

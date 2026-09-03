@@ -198,7 +198,7 @@ def build(outages, now, until, facts=None):
     return data, by_station, months
 
 
-def case_record(o, facts=None):
+def case_record(o, facts=None, lift_listed_too=False):
     """One outage, as compact as it can be while staying readable in the file.
 
     The two durations are computed here, from the offset-aware instants, and
@@ -232,16 +232,37 @@ def case_record(o, facts=None):
         [[_short(when), head, text or ""] for when, head, text in o.updates],
         round((o.end - o.first_seen).total_seconds() / 3600.0, 4),
         lead,
-        _access(o, facts),
+        _access(o, facts, lift_listed_too),
     ]
 
 
-def _access(o, facts):
+def _access(o, facts, lift_listed_too=False):
     """[state, sentence] for one outage, or None when no snapshot is loaded."""
     if not facts:
         return None
-    result = facts.verdict(o.code, o.kind, o.text)
+    result = facts.verdict(o.code, o.kind, o.text, lift_listed_too)
     return [result.state, result.detail]
+
+
+def _overlaps(a, b):
+    """Were the two listed at the same time?
+
+    Half-open, or both still listed: a notice first seen at the last poll is
+    listed for zero minutes (`model.listed_in` has the same case), and the one
+    thing that puts it beside another notice is that both were up at that
+    poll. A lift whose close is dated to that poll was not.
+    """
+    return (a.first_seen < b.end and b.first_seen < a.end) or (a.ongoing and b.ongoing)
+
+
+def lift_listed_too(o, outages):
+    """Did a lift notice at this station overlap this outage?
+
+    Station-wide rather than per platform: coarser only withholds a claim.
+    """
+    return o.kind == "escalator" and any(
+        x.kind == "lift" and _overlaps(x, o) for x in outages
+    )
 
 
 def shard(outages, months, until, facts=None):
@@ -252,12 +273,16 @@ def shard(outages, months, until, facts=None):
     under a month and match the headline.
     """
     windows = [(ym,) + model.observed_window(ym, until) for ym in months]
+    # Computed here because this is the one place that holds all of a
+    # station's outages: an escalator sentence must not quote a lift the row
+    # above it shows was listed out at the same time.
     by_month = defaultdict(list)
     for o in sorted(outages, key=lambda o: (o.first_seen, o.id), reverse=True):
+        overlapped = lift_listed_too(o, outages)
         record = None
         for ym, lo, hi in windows:
             if model.listed_in(o, lo, hi):
-                record = case_record(o, facts) if record is None else record
+                record = case_record(o, facts, overlapped) if record is None else record
                 by_month[ym].append(record)
     return by_month
 
@@ -302,7 +327,7 @@ def summary_bits(first_seen, end, ongoing, start, listed_end, lead_days=None):
 ACCESS_LABEL = {
     "lost": "No step-free access",
     "alternative": "Another step-free way",
-    "escalator": "Not a step-free route",
+    "escalator": "A way up lost, not step-free access",
     "unknown": "Effect on step-free access unknown",
 }
 
@@ -333,9 +358,9 @@ def _access_html(code, data, facts):
     has read one wrong. That has already happened twice - see
     notes/station-access.md.
 
-    Both legs of the journey, because they are different fields and only one of
-    them is derived from. `ticketOfficeAccess` is how you reach the concourse
-    from the street, which is where Connolly's escalator is and where
+    Both legs of the journey, because they are different fields and a notice is
+    read against the one it names. `ticketOfficeAccess` is how you reach the
+    concourse from the street, which is where Connolly's escalator is and where
     `platformAccess` says nothing at all.
     """
     station = facts.station(code) if facts else None
@@ -369,8 +394,8 @@ def _access_html(code, data, facts):
         '<div class="card access"><h2>Getting to the platforms</h2>'
         f"{blocks}{earned}"
         f'<p class="src">{html.escape(ACCESS_CAVEAT)} '
-        "What this page says about step-free access is worked out from the second "
-        "list; the first is shown because a lift or escalator can be on either leg. "
+        "A notice that names a platform is read against the second list, and one "
+        "that names the concourse or entrance against the first. "
         f'<a href="{report}">{html.escape(CORRECTION_PROMPT)}</a></p></div>'
     )
 

@@ -12,14 +12,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import sqlite3
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
 from lift_status.store import DB_FILENAME, DEFAULT_DATA_DIR
 
-from . import fetch, model, snapshot
+from . import fetch, golden, model, snapshot
 
 SNAPSHOT_DIR = snapshot.SNAPSHOT_DIR
 STATIONS_PREFIX = snapshot.STATIONS_PREFIX
@@ -73,39 +72,13 @@ def refresh(args):
     return 0
 
 
-def _notices(db_path):
-    """Every lift and escalator notice on record, for `report` to print.
-
-    Four fields: the station's location code; "lift" or "escalator", which
-    `classify` reads off the head; the head, which is the feed's own name for the
-    hand-written headline ("Tullamore - Lift out of order"); and the notice body
-    as the feed wrote it, which is the form `verdict` takes. `locationCodes[0]`
-    is the whole station, every lift notice naming exactly one.
-    """
-    from lift_site.model import classify
-
-    conn = sqlite3.connect(str(db_path))
-    try:
-        rows = conn.execute(
-            "SELECT location_codes, head, text_raw FROM messages ORDER BY head"
-        ).fetchall()
-    finally:
-        conn.close()
-    out = []
-    for codes, head, text in rows:
-        kind = classify(head)
-        if not kind:
-            continue
-        try:
-            listed = json.loads(codes)
-        except json.JSONDecodeError:
-            continue
-        if listed:
-            out.append((listed[0], kind, head, text))
-    return out
-
-
 def report(args):
+    """Every verdict beside the prose it was read from.
+
+    Prints the entrance prose too where the verdict read it: an escalator notice
+    or a lift notice that names the way in. It has no listings, so it never sets
+    `lift_listed_too`; that is the site build's knowledge, not the snapshot's.
+    """
     facts = snapshot.load(args.data_dir)
     if not facts:
         print(f"no station snapshot under {Path(args.data_dir) / SNAPSHOT_DIR}\n"
@@ -127,11 +100,17 @@ def report(args):
     db_path = Path(args.data_dir) / DB_FILENAME
     if db_path.exists():
         print("--- what each notice on record means ---")
-        for code, kind, head, text in _notices(db_path):
+        for code, kind, head, text in golden.notices(db_path):
             station = stations.get(code)
             result = model.verdict(station, kind, text)
             print(f"\n  {code:6} {head}")
             print(f"    prose:   {(station.platform_access if station else '(no station)')[:150]}")
+            if station and (kind == "escalator" or result.leg == model.ENTRANCE_LEG):
+                entry = " / ".join(
+                    line for line in station.ticket_office_access.split("\n") if line.strip()
+                )
+                print(f"    entry:   {entry[:150]}")
+                print(f"    leg:     {result.leg or 'not named'}")
             print(f"    notice:  {model.plain(text)[:150]}")
             print(f"    -> {result.state.upper()}: {result.detail}")
 
@@ -145,6 +124,29 @@ def report(args):
                 ", ".join(sorted(station.lift_platforms)) or "none named")
             print(f"\n  {code:6} {station.name}  (lift at: {serves})")
             print(f"    {station.platform_access[:200]}")
+    return 0
+
+
+def write_golden(args):
+    """Regenerate tests/fixtures/access-golden.json from the checked-out corpus."""
+    facts = snapshot.load(args.data_dir)
+    db_path = Path(args.data_dir) / DB_FILENAME
+    if not facts or not db_path.exists():
+        print("golden needs both a station snapshot and a rebuilt database", file=sys.stderr)
+        return 1
+    document = golden.build(facts, golden.notices(db_path))
+    before = json.loads(golden.PATH.read_text(encoding="utf-8")) if golden.PATH.exists() else {}
+    golden.PATH.write_text(golden.dumps(document), encoding="utf-8")
+    changes = golden.differences(before, document)
+    added = golden.new_notices(before, document)
+    print(f"wrote {golden.PATH}")
+    print(f"{len(document['stations'])} stations, {len(document['verdicts'])} notices "
+          f"({len(added)} newly pinned), {len(changes)} line(s) changed"
+          + (":" if changes or added else ""))
+    for line in changes:
+        print(f"  {line}")
+    for v in added:
+        print(f"  new notice {v['code']} {v['kind']}: {v['state']}")
     return 0
 
 
@@ -163,6 +165,11 @@ def main(argv=None) -> int:
     report_cmd.add_argument("--all", action="store_true",
                             help="also print every station that claims a lift")
     report_cmd.set_defaults(run=report)
+
+    golden_cmd = sub.add_parser(
+        "golden", help="regenerate tests/fixtures/access-golden.json and print what moved"
+    )
+    golden_cmd.set_defaults(run=write_golden)
 
     args = parser.parse_args(argv)
     return args.run(args)

@@ -64,7 +64,9 @@
 .acc { font-size: 12.5px; margin-top: 6px; padding: 6px 9px; border-radius: 6px; border-left: 3px solid; }
 .acc b { font-weight: 600; }
 .acc-lost { border-color: var(--critical); background: var(--grid); }
-.acc-alternative, .acc-escalator { border-color: var(--good); background: var(--grid); }
+.acc-alternative { border-color: var(--good); background: var(--grid); }
+/* Neither the red of a loss nor the green of a way round: a way up gone for some, step-free access for none. */
+.acc-escalator { border-color: var(--muted); background: var(--grid); }
 .acc-unknown { border-color: var(--cell-empty); background: var(--grid); color: var(--ink-2); }
 
 .card.access ul { margin: 0; padding-left: 18px; }
