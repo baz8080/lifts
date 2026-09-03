@@ -139,8 +139,10 @@ def report(args):
             print(f"\n  {code:6} {head}")
             print(f"    prose:   {(station.platform_access if station else '(no station)')[:150]}")
             if station and (kind == "escalator" or result.leg == model.ENTRANCE_LEG):
-                entry = " / ".join(station.ticket_office_access.split("\n"))
-                print(f"    entry:   {' '.join(entry.split())[:150]}")
+                entry = " / ".join(
+                    line for line in station.ticket_office_access.split("\n") if line.strip()
+                )
+                print(f"    entry:   {entry[:150]}")
                 print(f"    leg:     {result.leg or 'not named'}")
             print(f"    notice:  {model.plain(text)[:150]}")
             print(f"    -> {result.state.upper()}: {result.detail}")

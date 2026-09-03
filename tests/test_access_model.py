@@ -821,7 +821,18 @@ class ALiftOnTheWayIn(unittest.TestCase):
     def test_a_page_with_no_entrance_lift_is_unknown(self):
         result = model.verdict(station("ATHY"), "lift", "The lift at the entrance is out.")
         self.assertEqual((result.state, result.leg), ("unknown", "entrance"))
-        self.assertIn("names no lift there", result.detail)
+        self.assertIn("names no lift on the way in", result.detail)
+
+    def test_an_entrance_lift_named_on_the_platform_side_is_read_there(self):
+        # Pearse's way-in field names no lift; its platformAccess names lifts
+        # from the Pearse Street entrance. The page must not be reported as
+        # naming none, and the reading is the platform leg's, as before.
+        result = model.verdict(
+            station("PERSE"), "lift", "The lift from the Pearse Street entrance is out."
+        )
+        self.assertEqual((result.state, result.leg, result.platforms), ("lost", "entrance", ("2",)))
+        self.assertNotIn("names no lift", result.detail)
+        self.assertTrue(model.entrance_lift(station("PERSE")))
 
     def test_a_blank_entrance_field_is_unknown(self):
         result = model.verdict(station("HZLCH"), "lift", "The lift at the entrance is out.")
@@ -836,12 +847,19 @@ class ALiftOnTheWayIn(unittest.TestCase):
         self.assertEqual(result.state, "lost")
 
     def test_not_level_is_never_quoted_as_a_level_way_in(self):
-        kcool = station("DCKLS")._replace(
-            ticket_office_access="Lift to ticket office\n" + KCOOL_ENTRY
-        )
-        self.assertIsNone(model.entrance_step_free(kcool))
-        result = model.verdict(kcool, "lift", self.TEXT)
-        self.assertNotIn("needed no lift", result.detail)
+        for negated in (KCOOL_ENTRY, "No level access", "No ramp", "Level access not available"):
+            kcool = station("DCKLS")._replace(
+                ticket_office_access="Lift to ticket office\n" + negated
+            )
+            self.assertIsNone(model.entrance_step_free(kcool), negated)
+            result = model.verdict(kcool, "lift", self.TEXT)
+            self.assertNotIn("needed no lift", result.detail, negated)
+
+    def test_a_numbered_platform_is_not_a_negation(self):
+        # Carrigaloe and Dalkey write the label without a dot.
+        for sentence in ("Ramp to platform No 1 (for northbound routes and city centre)",
+                         "Via the main gate (top of ramp) to platform No 2 (Northbound)"):
+            self.assertEqual(model._level_sentences(sentence), (sentence,))
 
     def test_the_lift_call_boilerplate_is_not_an_entrance_lift(self):
         boiler = station("ATHY")._replace(
@@ -906,10 +924,36 @@ class WhoAnEscalatorOutageAffected(unittest.TestCase):
         # Its platform lift is on the other leg and says nothing about the way in.
         self.assertNotIn("platforms 6 and 7", result.detail)
 
-    def test_a_platform_with_no_lift_gets_the_level_line(self):
+    def test_a_level_platform_with_an_escalator_is_a_disagreement(self):
+        # A level platform has no level change for an escalator to make, so the
+        # page's level line is not quoted as a way round; the sources disagree.
         result = self.verdict("ATHY", "The escalator at platform 1 is out.")
-        self.assertIn('names a level way to platform 1: "Level to platform 1".', result.detail)
+        self.assertIn(
+            'names no lift to platform 1 and calls it level: "Level to platform 1", so the '
+            "notice and the page disagree about it.",
+            result.detail,
+        )
         self.assertNotIn("puts a lift", result.detail)
+        self.assertNotIn("names a level way", result.detail)
+
+    def test_the_lift_phrase_names_the_platforms_the_sentence_puts_a_lift_at(self):
+        result = self.verdict("ATHY", "The escalators at platforms 1 and 2 are out.")
+        self.assertIn('puts a lift on the way to platform 2 as well: "Lift to platform 2".',
+                      result.detail)
+        self.assertNotIn("platforms 1 and 2 as well", result.detail)
+        bare = self.verdict("PERSE", "The escalator to the platforms is out.")
+        self.assertIn("puts a lift on the way to platform 2 as well", bare.detail)
+        general = self.verdict("HZLCH", "The escalators at platforms 1 and 2 are out.")
+        self.assertIn("puts a lift on the way to platforms 1 and 2 as well", general.detail)
+
+    def test_pearses_entrance_lift_is_found_on_the_platform_side_of_the_page(self):
+        result = self.verdict("PERSE", "The escalator at the Pearse Street entrance is out.")
+        self.assertEqual(result.leg, "entrance")
+        self.assertIn(
+            'on the way into the station as well: "Lifts/stairs/Escalators from the Pearse '
+            'Street entrance".',
+            result.detail,
+        )
 
     def test_a_station_that_claims_no_lift_says_so(self):
         result = self.verdict("DRMOD", "The escalator at platform 2 is out.")
@@ -942,10 +986,12 @@ class WhoAnEscalatorOutageAffected(unittest.TestCase):
         )
         self.assertNotIn('"Lift or stairs', result.detail)
         self.assertIn(
-            "but a lift notice at this station overlapped this one, so that lift was out "
-            "for some or all of the time.",
+            "puts a lift on the way to platform 2 as well, though a lift notice at this "
+            "station overlapped this one.",
             result.detail,
         )
+        # Station-wide flag: it must not say which lift was out.
+        self.assertNotIn("was out", result.detail)
         entrance = self.verdict(
             "CNLLY", "The Escalator at the main concourse is out.", lift_listed_too=True
         )

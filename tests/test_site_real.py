@@ -245,9 +245,10 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
             result = self.facts.verdict(o.code, o.kind, o.text)
             if o.kind == "lift" and result.leg == access_model.ENTRANCE_LEG:
                 station = self.facts.station(o.code)
-                self.assertEqual(
-                    result.state == "lost", access_model.entrance_lift(station), o.head
-                )
+                if result.state == "lost":
+                    self.assertTrue(access_model.entrance_lift(station), o.head)
+                else:
+                    self.assertEqual(result.state, "unknown", o.head)
 
     def test_no_verdict_says_a_lift_remained(self):
         for o in self.outages:
@@ -256,8 +257,9 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
                 self.assertNotIn(phrase, detail, o.head)
 
     def test_the_overlap_flag_is_set_from_the_stations_own_rows(self):
-        # Zero overlaps on the corpus: Pearse's lift came down at the poll its
-        # escalator went up. The flag exists for the day that stops being true.
+        # Asserted against what the station's own rows say, not against today's
+        # count (zero: Pearse's lift came down at the poll its escalator went
+        # up), so the first real overlap turns the sentence and not this test.
         months = model.month_list(model.COLLECTION_START, max(self.now, self.until))
         by_code = {}
         for o in self.outages:
@@ -265,11 +267,17 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
         for code, outages in by_code.items():
             if not any(o.kind == "escalator" for o in outages):
                 continue
+            expected = {o.id: render.lift_listed_too(o, outages) for o in outages}
             by_month = render.shard(outages, months, self.until, self.facts)
             for rows in by_month.values():
                 for record in rows:
-                    if record[1] == "escalator":
-                        self.assertNotIn("overlapped this one", record[13][1], code)
+                    if record[1] != "escalator":
+                        continue
+                    detail = record[13][1]
+                    if expected[record[0]]:
+                        self.assertNotIn(' as well: "', detail, code)
+                    else:
+                        self.assertNotIn("overlapped this one", detail, code)
 
     def test_the_verdict_reaches_the_shard(self):
         months = model.month_list(model.COLLECTION_START, max(self.now, self.until))

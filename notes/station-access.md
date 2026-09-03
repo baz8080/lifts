@@ -383,9 +383,17 @@ is read as the page naming no lift there.
 
 Two shapes caught in the dry run. Kilcoole's field is the two words "Not level",
 which a filter that only looks for the word would quote as a level way in;
-`NOT_LEVEL` excludes it. Grand Canal Dock's lift sentence names platform 2 on
-its way to naming the lift, so the entrance picker takes the first lift sentence
-whatever platforms it mentions; there is one way in.
+`NEGATED` excludes any level or ramp sentence carrying "no" or "not", except a
+"No" before a number, which is how Carrigaloe and Dalkey label a platform. Grand Canal Dock's lift sentence names
+platform 2 on its way to naming the lift, so the entrance picker takes the first
+lift sentence whatever platforms it mentions; there is one way in.
+
+And one caught in review: Pearse's way-in field names no lift, but its
+`platformAccess` carries "Lifts/stairs/Escalators from the Pearse Street
+entrance". A notice naming that entrance must not be told the page names no
+lift there. `entrance_lift_sentence` reads both fields, and a lift notice whose
+entrance lift is named only on the platform side falls through to the platform
+reading, which is what it got before this change.
 
 ### A lift notice on the entrance leg
 
@@ -422,11 +430,15 @@ the way in:
 
 The lift sentence is picked specific-before-general, as `read_platform_access`
 reads the page, which is what keeps Pearse's summary "Via ramps, stairs,
-escalators, and lifts." out of the quote. A platform the page reaches without a
-lift gets its level line instead; a platform with neither gets "names no lift
-or level way to platform N, so nothing on it says there was another way up",
-and a station whose page claims no lift at all says so by name. That last is
-the only-powered-way-up shape, which no station has and
+escalators, and lifts." out of the quote, and the phrase names the platforms
+the quoted sentence puts a lift at rather than the notice's (Athy's "Lift to
+platform 2" beside a notice naming 1 and 2). A platform the page calls level is
+a disagreement, not a way round: a level platform has no level change for an
+escalator to make, so the sentence says the notice and the page disagree, the
+rule every other disagreement here follows. A platform with neither gets "names
+no lift or level way to platform N, so nothing on it says there was another way
+up", and a station whose page claims no lift at all says so by name. That last
+is the only-powered-way-up shape, which no station has and
 `tests/test_site_real.py` still guards for the grade. An unlocated escalator
 notice says the notice does not say where the escalator is.
 
@@ -440,12 +452,14 @@ A lift notice at the same station listed while the escalator was. Quoting "the
 page puts a lift on the way to platform 2 as well" under a row that shows that
 lift out would be the page contradicting itself, so `render.shard`, the one
 place that holds all of a station's outages, sets `lift_listed_too` and the
-sentence becomes "..., but a lift notice at this station overlapped this one,
-so that lift was out for some or all of the time". Half-open intervals: Pearse's
+sentence becomes "..., though a lift notice at this station overlapped this
+one". It says no more than that: the flag is station-wide, so which lift was out
+is not established and the sentence does not say. Half-open intervals, with
+`listed_in`'s one exception for a notice first seen at the last poll: Pearse's
 lift came down at the poll its escalator went up (13 August, 10:30Z), which is
-touching, not overlapping, and there are zero overlaps on the corpus. Station-
-wide rather than per platform, because coarser only ever withholds a claim.
-`report` has no listings and never sets it.
+touching, not overlapping, and there are zero overlaps on the corpus. The
+real-corpus test asserts the flag against the station's own rows, not against
+that count. `report` has no listings and never sets it.
 
 ### On the page
 

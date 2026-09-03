@@ -715,6 +715,20 @@ class TestTheOverlapGuard(SiteModelCase):
         self.assertNotIn("overlapped this one", sentence)
         self.assertIn('"Lift or stairs to platforms 6 and 7"', sentence)
 
+    def test_a_notice_first_seen_at_the_last_poll_overlaps_what_was_up(self):
+        # Zero minutes listed at the horizon: first_seen, end and the horizon
+        # coincide, and a half-open test would call it disjoint from the lift
+        # listed right beside it. listed_in has the same carve-out.
+        the_lift = lift(text="The lift at platform 6 is out of service.", **self.STATION)
+        self.poll(T0, [the_lift])
+        self.poll(T0 + timedelta(hours=1), [the_lift, self._escalator()])
+        self.assertIn("overlapped this one", self._escalator_sentence())
+        # And the mirror: the lift is the one first seen at the last poll.
+        self.setUp()
+        self.poll(T0, [self._escalator()])
+        self.poll(T0 + timedelta(hours=1), [self._escalator(), the_lift])
+        self.assertIn("overlapped this one", self._escalator_sentence())
+
     def test_a_lift_at_another_station_is_not_an_overlap(self):
         both = [lift(), self._escalator()]
         self.poll(T0, both)

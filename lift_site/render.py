@@ -244,6 +244,31 @@ def _access(o, facts, lift_listed_too=False):
     return [result.state, result.detail]
 
 
+def _overlaps(a, b):
+    """Were the two listed at the same time?
+
+    Half-open, with `model.listed_in`'s one exception: a notice first seen at
+    the last poll is listed for zero minutes, and it was up beside whatever else
+    was up at that poll.
+    """
+    if a.first_seen < b.end and b.first_seen < a.end:
+        return True
+    return any(
+        x.ongoing and x.first_seen == x.end and y.first_seen <= x.end <= y.end
+        for x, y in ((a, b), (b, a))
+    )
+
+
+def lift_listed_too(o, outages):
+    """Did a lift notice at this station overlap this outage?
+
+    Station-wide rather than per platform: coarser only withholds a claim.
+    """
+    return o.kind == "escalator" and any(
+        x.kind == "lift" and _overlaps(x, o) for x in outages
+    )
+
+
 def shard(outages, months, until, facts=None):
     """Every outage at one station, grouped by month.
 
@@ -254,15 +279,10 @@ def shard(outages, months, until, facts=None):
     windows = [(ym,) + model.observed_window(ym, until) for ym in months]
     # Computed here because this is the one place that holds all of a
     # station's outages: an escalator sentence must not quote a lift the row
-    # above it shows was listed out at the same time. Half-open, so a lift that
-    # came down at the poll the escalator went up (Pearse, 13 August) is not an
-    # overlap. Station-wide rather than per platform: coarser only withholds.
-    lifts = [x for x in outages if x.kind == "lift"]
+    # above it shows was listed out at the same time.
     by_month = defaultdict(list)
     for o in sorted(outages, key=lambda o: (o.first_seen, o.id), reverse=True):
-        overlapped = o.kind == "escalator" and any(
-            x.first_seen < o.end and o.first_seen < x.end for x in lifts
-        )
+        overlapped = lift_listed_too(o, outages)
         record = None
         for ym, lo, hi in windows:
             if model.listed_in(o, lo, hi):
