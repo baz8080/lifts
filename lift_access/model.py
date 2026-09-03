@@ -71,7 +71,7 @@ SAME_KIND = {"lift": LIFT, "escalator": ESCALATOR}
 # never a redirection: "use the stairs as the lift is out of service" names both.
 # Not after "No.", which is a platform label (Athlone's "platforms No. 2 and 3")
 # and not the end of a sentence.
-SENTENCE = re.compile(r"(?<=[.!;])(?<![Nn]o\.)\s+|\n")
+SENTENCE = re.compile(r"(?<=[.!;])(?<!\b[Nn]o\.)\s+|\n")
 REDIRECTION = re.compile(
     r"\b(?:use|using|via|take|taking)\s+(?:the\s+|a\s+|our\s+)?(?:lifts?|escalators?)\b",
     re.IGNORECASE,
@@ -383,7 +383,11 @@ def entrance_lift_sentence(station):
     if quoted:
         return quoted
     for sentence in _sentences(station.platform_access):
-        if LIFT.search(sentence) and ENTRANCE.search(sentence) and not DENIES_LIFT.search(sentence):
+        if (
+            LIFT.search(sentence)
+            and not DENIES_LIFT.search(sentence)
+            and leg_named(sentence) == ENTRANCE_LEG
+        ):
             return sentence
     return None
 
@@ -438,18 +442,22 @@ def _still_note(station, serves, platforms):
     if not still:
         return ""
     labels = [p for p, _ in still]
-    quoted = []
-    for _, sentence in still:
-        if sentence not in quoted:
-            quoted.append(sentence)
     named = _join(labels)
     subject = (
         f"Platform {named} needed no lift, so it"
         if len(labels) == 1
         else f"Platforms {named} needed no lift, so they"
     )
-    sources = " and ".join(f'"{sentence}"' for sentence in quoted)
-    return f" {subject} kept step-free access: {sources}."
+    return f" {subject} kept step-free access: {_quoted(s for _, s in still)}."
+
+
+def _quoted(sentences):
+    """'"a" and "b"', each sentence once however many platforms it covers."""
+    unique = []
+    for sentence in sentences:
+        if sentence not in unique:
+            unique.append(sentence)
+    return " and ".join(f'"{sentence}"' for sentence in unique)
 
 
 def _join(labels):
@@ -501,7 +509,10 @@ def _escalator_verdict(station, named, leg, lift_listed_too):
                 if p in named and p not in serves
             ]
             level_platforms = {p for p, _ in level}
-            lift_line = None
+            # Every named platform gets one of three sentences: the lift the page
+            # puts there, the level line it disagrees with, or that it has
+            # neither. `covered` is what the first two accounted for.
+            covered = set(level_platforms)
             if lift:
                 # Phrased from the platforms the quoted sentence names, not the
                 # notice's: Athy's "Lift to platform 2" beside a notice naming 1
@@ -514,31 +525,32 @@ def _escalator_verdict(station, named, leg, lift_listed_too):
                 else:
                     at = tuple(p for p in named if p not in level_platforms)
                 if at or not named:
-                    lift_line = (
+                    covered.update(at)
+                    parts.append(
                         f"Irish Rail's page puts a lift on the way to {_platform_phrase(at)} "
                         "as well" + (overlapped if lift_listed_too else f': "{lift}".')
                     )
-            if lift_line:
-                parts.append(lift_line)
             if level:
                 at = _platform_phrase(tuple(p for p, _ in level))
                 it = "it" if len(level) == 1 else "them"
                 parts.append(
-                    f"Irish Rail's page calls {at} level: "
-                    + " and ".join(f'"{sentence}"' for _, sentence in level)
-                    + f", so the notice and the page disagree about {it}."
+                    f"Irish Rail's page calls {at} level: {_quoted(s for _, s in level)}, "
+                    f"so the notice and the page disagree about {it}."
                 )
-            if not lift_line and not level and not station.claims_lift:
-                parts.append(
-                    f"Irish Rail's page names no lift at {station.name}"
-                    + (f" and no level way to {where}" if named else "")
-                    + ", so nothing on it says there was another way up."
-                )
-            elif not lift_line and not level:
-                parts.append(
-                    f"Irish Rail's page names no lift or level way to {where}, so nothing "
-                    "on it says there was another way up."
-                )
+            silent = tuple(p for p in named if p not in covered)
+            if silent or (not named and len(parts) == 1):
+                where = _platform_phrase(silent)
+                if station.claims_lift:
+                    parts.append(
+                        f"Irish Rail's page names no lift or level way to {where}, so "
+                        "nothing on it says there was another way up."
+                    )
+                else:
+                    parts.append(
+                        f"Irish Rail's page names no lift at {station.name}"
+                        + (f" and no level way to {where}" if named else "")
+                        + ", so nothing on it says there was another way up."
+                    )
         elif leg == ENTRANCE_LEG:
             lift = entrance_lift_sentence(station)
             level = entrance_step_free(station)
@@ -571,20 +583,30 @@ def _escalator_verdict(station, named, leg, lift_listed_too):
 def _entrance_verdict(station, named):
     """A lift notice that puts the lift on the way in, read against that leg.
 
-    Four pages put a lift there (Connolly, Clondalkin, Docklands, Grand Canal
-    Dock). Clondalkin's "Level or via lift" is read as a loss like Hazelhatch's
-    "lifts and ramps": the module does not parse connectives, and the quote lets
-    a reader see the page's own words.
+    Five pages put a lift there (Connolly, Clondalkin, Docklands, Grand Canal
+    Dock in ticketOfficeAccess; Pearse in platformAccess). Clondalkin's "Level
+    or via lift" is read as a loss like Hazelhatch's "lifts and ramps": the
+    module does not parse connectives, and the quote lets a reader see the
+    page's own words.
 
-    The lift may be named on either side of the page: Pearse's way-in field says
-    "Level, through main entrance to the booking hall" and its platformAccess
-    "Lifts/stairs/Escalators from the Pearse Street entrance". Reading only the
-    first reported a lift the page names as one it does not; reading the notice
-    on the platform leg instead published the ramp platform as kept, from a
-    booking hall the notice's lift may be the way to.
+    Pearse's way-in field says "Level, through main entrance to the booking
+    hall" and its platformAccess "Lifts/stairs/Escalators from the Pearse Street
+    entrance". Reading only the first reported a lift the page names as one it
+    does not; reading the notice on the platform leg instead published the ramp
+    platform as kept, from a booking hall the notice's lift may be the way to.
+
+    Returns None, for the caller to read the notice on the platform leg, only
+    where the page's one lift sentence with an entrance word also names a
+    platform ("Lift from the concourse to platform 2"): the page itself puts
+    that lift on the platform leg, and the platform reading is the right one.
     """
     entry = station.ticket_office_access or ""
     quoted = entrance_lift_sentence(station)
+    if not quoted and any(
+        LIFT.search(s) and ENTRANCE.search(s) and not DENIES_LIFT.search(s)
+        for s in _sentences(station.platform_access)
+    ):
+        return None
     if quoted:
         detail = (
             "The notice puts the lift on the way into the station, and Irish Rail's "
@@ -654,7 +676,9 @@ def _verdict(station, kind, text, leg, lift_listed_too):
     # Before `has_lift`, which reads the platform leg: a page can put a lift on
     # the way in and claim none to the platforms.
     if leg == ENTRANCE_LEG:
-        return _entrance_verdict(station, named)
+        result = _entrance_verdict(station, named)
+        if result is not None:
+            return result
 
     if has_lift(station) != "yes":
         return _unknown(

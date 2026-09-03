@@ -870,6 +870,25 @@ class ALiftOnTheWayIn(unittest.TestCase):
             self.assertEqual(model._level_sentences(sentence), (sentence,))
         self.assertEqual(model._sentences("Ramp to platform 1. No lift to platform 2."),
                          ["Ramp to platform 1", "No lift to platform 2"])
+        # Only the label: a word that happens to end in "no." still ends a sentence.
+        self.assertEqual(model._sentences("Access via the casino. Lift to platform 2."),
+                         ["Access via the casino", "Lift to platform 2"])
+
+    def test_a_concourse_lift_the_page_puts_on_the_platform_leg_is_read_there(self):
+        # The page's own sentence names the platform, so the platform reading
+        # is the right one: platform 2 lost, platform 1 kept.
+        prose = "Level to platform 1\nLift from the concourse to platform 2"
+        lift_platforms, claims, denies = model.read_platform_access(prose)
+        st = station("ATHY")._replace(
+            platform_access=prose, lift_platforms=lift_platforms,
+            claims_lift=claims, denies_lift=denies,
+        )
+        self.assertIsNone(model.entrance_lift_sentence(st))
+        result = model.verdict(st, "lift", "The lift at the concourse is out of service.")
+        self.assertEqual((result.state, result.leg, result.platforms), ("lost", "entrance", ("2",)))
+        self.assertIn("Platform 2 is reached by lift", result.detail)
+        # Pearse's entrance sentence names no platform and stays an entrance lift.
+        self.assertIsNotNone(model.entrance_lift_sentence(station("PERSE")))
 
     def test_the_lift_call_boilerplate_is_not_an_entrance_lift(self):
         boiler = station("ATHY")._replace(
@@ -995,6 +1014,30 @@ class WhoAnEscalatorOutageAffected(unittest.TestCase):
         self.assertIsNone(result.leg)
         self.assertIn("does not say where the escalator is", result.detail)
         self.assertNotIn("puts a lift", result.detail)
+
+    def test_every_named_platform_is_accounted_for(self):
+        # Greystones: platform 1 level, platform 2 footbridge only, no lift
+        # claimed. A notice naming both must not go quiet about platform 2
+        # because platform 1 had something to say.
+        result = self.verdict("GSTNS", "The escalators at platforms 1 and 2 are out.")
+        self.assertIn('calls platform 1 level: "Level to platform 1 (northbound)"', result.detail)
+        self.assertIn(
+            f"names no lift at {station('GSTNS').name} and no level way to platform 2",
+            result.detail,
+        )
+        # Athy claims a lift: the silent platform gets the other wording.
+        result = self.verdict("ATHY", "The escalators at platforms 1 and 3 are out.")
+        self.assertIn("calls platform 1 level", result.detail)
+        self.assertIn("names no lift or level way to platform 3", result.detail)
+
+    def test_one_level_sentence_is_quoted_once_for_many_platforms(self):
+        result = self.verdict("BRAY", "The escalators at platforms 1 and 2 are out.")
+        self.assertIn(
+            'calls platforms 1 and 2 level: "Level to platform 1, 2 & 3", so the notice and '
+            "the page disagree about them.",
+            result.detail,
+        )
+        self.assertEqual(result.detail.count('"Level to platform 1, 2 & 3"'), 1)
 
     def test_a_missing_station_gets_the_deduction_alone(self):
         result = model.verdict(None, "escalator", "The escalator at platform 2 is out.")

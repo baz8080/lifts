@@ -400,7 +400,9 @@ lift there, so `entrance_lift_sentence` reads both fields. The first fix sent
 such a notice to the platform reading instead, which published "Platform 1
 needed no lift ... Ramp to platform 1" for a lift that may be the way to the
 booking hall the ramp starts from. It is an entrance loss quoting the sentence,
-whichever field holds it.
+whichever field holds it. The one shape still read on the platform leg is a
+page whose entrance-word lift sentence names a platform ("Lift from the
+concourse to platform 2"): the page itself puts that lift on the platform leg.
 
 ### A lift notice on the entrance leg
 
@@ -444,7 +446,9 @@ a disagreement, not a way round: a level platform has no level change for an
 escalator to make, so the sentence says the notice and the page disagree, the
 rule every other disagreement here follows, and it says so even beside a
 general lift claim (Bray's "Use the lift or stairs" is not put on the way to
-the platforms the same page calls level). A platform with neither gets "names
+the platforms the same page calls level). Every platform the notice names gets
+one of the three sentences, so a notice naming a level platform and a bare one
+says both. A platform with neither gets "names
 no lift or level way to platform N, so nothing on it says there was another way
 up", and a station whose page claims no lift at all says so by name. That last
 is the only-powered-way-up shape, which no station has and
