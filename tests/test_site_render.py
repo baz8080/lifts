@@ -62,10 +62,11 @@ class TestWrite(SiteModelCase):
         esc = d["stats"]["CNLLY"]["2026-08"]
         self.assertEqual(len(esc), 6)
         self.assertEqual(len(esc[5]), 31)
-        # Connolly's notice is the escalator's, so the lift bar stays clear -
-        # but the grade counts both kinds, so it is not a clean 100%.
+        # Connolly's notice is the escalator's: the lift bar stays clear and
+        # the grade is a clean 100%, the escalator's days being on its own bar
+        # and off the total.
         self.assertEqual(set(esc[0]) - set("89"), {"0"})
-        self.assertLess(esc[4], 100)
+        self.assertEqual(esc[4], 100)
 
     def test_a_shard_carries_every_outage_at_the_station_and_no_other(self):
         text = (self.site / "h" / "ATHY.js").read_text(encoding="utf-8")
@@ -390,6 +391,9 @@ class TestLegend(unittest.TestCase):
             # grade, and a colour key to a colour nothing else uses said nothing
             self.assertIn(f'class="gradechip g-{letter}"', render.GRADE_SPANS)
             self.assertIn(f">{letter}</span>", render.GRADE_SPANS)
+        # The key names exactly what counts: the escalator bar is shown, not graded.
+        self.assertIn("<span>Lift availability</span>", render.GRADE_SPANS)
+        self.assertNotIn("escalator", render.GRADE_SPANS.lower())
 
     def test_the_grade_key_does_not_promise_an_empty_bar(self):
         """A is 100% of the days that counted. A planned-works notice inside its

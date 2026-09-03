@@ -262,6 +262,9 @@ lives here instead. And the Pearse example at the end of this section is stale
 - Pearse now grades F / 22% on its escalator, and Tullamore is the station
 that carries an A over planned-works cells.
 
+**Amended again 2026-09-03.** The number is lift notices alone once more, and
+the key says so; see "The grade is lift availability" at the end of this file.
+
 "5 days listed" was a raw count: it says nothing about whether that is bad,
 and a 31-day month and a 20-day partial one are not comparable by it. The
 number on a row is now the share of the days watched on which no lift notice
@@ -362,6 +365,10 @@ the overview, because "a notice up right now" is the first sort key.
 **Reversed 2026-08-29.** See "An escalator out is a day the station was short
 of a way up" below: both kinds count now, and only the bars stay split.
 
+**Reinstated 2026-09-03.** The lifts-only rule stands again, with the grade
+named for what it counts; see "The grade is lift availability" at the end of
+this file.
+
 Rejected: labelling the two strips on an overview row. The label column
 shortened that one station's bar and knocked its days out of line with every
 other row's. The labels stay on the drill-down, where the bars are tall.
@@ -411,6 +418,10 @@ case against it was Connolly: an escalator listed on 17 and 18 August, two
 green **A / 100% available** chip on the row above them. The grade
 contradicted the bar underneath it, and no reader was going to resolve that in
 the site's favour.
+
+**Reversed 2026-09-03.** See "The grade is lift availability" at the end of
+this file. The body below stands: its account of what the grade can and cannot
+claim is still what the new section leans on.
 
 **The grade is not step-free-access availability, and this note is the place
 that says so.** Wheelchair users cannot use an escalator - every operator
@@ -702,3 +713,99 @@ along, and works that blink off the feed for an afternoon cannot farm a new
 grace week by doing it. This is the same reasoning `merge_edits` already rests
 on - works reissued every few days are still works that ran for a month - so
 the two now say it the same way.
+
+## The grade is lift availability, and an escalator notice stops knocking - 2026-09-03
+
+The corpus is 26 days (8 August to 3 September 2026, 1,216 runs, horizon
+05:00Z on the 3rd), 32 outages across 25 stations, of which four are escalator
+notices at three stations: Pearse twice, Connolly, and Tara Street since 2
+September. All three stations claim a lift on their irishrail.ie page.
+
+Issue #32. This reverses "An escalator out is a day the station was short of a
+way up" above and reinstates the rule under "One bar per kind": the grade is
+the lift bar's alone.
+
+### The chip and the sentence disagreed
+
+Pearse's page for August carried an F on the chip and, on the escalator outage
+under it, "an escalator is moving stairs, so it was not a step-free route to
+begin with and its being out did not remove one". Both true. The explainer
+said "no lift and no escalator" and was accurate too. But the chip is what a
+reader takes in, and one letter was answering two questions for two
+populations: a wheelchair user read Pearse's F as a bad month for them, when
+their lift was out for five days inside the works grace and the F was the
+escalator's alone.
+
+### One condition, and a name
+
+`station_month` collects `against` from lift days only. The escalator keeps
+its strip, its colours and its count on the tiles; it just paints nothing on
+the letter. `national_month` goes through `station_month`, so the headline
+follows.
+
+The key reads "Lift availability", not "step-free availability", which the
+issue proposed. The grade counts notices, not access: a lift out at Raheny or
+Cork still knocks it though Irish Rail's page names a ramp round that lift, and
+the six of 24 verdicts that come back `unknown` knock it too, because the safe
+direction is to count them. A name that promised step-free would be claiming
+what `lift_access` is at pains not to.
+
+### Why the 2026-08-29 objection no longer holds
+
+What killed lifts-only the first time was Connolly reading A / 100% directly
+above two red cells, with nothing on the row saying the red cells were an
+escalator's. Since "The bars say which kind" (2026-09-01) every bar carries its
+glyph in a gutter the same width on every row, the kinds are their own legend
+key, and the grade key beside the chip says what is graded. Red escalator cells
+under a green lift chip now read as two facts about two machines rather than
+one contradiction.
+
+The overview sort is unchanged: a station with any notice up leads, then the
+least available. Tara Street sits at the top today with an A beside its red
+escalator strip, which is the correct shape for a station whose lift is fine
+and whose escalator is out.
+
+### The numbers
+
+| month | station | shipped | lifts only |
+|---|---|---|---|
+| August 2026 | Dublin Connolly | C, 91% | A, 100% |
+| August 2026 | Dublin Pearse | F, 20% | A, 100% |
+| August 2026 | national, 21 stations | 72% | 76% |
+| September so far | Tara Street | F, 33% | A, 100% |
+| September so far | national, 6 stations | 50% | 61% |
+
+The issue's own table read 21%, 67% and 70%; it was measured before the
+listings split of 2026-09-02, which moved Portlaoise, Thurles and Clondalkin.
+
+### Rejected
+
+- **A fractional weight for escalators.** Nothing to calibrate it against, and
+  the bands exist so a reader can reconstruct the number by counting days on
+  the bar. A coefficient makes the letter a number nobody can check.
+- **Two grades.** The most accurate, and it costs a second chip on every row
+  and a decision about which one sorts the overview, for a distinction the feed
+  has shown at three stations.
+- **Wording only.** The wording was already accurate and fixed nothing, because
+  the chip is what is read.
+- **A grade driven by the access verdict**, knocking only where `verdict` says
+  `lost`. The site builds with no station snapshot at all, six of 24 verdicts
+  are `unknown`, and the number would then move on a monthly scrape of prose
+  rather than on the feed.
+
+### The case that should knock: the only powered way up
+
+An escalator notice counts against a station's availability only where the
+escalator is the only powered way up, which on this network is a station whose
+Irish Rail page does not claim a lift. Stairs only is a real loss for the
+people an escalator serves: anyone who can manage a flight with difficulty, or
+has a buggy, a suitcase or a stick. No station in the corpus is of that shape;
+Pearse, Connolly and Tara Street all claim a lift. So the rule is written here
+and not coded. `tests/test_site_real.py` fails the day an escalator notice
+appears at a station whose page claims no lift, and that failure is the signal
+to build the rule in `station_month`, which will then need the station facts
+the site is built to run without. It is not a signal to loosen the test.
+
+Issue #33, saying who an escalator outage did affect, stays open, and it is
+what makes dropping escalators from the letter honest rather than a dodge: the
+group an escalator serves is off the grade and, for now, off the page.

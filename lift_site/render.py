@@ -582,7 +582,7 @@ GRADE_LABELS = (
     ("F", "under 50% available"),
 )
 
-GRADE_SPANS = "<span>Lift and escalator availability</span>" + "".join(
+GRADE_SPANS = "<span>Lift availability</span>" + "".join(
     f"<span>{_chip(letter, f'Grade {letter}')}{label}</span>"
     for letter, label in GRADE_LABELS
 )

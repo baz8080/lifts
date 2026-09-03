@@ -7,10 +7,10 @@ out for every day of every month whether a notice was listed.
 
 That is the whole measurement. The feed carries no magnitude - a notice is
 either listed or it is not - so a day cell says only that, and the grade counts
-those days: the share of the days watched on which nothing was listed. The words
-the site uses are "listed" and "no longer listed", never "fixed": a notice
-vanishing means Irish Rail took it down, which is usually but not provably the
-same thing.
+those days: the share of the days watched on which no lift notice was listed.
+The words the site uses are "listed" and "no longer listed", never "fixed": a
+notice vanishing means Irish Rail took it down, which is usually but not
+provably the same thing.
 
 Every interval measured here is the one the notice was *listed* for. The start
 date Irish Rail writes on a notice is shown but never measured: it routinely
@@ -482,10 +482,8 @@ def station_month(outages, ym, now, until):
     arithmetic and the filter live in one place. `now` decides only what is
     still in the future; everything measured ends at `until`.
 
-    Both kinds count towards the grade. They keep separate bars, because a
-    working lift must not be painted by a broken escalator, but a day is a day
-    the station was short of a way up: Connolly reading 100% over two days of
-    escalator outage was the grade disagreeing with the bar under it.
+    The grade is the lift bar's alone. An escalator notice paints its own bar
+    and counts nothing, because an escalator was never a step-free route.
     """
     lo, hi = observed_window(ym, until)
     month_lo = month_bounds(ym)[0]
@@ -493,7 +491,7 @@ def station_month(outages, ym, now, until):
     faults = planned = lifts = escalators = 0
     ongoing = False
     marks = {"lift": {}, "escalator": {}}
-    against = set()  # days, either kind, that count against availability
+    against = set()  # lift days that count against availability
 
     for o in outages:
         if not listed_in(o, lo, hi):
@@ -517,7 +515,7 @@ def station_month(outages, ym, now, until):
                 code = DAY_PLANNED_LONG if counts else DAY_PLANNED
             if DAY_SEVERITY[code] > DAY_SEVERITY.get(kind_marks.get(day), 0):
                 kind_marks[day] = code
-            if counts:
+            if counts and o.kind == "lift":
                 against.add(day)
 
     cells, observed = _cells(marks["lift"], month_lo, now, until)
