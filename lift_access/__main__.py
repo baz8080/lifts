@@ -171,11 +171,15 @@ def write_golden(args):
     before = json.loads(golden.PATH.read_text(encoding="utf-8")) if golden.PATH.exists() else {}
     golden.PATH.write_text(golden.dumps(document), encoding="utf-8")
     changes = golden.differences(before, document)
+    added = golden.new_notices(before, document)
     print(f"wrote {golden.PATH}")
-    print(f"{len(document['stations'])} stations, {len(document['verdicts'])} notices, "
-          f"{len(changes)} line(s) changed" + (":" if changes else ""))
+    print(f"{len(document['stations'])} stations, {len(document['verdicts'])} notices "
+          f"({len(added)} newly pinned), {len(changes)} line(s) changed"
+          + (":" if changes or added else ""))
     for line in changes:
         print(f"  {line}")
+    for v in added:
+        print(f"  new notice {v['code']} {v['kind']}: {v['state']}")
     return 0
 
 

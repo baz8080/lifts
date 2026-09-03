@@ -10,6 +10,11 @@ by an ad hoc version of this comparison and by nothing else in the suite.
 The file names the snapshot it was built from. A refreshed snapshot fails the
 test until the file is regenerated, which is the monthly report made mandatory:
 a reworded station page becomes a diff that has to be read before it lands.
+
+A notice the file has never seen is not a failure. The corpus gains one every
+few days and CI reads it at its head, so a guard that failed on new data would
+be red most of the time for reasons no PR caused. New notices are pinned at the
+next regeneration, and until then the other real-corpus tests cover them.
 """
 
 from __future__ import annotations
@@ -55,8 +60,16 @@ def build(facts, notices):
     }
 
 
+def _key(verdict):
+    return verdict["code"], verdict["kind"], verdict["text"]
+
+
 def differences(stored, current):
-    """Where two golden documents disagree, one line each, for a test message."""
+    """Where two golden documents disagree, one line each, for a test message.
+
+    A notice only `current` holds is not a disagreement: the file pins what the
+    derivation says about the notices it has, not the size of the corpus.
+    """
     out = []
     if stored.get("snapshot") != current.get("snapshot"):
         out.append(f"snapshot: {stored.get('snapshot')} -> {current.get('snapshot')}")
@@ -71,13 +84,12 @@ def differences(stored, current):
                 out.append(
                     f"station {code}: {field}: {before.get(field)!r} -> {after.get(field)!r}"
                 )
-    key = lambda v: (v["code"], v["kind"], v["text"])  # noqa: E731
-    old_verdicts = {key(v): v for v in stored.get("verdicts", [])}
-    new_verdicts = {key(v): v for v in current.get("verdicts", [])}
-    for k in sorted(set(old_verdicts) | set(new_verdicts)):
-        before, after = old_verdicts.get(k), new_verdicts.get(k)
-        if before is None or after is None:
-            out.append(f"notice {k[0]} {k[1]}: {'added' if before is None else 'dropped'}")
+    old_verdicts = {_key(v): v for v in stored.get("verdicts", [])}
+    new_verdicts = {_key(v): v for v in current.get("verdicts", [])}
+    for k in sorted(old_verdicts):
+        before, after = old_verdicts[k], new_verdicts.get(k)
+        if after is None:
+            out.append(f"notice {k[0]} {k[1]}: dropped")
             continue
         for field in ("state", "leg", "platforms", "detail"):
             if before.get(field) != after.get(field):
@@ -85,6 +97,12 @@ def differences(stored, current):
                     f"notice {k[0]} {k[1]}: {field}: {before.get(field)!r} -> {after.get(field)!r}"
                 )
     return out
+
+
+def new_notices(stored, current):
+    """The notices `current` holds that `stored` has not pinned yet."""
+    seen = {_key(v) for v in stored.get("verdicts", [])}
+    return [v for v in current.get("verdicts", []) if _key(v) not in seen]
 
 
 def dumps(document):

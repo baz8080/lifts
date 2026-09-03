@@ -563,6 +563,15 @@ is the monthly report made mandatory rather than advisory. Skipping on a
 snapshot mismatch was considered and rejected: the guard would be silently off
 from the first refresh nobody regenerated after.
 
+A new notice on the feed is the one thing the test lets through. The first
+version failed on any notice the file had not seen, and the corpus gained 21
+distinct texts in 26 days with CI reading `lifts-data` at its head, so every
+PR here would have gone red within days for nothing it did. A notice is pinned
+at the next regeneration; until then it is covered by the real-corpus checks
+that need no file (every quote on the page, no forbidden word, lost only where
+the page puts a lift). A notice that vanishes from the database still fails,
+because the logs are append-only and that can only mean a bad checkout.
+
 **What would raise reliability.** Ground truth, which no amount of parsing
 supplies: a dozen verdicts checked at the station, or against any source Irish
 Rail publishes beyond the page. Until then the site should keep saying, wherever
