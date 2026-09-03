@@ -17,6 +17,7 @@ uv run python -m lift_status --data-dir <dir> stats
 uv run python -m lift_site --data-dir <dir>             # build out/site/
 uv run python -m lift_access --data-dir <dir> refresh   # station facts (monthly, not on the Pi)
 uv run python -m lift_access --data-dir <dir> report    # every verdict beside its source prose
+uv run python -m lift_access --data-dir <dir> golden    # regenerate tests/fixtures/access-golden.json
 uv run --group dev ruff check
 uv run python -m unittest discover -s tests -t .
 ```
@@ -191,6 +192,13 @@ lift/escalator notice appears on the site exactly once, the shards add up to
 the headline, the horizon is the last successful run. If it fails, something
 moved in the model or in the feed - find out which before adjusting the model
 to make it pass.
+
+`tests/fixtures/access-golden.json` is every level line, entrance sentence and
+verdict the access derivation produces across the 152 stations and every notice
+on record, and a real-corpus test asserts the regeneration matches. A change to a
+regex or a sentence that moves one fails it; regenerate with `golden`, read the
+diff, commit it with the change. A refreshed snapshot merged in `lifts-data`
+fails it too, on purpose, until the diff is read and the file regenerated here.
 
 The 500 KB initial-load budget is printed by every build and asserted by the
 render tests. It holds because individual outages live in per-station shards

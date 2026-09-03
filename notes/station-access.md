@@ -502,6 +502,72 @@ Street would read as the entrance leg against a field that does not mention that
 entrance (the stairs-only line sits in `platformAccess`) and come out unknown.
 That is the safe direction.
 
+## How reliable this is, honestly - 2026-09-03
+
+Written after building the entrance leg, because the question came up and the
+answer belongs where the next reader will look. The short form: defensible as
+an annotation on an outage archive, with the safeguards below, and not as
+anything a traveller should act on.
+
+**Why it is defensible at all.** The alternative is not a better source but
+silence: every structured source is empty (§ Why scraping prose is the only
+option). A reading of the prose beats silence only if the error direction is
+controlled, and that is the whole design: default to "gone", say "unknown"
+freely, quote the sentence each claim rests on, carry the caveat and the
+correction link on every page that makes a derived claim, and keep the grade
+independent of all of it. A reader can falsify any verdict against the quoted
+words. Remove the quoting or the one-directional bias and it stops being
+defensible.
+
+**By class of sentence, on the corpus to 3 September (27 distinct notices).**
+
+- *"Step-free access was gone"* (18 of 27). The strongest part: one direct
+  sentence and one notice. Its failure mode is a wrong page, and the page has
+  already produced a typo (Rush and Lusk), a self-contradiction (Limerick
+  Junction) and an omission (Connolly's escalator). Six of 27 verdicts are
+  unknown for exactly that reason. That figure is honest, and it is also the
+  reliability ceiling of the source.
+- *"Platform 1 needed no lift"* and *"Level access from car park"*. Direct
+  statements, but "level" is Irish Rail's word. Nobody has checked one of
+  these against the station: distance, gates, opening hours, whether the route
+  is usable with a buggy in the rain. The correction link is the only feedback
+  channel and it has never fired.
+- *The escalator sentence's second half* (3 of 27). "The page puts a lift on
+  the way to platform 2 as well" is true of the page. What a reader infers is
+  that the lift worked. The overlap guard covers the one thing the site knows,
+  but the feed is not complete (notices appear and vanish in batches), so a
+  lift out that Irish Rail never posted is invisible. The site controls its
+  words, not the inference.
+- *The entrance leg* (0 lift notices, 1 escalator notice). Built from one real
+  example, on a field that is literally about reaching the ticket office; at
+  26 stations it says there is no office, so a sixth of the network is unknown
+  on that leg by construction. Treat it as untested machinery until a notice
+  exercises it.
+
+**What the code's own history says.** Three review passes on the day this was
+built found nine, six and five findings in about a thousand lines of this
+kind of logic, and one fix was itself a regression. Every rule tested against
+the corpus was later found to have a wording it had not seen ("platform No 1",
+"Not level", "No." mid-sentence). The unit tests mostly pin strings their
+author wrote; the checks that caught the real regressions compared the level
+lines and the report across all 152 stations against `main`, by hand. That
+comparison is now `tests/fixtures/access-golden.json` and a test, so a regex
+or a sentence that moves anything is a diff in the PR that moved it. Assume
+wording gaps remain: the corpus is 152 pages, 28 notices, three escalators.
+
+**The golden file's trade-off.** It lives here and not in `lifts-data`,
+because the regressions it guards are code changes and the regeneration must
+land in the same PR. So a refreshed snapshot merged in `lifts-data` turns this
+repository's CI red until someone regenerates the file and reads the diff. That
+is the monthly report made mandatory rather than advisory. Skipping on a
+snapshot mismatch was considered and rejected: the guard would be silently off
+from the first refresh nobody regenerated after.
+
+**What would raise reliability.** Ground truth, which no amount of parsing
+supplies: a dozen verdicts checked at the station, or against any source Irish
+Rail publishes beyond the page. Until then the site should keep saying, wherever
+it says anything derived, that it is a careful reading and not a survey.
+
 ## The sources, and the ones that are closed
 
 The three checks `accessible-routes.md` scoped are answered. They are struck

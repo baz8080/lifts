@@ -1,0 +1,91 @@
+"""Everything the derivation says about the checked-out corpus, as one file.
+
+`tests/fixtures/access-golden.json` is regenerated from the snapshot and the
+database, and a real-corpus test asserts the regeneration matches. The point is
+the diff: a change to a regex or a sentence that moves a verdict, or a level
+line, at any of the 152 stations shows up as a change to a tracked file in the
+same PR, where a reviewer reads it. Two such regressions in one day were caught
+by an ad hoc version of this comparison and by nothing else in the suite.
+
+The file names the snapshot it was built from. A refreshed snapshot fails the
+test until the file is regenerated, which is the monthly report made mandatory:
+a reworded station page becomes a diff that has to be read before it lands.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from . import model
+
+PATH = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "access-golden.json"
+
+
+def build(facts, notices):
+    """The derivation's output for every station and every distinct notice."""
+    stations = {}
+    for code in sorted(facts.stations):
+        station = facts.stations[code]
+        stations[code] = {
+            "name": station.name,
+            "lift_platforms": sorted(station.lift_platforms),
+            "claims_lift": station.claims_lift,
+            "denies_lift": station.denies_lift,
+            "step_free_platforms": [list(pair) for pair in model.step_free_platforms(station)],
+            "entrance_lift_sentence": model.entrance_lift_sentence(station),
+            "entrance_step_free": model.entrance_step_free(station),
+        }
+    verdicts = []
+    for code, kind, text in sorted({(code, kind, text) for code, kind, _, text in notices}):
+        result = facts.verdict(code, kind, text)
+        verdicts.append({
+            "code": code,
+            "kind": kind,
+            "text": text,
+            "state": result.state,
+            "leg": result.leg,
+            "platforms": list(result.platforms),
+            "detail": result.detail,
+        })
+    return {
+        "snapshot": facts.path.name if facts.path else None,
+        "stations": stations,
+        "verdicts": verdicts,
+    }
+
+
+def differences(stored, current):
+    """Where two golden documents disagree, one line each, for a test message."""
+    out = []
+    if stored.get("snapshot") != current.get("snapshot"):
+        out.append(f"snapshot: {stored.get('snapshot')} -> {current.get('snapshot')}")
+    old_stations, new_stations = stored.get("stations", {}), current.get("stations", {})
+    for code in sorted(set(old_stations) | set(new_stations)):
+        before, after = old_stations.get(code), new_stations.get(code)
+        if before is None or after is None:
+            out.append(f"station {code}: {'added' if before is None else 'dropped'}")
+            continue
+        for field in sorted(set(before) | set(after)):
+            if before.get(field) != after.get(field):
+                out.append(
+                    f"station {code}: {field}: {before.get(field)!r} -> {after.get(field)!r}"
+                )
+    key = lambda v: (v["code"], v["kind"], v["text"])  # noqa: E731
+    old_verdicts = {key(v): v for v in stored.get("verdicts", [])}
+    new_verdicts = {key(v): v for v in current.get("verdicts", [])}
+    for k in sorted(set(old_verdicts) | set(new_verdicts)):
+        before, after = old_verdicts.get(k), new_verdicts.get(k)
+        if before is None or after is None:
+            out.append(f"notice {k[0]} {k[1]}: {'added' if before is None else 'dropped'}")
+            continue
+        for field in ("state", "leg", "platforms", "detail"):
+            if before.get(field) != after.get(field):
+                out.append(
+                    f"notice {k[0]} {k[1]}: {field}: {before.get(field)!r} -> {after.get(field)!r}"
+                )
+    return out
+
+
+def dumps(document):
+    return json.dumps(document, indent=1, sort_keys=True, ensure_ascii=False) + "\n"

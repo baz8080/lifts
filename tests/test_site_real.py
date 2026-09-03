@@ -19,8 +19,9 @@ import unittest
 from datetime import UTC, datetime
 from pathlib import Path
 
-from lift_access import fetch, snapshot
+from lift_access import fetch, golden, snapshot
 from lift_access import model as access_model
+from lift_access.__main__ import _notices
 from lift_site import model, render
 from lift_status.store import DB_FILENAME
 
@@ -290,6 +291,23 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
                         self.assertNotIn(' as well: "', detail, code)
                     else:
                         self.assertNotIn("overlapped this one", detail, code)
+
+    def test_the_golden_file_is_what_the_derivation_says_today(self):
+        # Every level line, entrance sentence and verdict across the corpus, as
+        # a tracked file, so a regex or a sentence that moves one shows up as a
+        # diff in the PR that moved it. Two regressions on 2026-09-03 were
+        # caught by an ad hoc version of this and by nothing else here.
+        stored = json.loads(golden.PATH.read_text(encoding="utf-8"))
+        current = golden.build(self.facts, _notices(DB_PATH))
+        changes = golden.differences(stored, current)
+        self.assertEqual(
+            changes,
+            [],
+            "the derivation no longer matches tests/fixtures/access-golden.json. If the "
+            "change is intended (a code change, or a refreshed snapshot), regenerate with "
+            "`python -m lift_access --data-dir <data-dir> golden`, read the diff, and commit "
+            "it with the change:\n  " + "\n  ".join(changes),
+        )
 
     def test_the_verdict_reaches_the_shard(self):
         months = model.month_list(model.COLLECTION_START, max(self.now, self.until))

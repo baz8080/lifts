@@ -19,7 +19,7 @@ from pathlib import Path
 
 from lift_status.store import DB_FILENAME, DEFAULT_DATA_DIR
 
-from . import fetch, model, snapshot
+from . import fetch, golden, model, snapshot
 
 SNAPSHOT_DIR = snapshot.SNAPSHOT_DIR
 STATIONS_PREFIX = snapshot.STATIONS_PREFIX
@@ -160,6 +160,25 @@ def report(args):
     return 0
 
 
+def write_golden(args):
+    """Regenerate tests/fixtures/access-golden.json from the checked-out corpus."""
+    facts = snapshot.load(args.data_dir)
+    db_path = Path(args.data_dir) / DB_FILENAME
+    if not facts or not db_path.exists():
+        print("golden needs both a station snapshot and a rebuilt database", file=sys.stderr)
+        return 1
+    document = golden.build(facts, _notices(db_path))
+    before = json.loads(golden.PATH.read_text(encoding="utf-8")) if golden.PATH.exists() else {}
+    golden.PATH.write_text(golden.dumps(document), encoding="utf-8")
+    changes = golden.differences(before, document)
+    print(f"wrote {golden.PATH}")
+    print(f"{len(document['stations'])} stations, {len(document['verdicts'])} notices, "
+          f"{len(changes)} line(s) changed" + (":" if changes else ""))
+    for line in changes:
+        print(f"  {line}")
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="lift_access", description="Station accessibility facts for the lift site."
@@ -175,6 +194,11 @@ def main(argv=None) -> int:
     report_cmd.add_argument("--all", action="store_true",
                             help="also print every station that claims a lift")
     report_cmd.set_defaults(run=report)
+
+    golden_cmd = sub.add_parser(
+        "golden", help="regenerate tests/fixtures/access-golden.json and print what moved"
+    )
+    golden_cmd.set_defaults(run=write_golden)
 
     args = parser.parse_args(argv)
     return args.run(args)
