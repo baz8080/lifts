@@ -98,8 +98,8 @@ was not there - notices have been seen to appear and disappear in batches,
 months after the start date they carry. "No longer listed" is the word used,
 never "fixed": there is no completion signal in the feed.
 
-A station is graded on **availability**: the share of the days watched on
-which no lift *or escalator* notice was listed there. The scale is this site's
+A station is graded on **lift availability**: the share of the days watched on
+which no lift notice was listed there. The scale is this site's
 own - the PRM TSI sets design rules and a duty to hold a written access
 policy, not a number, and Irish Rail publishes no availability target - so the
 bands are calibrated in days: A is 100% available, B 95%+, C 90%+, D 75%+,
@@ -107,11 +107,14 @@ E 50%+, F below that. A is not "nothing listed": planned works inside their grac
 drawn on the bar and left out of the total.
 Planned works are excused for their first week and count in full past it, in
 their own colour once they do.
-Escalator notices keep their own bar, so a working lift is never painted by a
-broken escalator, but their days count like a lift's. That makes the grade
-"something was reported out at this station", **not** step-free-access
-availability: a wheelchair user cannot use an escalator, so an escalator going
-out never removes a step-free route.
+Escalator notices keep their own bar and are off the total: an escalator is
+never a step-free route, so its going out removes a convenience and not access.
+The grade is named for what it counts and not "step-free availability", because
+a lift out knocks it even where Irish Rail's page names a ramp round the lift,
+and so does an outage the site cannot read either way. The one escalator outage
+that should knock, an escalator that is the only powered way up, has no example
+yet; `notes/site.md` carries the rule and a test on the real corpus fails the
+day it applies.
 
 A reissued notice that appears at the very poll the old one vanished is one
 outage with the reissue noted; a notice that comes back a poll or more later

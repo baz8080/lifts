@@ -224,14 +224,14 @@ an escalator in a notice would break the deduction. None is named in any of the
 escalator, the verdict now says so rather than implying the machine's role is
 known.
 
-**Still open: the grade.** `site.md` § *An escalator out is a day the station was
-short of a way up* counts escalator outages at the same weight as lift outages,
-so the grade and the station page disagree in public. Issue #32, with the
-numbers: Dublin Pearse is graded F, the worst band, on the strength of an
-escalator alone. The two rules were decided at different times against different
-questions and both look sound alone; the question under them is what the grade is
-for. Do not try to settle it from `platformAccess`, which mentions an escalator
-at 2 of 147 stations.
+**Settled 2026-09-03: the grade.** It counted escalator outages at the same
+weight as lift outages, so the grade and the station page disagreed in public:
+Dublin Pearse graded F, the worst band, on the strength of an escalator alone
+(issue #32). Escalator days are off the total now and the grade is named lift
+availability; `site.md` § *The grade is lift availability* has the numbers, the
+rejected options and the one escalator case that should knock, which
+`tests/test_site_real.py` guards. It was not settled from `platformAccess`,
+which mentions an escalator at 2 of 147 stations.
 
 ## The other platform is often still step-free, and the prose says so
 

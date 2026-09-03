@@ -358,17 +358,25 @@ class TestStationMonth(SiteModelCase):
         self.assertEqual(s["cells"][7], "5")
         self.assertIsNone(s["esc_cells"])
 
-    def test_an_escalator_notice_counts_towards_the_grade(self):
-        # Pearse in August 2026: the escalator listed for a fortnight while the
-        # lifts ran. The lift bar stays clear - a working lift is never painted
-        # by a broken escalator - but the days count, because the station was
-        # short of a way up on them.
+    def test_an_escalator_notice_paints_its_own_bar_and_not_the_grade(self):
+        # Pearse in August 2026 graded F on an escalator alone, beside a line
+        # saying the outage did not remove step-free access (issue #32).
         self.poll(T0, [escalator(station="Dublin Pearse", code="PERSE")])
         self.poll(T0 + timedelta(days=2), [escalator(station="Dublin Pearse", code="PERSE")])
         s = self.cells(self.load())
         self.assertEqual(set(s["cells"]) - set("89"), {"0"})
         self.assertEqual(s["esc_cells"][7:10], "111")
-        self.assertEqual((s["against"], s["avail"], s["grade"]), (3, 0, "F"))
+        self.assertEqual((s["against"], s["avail"], s["grade"]), (0, 100, "A"))
+
+    def test_a_lift_beside_an_escalator_counts_only_the_lifts_days(self):
+        esc = escalator(station="Dublin Pearse", code="PERSE")
+        self.poll(T0, [esc, lift(station="Dublin Pearse", code="PERSE")])
+        self.poll(T0 + timedelta(minutes=30), [esc])
+        self.poll(T0 + timedelta(hours=1), [esc])
+        self.poll(T0 + timedelta(days=2), [esc])
+        s = self.cells(self.load())
+        self.assertEqual((s["cells"][7:10], s["esc_cells"][7:10]), ("100", "111"))
+        self.assertEqual((s["observed"], s["against"], s["avail"], s["grade"]), (3, 1, 66, "E"))
 
     def test_planned_works_are_excused_for_a_week_and_not_a_day_longer(self):
         short = model.PLANNED_GRACE - timedelta(hours=1)
@@ -524,11 +532,11 @@ class TestStationMonth(SiteModelCase):
         self.assertEqual(n["stations"], 3)
         self.assertEqual(n["outages"], 3)
         self.assertEqual((n["faults"], n["planned"]), (3, 0))
-        # Two days watched at each of the three stations, and all three are
-        # listed on both: Athy throughout, Bray closed at the poll on the 9th
-        # having been listed into it, and Connolly's escalator, which counts
-        # like a lift. So none of the six station-days is available.
-        self.assertEqual(n["avail"], 0)
+        # Two days watched at each of the three stations. Athy is listed
+        # throughout and Bray closed at the poll on the 9th having been listed
+        # into it; Connolly's escalator is on its own bar and off the total. So
+        # two of the six station-days are available, floored.
+        self.assertEqual(n["avail"], 33)
         self.assertEqual(n["ongoing"], 1)
 
 
