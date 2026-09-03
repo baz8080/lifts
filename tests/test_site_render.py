@@ -729,6 +729,21 @@ class TestTheOverlapGuard(SiteModelCase):
         self.poll(T0 + timedelta(hours=1), [self._escalator(), the_lift])
         self.assertIn("overlapped this one", self._escalator_sentence())
 
+    def test_a_lift_closed_at_the_horizon_poll_is_not_up_at_it(self):
+        # The zero-minute case is decided by both notices being up at the last
+        # poll, not by the instants touching: a lift whose close is dated to
+        # that poll (one grace miss, or a grace of 1) had come down.
+        from types import SimpleNamespace as row
+        h = NOW
+        zero = row(first_seen=h, end=h, ongoing=True)
+        up = row(first_seen=h - timedelta(days=1), end=h, ongoing=True)
+        closed = row(first_seen=h - timedelta(days=1), end=h, ongoing=False)
+        self.assertTrue(render._overlaps(zero, up))
+        self.assertTrue(render._overlaps(up, zero))
+        self.assertFalse(render._overlaps(zero, closed))
+        self.assertFalse(render._overlaps(closed, zero))
+        self.assertTrue(render._overlaps(zero, zero))
+
     def test_a_lift_at_another_station_is_not_an_overlap(self):
         both = [lift(), self._escalator()]
         self.poll(T0, both)

@@ -823,14 +823,19 @@ class ALiftOnTheWayIn(unittest.TestCase):
         self.assertEqual((result.state, result.leg), ("unknown", "entrance"))
         self.assertIn("names no lift on the way in", result.detail)
 
-    def test_an_entrance_lift_named_on_the_platform_side_is_read_there(self):
+    def test_an_entrance_lift_named_on_the_platform_side_is_still_an_entrance_lift(self):
         # Pearse's way-in field names no lift; its platformAccess names lifts
         # from the Pearse Street entrance. The page must not be reported as
-        # naming none, and the reading is the platform leg's, as before.
+        # naming none, and the notice must not be read on the platform leg,
+        # which published the ramp platform as kept from a booking hall this
+        # lift may be the way to.
         result = model.verdict(
             station("PERSE"), "lift", "The lift from the Pearse Street entrance is out."
         )
-        self.assertEqual((result.state, result.leg, result.platforms), ("lost", "entrance", ("2",)))
+        self.assertEqual((result.state, result.leg, result.platforms), ("lost", "entrance", ()))
+        self.assertIn('"Lifts/stairs/Escalators from the Pearse Street entrance"', result.detail)
+        self.assertIn("step-free access into the station was gone", result.detail)
+        self.assertNotIn("kept step-free access", result.detail)
         self.assertNotIn("names no lift", result.detail)
         self.assertTrue(model.entrance_lift(station("PERSE")))
 
@@ -856,10 +861,15 @@ class ALiftOnTheWayIn(unittest.TestCase):
             self.assertNotIn("needed no lift", result.detail, negated)
 
     def test_a_numbered_platform_is_not_a_negation(self):
-        # Carrigaloe and Dalkey write the label without a dot.
+        # Carrigaloe and Dalkey write the label without a dot; Athlone with one,
+        # which the sentence splitter must not take for a full stop.
         for sentence in ("Ramp to platform No 1 (for northbound routes and city centre)",
-                         "Via the main gate (top of ramp) to platform No 2 (Northbound)"):
+                         "Via the main gate (top of ramp) to platform No 2 (Northbound)",
+                         "Level to platforms No. 2 and 3"):
+            self.assertEqual(model._sentences(sentence), [sentence])
             self.assertEqual(model._level_sentences(sentence), (sentence,))
+        self.assertEqual(model._sentences("Ramp to platform 1. No lift to platform 2."),
+                         ["Ramp to platform 1", "No lift to platform 2"])
 
     def test_the_lift_call_boilerplate_is_not_an_entrance_lift(self):
         boiler = station("ATHY")._replace(
@@ -929,18 +939,30 @@ class WhoAnEscalatorOutageAffected(unittest.TestCase):
         # page's level line is not quoted as a way round; the sources disagree.
         result = self.verdict("ATHY", "The escalator at platform 1 is out.")
         self.assertIn(
-            'names no lift to platform 1 and calls it level: "Level to platform 1", so the '
-            "notice and the page disagree about it.",
+            'calls platform 1 level: "Level to platform 1", so the notice and the page '
+            "disagree about it.",
             result.detail,
         )
         self.assertNotIn("puts a lift", result.detail)
         self.assertNotIn("names a level way", result.detail)
+
+    def test_a_general_lift_claim_is_not_put_on_the_way_to_a_level_platform(self):
+        # Bray: "Level to platform 1, 2 & 3" beside "Use the lift or stairs to
+        # travel between platforms". The disagreement is what gets said.
+        result = self.verdict("BRAY", "The escalator at platform 1 is out of service.")
+        self.assertNotIn("puts a lift", result.detail)
+        self.assertIn('calls platform 1 level: "Level to platform 1, 2 & 3"', result.detail)
+        # And with no platform named, the general claim stands as a general claim.
+        bare = self.verdict("BRAY", "The escalator at the platforms is out of service.")
+        self.assertIn("puts a lift on the way to the platforms as well", bare.detail)
 
     def test_the_lift_phrase_names_the_platforms_the_sentence_puts_a_lift_at(self):
         result = self.verdict("ATHY", "The escalators at platforms 1 and 2 are out.")
         self.assertIn('puts a lift on the way to platform 2 as well: "Lift to platform 2".',
                       result.detail)
         self.assertNotIn("platforms 1 and 2 as well", result.detail)
+        # Both facts stand: the lift to 2 and the disagreement about 1.
+        self.assertIn("calls platform 1 level", result.detail)
         bare = self.verdict("PERSE", "The escalator to the platforms is out.")
         self.assertIn("puts a lift on the way to platform 2 as well", bare.detail)
         general = self.verdict("HZLCH", "The escalators at platforms 1 and 2 are out.")

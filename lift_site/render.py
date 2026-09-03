@@ -247,16 +247,12 @@ def _access(o, facts, lift_listed_too=False):
 def _overlaps(a, b):
     """Were the two listed at the same time?
 
-    Half-open, with `model.listed_in`'s one exception: a notice first seen at
-    the last poll is listed for zero minutes, and it was up beside whatever else
-    was up at that poll.
+    Half-open, or both still listed: a notice first seen at the last poll is
+    listed for zero minutes (`model.listed_in` has the same case), and the one
+    thing that puts it beside another notice is that both were up at that
+    poll. A lift whose close is dated to that poll was not.
     """
-    if a.first_seen < b.end and b.first_seen < a.end:
-        return True
-    return any(
-        x.ongoing and x.first_seen == x.end and y.first_seen <= x.end <= y.end
-        for x, y in ((a, b), (b, a))
-    )
+    return (a.first_seen < b.end and b.first_seen < a.end) or (a.ongoing and b.ongoing)
 
 
 def lift_listed_too(o, outages):

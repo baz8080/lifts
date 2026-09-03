@@ -267,7 +267,19 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
         for code, outages in by_code.items():
             if not any(o.kind == "escalator" for o in outages):
                 continue
-            expected = {o.id: render.lift_listed_too(o, outages) for o in outages}
+            # Its own interval arithmetic, not render's, so a wrong _overlaps
+            # shows up here: listed at the same instant, or both still up.
+            expected = {
+                o.id: o.kind == "escalator" and any(
+                    x.kind == "lift"
+                    and (
+                        max(x.first_seen, o.first_seen) < min(x.end, o.end)
+                        or (x.ongoing and o.ongoing)
+                    )
+                    for x in outages
+                )
+                for o in outages
+            }
             by_month = render.shard(outages, months, self.until, self.facts)
             for rows in by_month.values():
                 for record in rows:
