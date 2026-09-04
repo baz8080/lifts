@@ -278,6 +278,8 @@ class Outcome(NamedTuple):
     unaffected: tuple  # platforms whose routes never used the equipment
     never: tuple  # platforms with no step-free route before either
     unmatched: tuple  # platforms the notice named that no equipment touches
+    kept: dict  # node -> route with the equipment gone, any confidence
+    confirmed: dict  # node -> route with the equipment gone, confirmed edges only
 
 
 def join_notice(graph, kind, text):
@@ -337,9 +339,11 @@ def outcome(graph, kind, text):
     platforms = graph.platforms()
     best = routes(graph)
     before = frozenset(best)
-    after = reachable(graph, removed)
+    kept = routes(graph, removed)
+    after = frozenset(kept)
     touched = _served(graph, removed, best)
-    confirmed = frozenset(routes(graph, removed, True))
+    confirmed_routes = routes(graph, removed, confirmed_only=True)
+    confirmed = frozenset(confirmed_routes)
     lost, alternative, unconfirmed, unaffected, never = [], [], [], [], []
     for label, node in platforms.items():
         if node not in before:
@@ -352,7 +356,7 @@ def outcome(graph, kind, text):
             unaffected.append(label)
     return Outcome(
         joined, tuple(sorted(removed)), tuple(lost), tuple(alternative), tuple(unconfirmed),
-        tuple(unaffected), tuple(never), unmatched,
+        tuple(unaffected), tuple(never), unmatched, kept, confirmed_routes,
     )
 
 
@@ -462,10 +466,9 @@ def verdict(graph, kind, text):
         return _escalator(graph, joined, text)._replace(leg=leg)
 
     result = outcome(graph, kind, text)
-    kept = routes(graph, frozenset(result.removed))
     # The state was decided on confirmed edges only, so the route the detail
-    # names must be one of those, not the shorter page-only one `kept` prefers.
-    confirmed = routes(graph, frozenset(result.removed), confirmed_only=True)
+    # names for a kept platform must be one of those, not the page-only one.
+    kept, confirmed = result.kept, result.confirmed
     parts = []
     which = model._join([describe_equipment(graph, item) for item in joined])
     if result.lost:

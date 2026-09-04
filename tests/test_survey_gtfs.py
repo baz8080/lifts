@@ -37,6 +37,24 @@ class Export(unittest.TestCase):
         self.assertEqual(rows["TOY:p1"]["wheelchair_boarding"], 2)
         self.assertEqual(rows["TOY:p2"]["wheelchair_boarding"], 1)
 
+    def test_a_platform_only_the_page_reaches_is_unknown(self):
+        # The verdict reads p3's page-only ramp as unconfirmed; the export must
+        # not say more than the verdict does.
+        g, _ = build([line({"type": "retract", "id": "lift-to-p3", "of": "edge"})])
+        rows = {r["stop_id"]: r for r in gtfs.stop_rows(g)}
+        self.assertEqual(rows["TOY:p3"]["wheelchair_boarding"], 0)
+
+    def test_a_small_lift_and_a_barrier_keep_their_modes(self):
+        g, _ = build([
+            line({"type": "edge", "id": "small", "mode": "lift", "from": "hall", "to": "p1",
+                  "equipment": "lift-c", "wheelchair": False}),
+            line({"type": "edge", "id": "barrier", "mode": "gate", "gate": "ticket-barrier",
+                  "from": "hall", "to": "p2", "wheelchair": False}),
+        ])
+        rows = {r["pathway_id"]: r for r in gtfs.pathway_rows(g)}
+        self.assertEqual(rows["TOY:small"]["pathway_mode"], 5)
+        self.assertEqual(rows["TOY:barrier"]["pathway_mode"], 6)
+
     def test_an_incomplete_graph_says_unknown_not_no(self):
         g, _ = build([line({"type": "retract", "id": "to-p1", "of": "edge"}),
                       line({"type": "edge", "id": "back", "mode": "unsurveyed", "from": "side",

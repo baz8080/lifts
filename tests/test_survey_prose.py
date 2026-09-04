@@ -20,9 +20,9 @@ class Layout(unittest.TestCase):
         self.assertIn("If the lift is out of service there is no step-free way to platform 2.",
                       text)
         self.assertIn("Platform 3: yes, by lift. A level walk to the booking hall, then a lift "
-                      "to platform 3. If the lift is out of service the page names a way round "
-                      "(a level walk to the booking hall, then a ramp to platform 3) that "
-                      "nobody has confirmed.", text)
+                      "to platform 3. If the lift is out of service the survey names a way "
+                      "round (a level walk to the booking hall, then a ramp to platform 3) "
+                      "that nobody has confirmed.", text)
         self.assertIn("The main entrance: level to the booking hall", text)
         self.assertIn("Three lifts.", text)
         self.assertIn("called from a help point, 06:00-23:30", text)
@@ -45,9 +45,8 @@ class Layout(unittest.TestCase):
     def test_a_page_only_route_is_said_to_be_unconfirmed(self):
         g, _ = build([line({"type": "retract", "id": "lift-to-p3", "of": "edge"})])
         text = prose.render(g)
-        self.assertIn("Platform 3: yes, according to Irish Rail's page, which nobody has "
-                      "confirmed. A level walk to the booking hall, then a ramp to platform 3.",
-                      text)
+        self.assertIn("Platform 3: yes, though nobody has confirmed the route. A level walk "
+                      "to the booking hall, then a ramp to platform 3.", text)
 
     def test_an_unsurveyed_way_in_is_said_as_not_yet_recorded(self):
         g, _ = build([line({"type": "edge", "id": "back", "mode": "unsurveyed", "from": "side",

@@ -6,13 +6,16 @@ option). Exporting the survey in that shape means the NTA, Google, Apple or
 Transit could take it as it stands. Provenance stays in the log: pathways.txt
 has no column for who said so.
 
-A ramp or gate recorded as not passable in a wheelchair has no pathway_mode
-of its own, so it exports as stairs (mode 2), which every consumer reads as
-not accessible; exported as a walkway it would be routed through. Platform
-and entrance stops carry `wheelchair_boarding` from the graph's own
-reachability, 0 rather than 2 for a platform an incomplete graph cannot reach.
-`unsurveyed` edges are not exported; they are the absence of a record, and
-GTFS has no way to say that.
+A walkway, ramp or plain gate recorded as not passable in a wheelchair has no
+pathway_mode of its own, so it exports as stairs (mode 2), which every
+consumer reads as not accessible; exported as a walkway it would be routed
+through. A lift, escalator or ticket barrier keeps its own mode whatever the
+flag says, since those modes carry meaning a consumer needs. Platform stops
+carry `wheelchair_boarding` under the same gate as the verdict: 1 only where a
+route somebody confirmed reaches the platform, 0 where only the page vouches
+for one or the graph is incomplete, 2 where a complete graph reaches it by
+nothing step-free. `unsurveyed` edges are not exported; they are the absence
+of a record, and GTFS has no way to say that.
 """
 
 from __future__ import annotations
@@ -49,13 +52,22 @@ def stop_rows(graph, station=None):
         "platform_code": "", "wheelchair_boarding": "", "level_id": "", "stop_lat": lat,
         "stop_lon": lon,
     }]
+    # The same gate as the verdict: 1 only on a route somebody confirmed, 0
+    # where only the page vouches for it or the graph is incomplete, 2 where a
+    # complete graph reaches it by nothing step-free.
+    confirmed = frozenset(g.routes(graph, confirmed_only=True))
     reached = g.reachable(graph)
     for node in graph.nodes.values():
         boarding = ""
         if node.kind == "entrance":
             boarding = 1
         elif node.kind == "platform":
-            boarding = 1 if node.id in reached else (2 if graph.complete else 0)
+            if node.id in confirmed:
+                boarding = 1
+            elif node.id in reached or not graph.complete:
+                boarding = 0
+            else:
+                boarding = 2
         rows.append({
             "stop_id": stop_id(graph, node.id),
             "stop_name": node.name or (f"Platform {node.platform}" if node.platform else node.id),
@@ -75,12 +87,12 @@ def pathway_rows(graph):
     for edge in graph.edges.values():
         if edge.mode == "unsurveyed":
             continue
-        if edge.wheelchair is False:
-            mode = PATHWAY_MODE["stairs"]
-        elif edge.mode == "gate":
+        if edge.mode == "gate":
             mode = GATE_MODE.get(edge.gate, PATHWAY_MODE["gate"])
         else:
             mode = PATHWAY_MODE[edge.mode]
+        if edge.wheelchair is False and mode == PATHWAY_MODE["walkway"]:
+            mode = PATHWAY_MODE["stairs"]
         rows.append({
             "pathway_id": f"{graph.code}:{edge.id}",
             "from_stop_id": stop_id(graph, edge.start),

@@ -5,8 +5,8 @@ is a fixed order of questions answered in sentences, one per platform, with
 the failure case in the same breath. Rendering the graph in that layout does
 two jobs: the pilot stations become worked examples, and a fact the layout
 cannot say is a test failure rather than a silent omission. The confidence
-gate applies here as it does to the verdict: a route with a page-only edge on
-it is "yes, according to Irish Rail's page, which nobody has confirmed".
+gate applies here as it does to the verdict: a route with a low-confidence
+edge on it is "yes, though nobody has confirmed the route".
 """
 
 from __future__ import annotations
@@ -33,7 +33,8 @@ def _unconfirmed(graph, route):
     return any(graph.edges[e].confidence not in g.CONFIRMED for e in route)
 
 
-UNCONFIRMED = "according to Irish Rail's page, which nobody has confirmed"
+# Not "according to the page": a low-confidence line can come from a person too.
+UNCONFIRMED = "though nobody has confirmed the route"
 
 
 def _ways(graph, node, stepped_only):
@@ -74,7 +75,7 @@ def _platform_paragraph(graph, label, node, route):
         text += (f" If the lift is out of service there is no step-free way to "
                  f"platform {label}.")
     elif _unconfirmed(graph, without):
-        text += (f" If the lift is out of service the page names a way round "
+        text += (f" If the lift is out of service the survey names a way round "
                  f"({g.describe_route(graph, without)}) that nobody has confirmed.")
     else:
         text += f" If the lift is out of service: {g.describe_route(graph, without)}."

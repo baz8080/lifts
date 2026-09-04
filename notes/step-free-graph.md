@@ -227,21 +227,19 @@ A passenger asks two questions, *can I get to my platform without steps* and
 platform, in sentences, and puts the inventory after. `prose CODE` renders a
 surveyed station in it, so the proposal arrives with worked examples and a
 fact the layout cannot say is a test failure. The confidence gate applies to
-it as to the verdict: a page-only route reads "according to Irish Rail's
-page, which nobody has confirmed", and the qualifier goes when a person
-confirms the route. Athy, from the seed:
+it as to the verdict: a route with a low-confidence edge on it reads
+"though nobody has confirmed the route", and the qualifier goes when a
+person confirms it. Athy, from the seed:
 
 ```
 Getting to the platforms without steps
 
-Platform 1: yes, according to Irish Rail's page, which nobody has
-confirmed. A level walk to the concourse or ticket office, then a level
-walk to platform 1.
+Platform 1: yes, though nobody has confirmed the route. A level walk to
+the concourse or ticket office, then a level walk to platform 1.
 
-Platform 2: yes, by lift, according to Irish Rail's page, which nobody has
-confirmed. A level walk to the concourse or ticket office, then a lift to
-platform 2. If the lift is out of service there is no step-free way to
-platform 2.
+Platform 2: yes, by lift, though nobody has confirmed the route. A level
+walk to the concourse or ticket office, then a lift to platform 2. If the
+lift is out of service there is no step-free way to platform 2.
 
 Getting into the station
 
