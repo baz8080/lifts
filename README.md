@@ -51,6 +51,12 @@ just checked at runtime.
 - `lift_status.db` - a derived SQLite database, entirely rebuildable from the
   raw log via `rebuild`. Never back this up; back up `raw/` instead.
 
+`messages` holds one row per notice, keyed by identity, and `listings` one row
+per stretch that notice was continuously on the feed. A notice that vanishes
+and comes back keeps its `messages` row and gains a second `listings` row: the
+gap between them is what the site measures, so it cannot live in a row that
+spans it.
+
 ## CLI
 
 ```
@@ -70,7 +76,7 @@ All accept `--data-dir` (default: `$LIFT_STATUS_DATA_DIR`, or `/data`).
 | `LIFT_STATUS_DATA_DIR` | Storage root (default `/var/lib/lift-status` once installed) |
 | `LIFT_STATUS_API_KEY` | **Required.** The `x-api-key` value, captured from a browser session. Deliberately not stored in this repository |
 | `LIFT_STATUS_ALERT_WEBHOOK` | Where failure alerts are POSTed (an ntfy.sh topic URL works out of the box). An unchanged alert repeats at most daily, so a stuck fault doesn't push every 30 minutes |
-| `LIFT_STATUS_GRACE_MISSES` | Consecutive misses before a message is marked closed (default `1`: close on first miss) |
+| `LIFT_STATUS_GRACE_MISSES` | Consecutive misses before a message is marked closed (default `2`). It still closes at the *first* miss; the second only confirms it |
 
 ## The site
 
@@ -92,8 +98,8 @@ was not there - notices have been seen to appear and disappear in batches,
 months after the start date they carry. "No longer listed" is the word used,
 never "fixed": there is no completion signal in the feed.
 
-A station is graded on **availability**: the share of the days watched on
-which no lift *or escalator* notice was listed there. The scale is this site's
+A station is graded on **lift availability**: the share of the days watched on
+which no lift notice was listed there. The scale is this site's
 own - the PRM TSI sets design rules and a duty to hold a written access
 policy, not a number, and Irish Rail publishes no availability target - so the
 bands are calibrated in days: A is 100% available, B 95%+, C 90%+, D 75%+,
@@ -101,11 +107,16 @@ E 50%+, F below that. A is not "nothing listed": planned works inside their grac
 drawn on the bar and left out of the total.
 Planned works are excused for their first week and count in full past it, in
 their own colour once they do.
-Escalator notices keep their own bar, so a working lift is never painted by a
-broken escalator, but their days count like a lift's. That makes the grade
-"something was reported out at this station", **not** step-free-access
-availability: a wheelchair user cannot use an escalator, so an escalator going
-out never removes a step-free route.
+Escalator notices keep their own bar and are off the total: an escalator is
+never a step-free route, so its going out removes a way up for anyone who finds
+stairs hard, and not a step-free route; each escalator outage on a station page
+says so, and what Irish Rail's page puts on the same leg.
+The grade is named for what it counts and not "step-free availability", because
+a lift out knocks it even where Irish Rail's page names a ramp round the lift,
+and so does an outage the site cannot read either way. The one escalator outage
+that should knock, an escalator that is the only powered way up, has no example
+yet; `notes/site.md` carries the rule and a test on the real corpus fails the
+day it applies.
 
 A reissued notice that appears at the very poll the old one vanished is one
 outage with the reissue noted; a notice that comes back a poll or more later
@@ -113,11 +124,18 @@ is a separate outage, because the gap is what the site is measuring.
 
 `notes/site.md` has the decisions and the numbers behind them.
 `.github/workflows/pages.yml` rebuilds the database from
-[`lifts-data`](https://github.com/baz8080/lifts-data) and publishes the site
-daily and on every push to `main`. It needs Pages enabled once, under
-**Settings → Pages → source "GitHub Actions"**. GitHub disables the cron after
-60 days without a commit to *this* repository - the data lands in
-`lifts-data`, which does not count - so re-arm it when the email arrives.
+[`lifts-data`](https://github.com/baz8080/lifts-data) and publishes the site. It
+runs on every push to `main`, twice a day on a fallback cron, and - the trigger
+that actually keeps the page current - whenever `lifts-data` itself is pushed to.
+That last one is a workflow in `lifts-data` calling this workflow's
+`workflow_dispatch`, and it needs a fine-grained token with **Actions: write** on
+this repository stored there as the secret `SITE_BUILD_TOKEN`. Without it the
+dispatch fails visibly on each push and the site falls back to the cron.
+
+Pages needs enabling once, under **Settings → Pages → source "GitHub Actions"**.
+GitHub disables the cron after 60 days without a commit to *this* repository -
+the data lands in `lifts-data`, which does not count - so re-arm it when the
+email arrives. `notes/publish-cadence.md` has why the cron is only the fallback.
 
 ## Running the tests
 
@@ -170,8 +188,8 @@ the systemd units. Then, following the printed instructions:
 
 ### Setting up the data backup
 
-Raw logs back up to a separate repository (`lifts-data`), pushed daily via a
-dedicated deploy key - mirroring the `esb`/`esb-data` pattern:
+Raw logs back up to a separate repository (`lifts-data`), pushed every six hours
+via a dedicated deploy key - mirroring the `esb`/`esb-data` pattern:
 
 1. Create a new (can be public) GitHub repo, e.g. `lifts-data`.
 2. Generate a deploy key with write access:
@@ -208,7 +226,17 @@ database are untouched by an auth failure.
   needs smarter reprocessing later.
 - **No completion signal from the API**: `end` is recorded but not trusted;
   "fixed" is inferred purely from a message's absence in a later run.
-- **Flapping**: `LIFT_STATUS_GRACE_MISSES` defaults to `1` (close on first
-  miss) for simplicity. If the data shows single-cycle blips causing
-  spurious close/reopen pairs, raise it - a message won't be marked closed
-  until it's missed that many consecutive successful runs in a row.
+- **Flapping**: `LIFT_STATUS_GRACE_MISSES` defaults to `2`, so a notice gone
+  from one poll and back at the next is treated as the feed blinking rather
+  than as an outage ending. A miss absorbed by the grace extends the open
+  `listings` row instead of starting a new one, and the close is still dated
+  to the first miss, so the grace costs nothing but a poll's delay. Raise it
+  further if longer blips show up.
+
+## Credits
+
+The lift and escalator glyphs on the day bars are `elevator` and `escalator`
+from [Material Design Icons](https://pictogrammers.com/library/mdi/) by
+Pictogrammers, used under the Apache License 2.0. They are inlined into every
+page as CSS masks; the path data and this credit sit together in
+`lift_site/site.css`.

@@ -17,6 +17,7 @@ uv run python -m lift_status --data-dir <dir> stats
 uv run python -m lift_site --data-dir <dir>             # build out/site/
 uv run python -m lift_access --data-dir <dir> refresh   # station facts (monthly, not on the Pi)
 uv run python -m lift_access --data-dir <dir> report    # every verdict beside its source prose
+uv run python -m lift_access --data-dir <dir> golden    # regenerate tests/fixtures/access-golden.json
 uv run --group dev ruff check
 uv run python -m unittest discover -s tests -t .
 ```
@@ -129,22 +130,29 @@ merged with `sort -u`.
 | The listing interval is measured; Irish Rail's start is shown, not measured | `notes/site.md` § The measured interval |
 | Stations keyed by location code, named from the newest notice | `notes/site.md` § Rows are stations |
 | Escalators included and tagged, never excluded (their own bar since 2026-08-28) | `notes/site.md` § Escalators, § One bar per kind |
-| Same-poll reissues merge; a gap of a poll or more is a new outage | `notes/site.md` § Notices reissued |
+| Same-poll reissues merge; a gap of a poll or more is a new outage. The collector records one `listings` row per stretch a notice was on the feed, because a reopen used to revive the `messages` row and republish the gap as listed time | `notes/site.md` § Notices reissued, § A notice that came back was published as never having left |
+| A notice absent from a single poll is the feed blinking, not an outage ending: `DEFAULT_GRACE_MISSES` is 2, and the close is still dated to the first miss | `notes/site.md` § One missed poll is the feed blinking |
+| The planned-works grace is earned per notice, pooled over all its stretches (`Outage.planned_total`), and spent per stretch - so a gap splits what is measured without refreshing what is excused | `notes/site.md` § The grace is earned per notice and spent per stretch |
 | Planned works is what the notice text says | `notes/site.md` § Planned works |
-| Stations are graded on availability - days watched with no lift *or escalator* notice - on this site's own scale, there being no Irish or EU target; overview sorts by listed-now, then availability. **Not** step-free-access availability: an escalator is never a step-free route, so the grade means "something was reported out" | `notes/site.md` § The grade is availability, § An escalator out is a day the station was short of a way up |
+| Stations are graded on lift availability - days watched with no lift notice - on this site's own scale, there being no Irish or EU target; an escalator notice has its own bar and knocks nothing. Named for what it counts, not "step-free": a lift out knocks even where the page names a ramp round it, and so does an unknown verdict. Overview sorts by listed-now, whatever the kind, then availability | `notes/site.md` § The grade is availability, § The grade is lift availability |
 | The scale runs A to F inclusive. E splits the old F band at **50%**, which over a 31-day month is 8 to 15 days listed against F's 16 or more: up to half the month, then more than half. Every A-D cut is unmoved, and the cut lands in a real gap in the data | `notes/site.md` § The scale grew an E |
 | Planned works are excused for their first week and count in full past it, in their own colour once they do | `notes/site.md` § Planned works are excused for a week, § Blue said two opposite things |
-| A bar carries one kind and an escalator notice gets its own strip - separate bars, one pool of graded days | `notes/site.md` § One bar per kind |
+| A bar carries one kind and an escalator notice gets its own strip - separate bars, and only the lift bar's days are graded | `notes/site.md` § One bar per kind, § The grade is lift availability |
+| Every bar names its kind with an MDI glyph in a gutter the same width on every row, and the word too where the bars are tall; the kinds are their own legend key, the day key still names no kind | `notes/site.md` § The bars say which kind |
 | `end` printed as "listed end" while the notice is up, dropped once it comes down; plays no part in any measure | `notes/site.md` § `end` is shown, § Irish Rail's end date goes when the notice does |
 | Windows end at the collection horizon; zero-minute listings count in its month | `notes/site.md` § Windows end |
 | Displayed instants are Dublin wall-clock; build/horizon stamps are UTC | `notes/site.md` § Displayed instants |
 | Station page shows every month, newest first; overview lists only stations with a notice that month | this file, and the ESB PR discussion |
-| The Pi pushes twice daily (midnight and noon local) and the site builds after each slot; the stale banner trips at 16h - above the widest legitimate push gap (~14h), below a missed midnight push (17h+) | `STALE_AFTER` in `lift_site/render.py` |
+| The Pi pushes every six hours and `lifts-data` dispatches the site build on each push; the two crons are a fallback only, because scheduled runs here have landed 4-10h behind their cron time. The stale banner trips at 10h - above the widest legitimate age (~7h), below a missed push (13h+) | `notes/publish-cadence.md`; `STALE_AFTER` in `lift_site/render.py` |
+| The stale banner states the data's age and names no cause: from the browser a stalled build and a stalled collector look identical, so the page says the one thing it knows | `notes/publish-cadence.md` § The banner blamed the wrong half |
 | Banner, national heading, legend placement, search widget and footer follow the shared design language (aligned 2026-08-26); the horizon left the header stamp for the freshness chip's hover title and the static pages' sub line | `notes/site.md` § The design alignment pass |
 | Every drill-down links to its static page from its own line under the heading; the wording follows the content relationship, which gives two categories: esb and uisce both say "every month ... on one page" because their pages carry months their views do not, while this site's page is the same content as its view and so names the address instead | `notes/site.md` § The permalink affordance moved out of the footer |
 | irishrail.ie `stationCode` is the same code space as `locationCodes`, so there is no name-to-code join to build | `notes/station-access.md` § The sources |
 | "and" in `platformAccess` is a sequence, not a choice; a lift out removes step-free access unless one of two reviewed exceptions applies | `notes/station-access.md` § "and" is a sequence |
-| Escalators are not step-free, so an escalator outage removes a convenience, not access. The grade still weighs them the same, so the two disagree in public: open as issue #32 | `notes/station-access.md` § Escalators |
+| Escalators are not step-free, so an escalator outage removes a convenience, not access, and since 2026-09-03 the grade agrees. The one escalator that should knock is one that is the only powered way up; no station is of that shape, and a real-corpus test fails the day one appears | `notes/station-access.md` § Escalators; `notes/site.md` § The grade is lift availability |
+| An escalator verdict says who did lose a way up and quotes what the page puts on the same leg; it never says a lift was working, and the site withholds the quoted lift when its own rows show a lift notice overlapping | `notes/station-access.md` § The entrance leg, and who an escalator served |
+| A notice's own text says which leg it is about, and a platform wins over an entrance word; a lift notice naming the way in is read against the way in, lost where either field puts a lift there and unknown otherwise | `notes/station-access.md` § The entrance leg, and who an escalator served |
+| A lost verdict names the platforms that never needed the lift, quoting the prose - withheld wherever the notice and the page disagree, and worded apart from the reviewed same-platform alternatives | `notes/station-access.md` § The other platform is often still step-free |
 | OpenStreetMap was carried as a second opinion and removed: it changed no verdict, its one signal was redundant, and it has no `level` tags outside the Dublin termini | `notes/station-access.md` § OpenStreetMap |
 | GTFS, GTFS-R, the NTA developer API, NaPTAN, PTIMS and OSM all carry no station accessibility data, and the GTFS fields Google and Apple read for accessible routing are absent too. Scraping the prose is the last resort, not the lazy option | `notes/station-access.md` § Why scraping prose is the only option |
 | NeTEx and SIRI-FM are the formats that would carry this. Ireland publishes neither, and 2017/1926 only obliges publishing data that already exists. NeTEx appearing is the one thing worth watching for | `notes/station-access.md` § The regulation |
@@ -184,6 +192,13 @@ lift/escalator notice appears on the site exactly once, the shards add up to
 the headline, the horizon is the last successful run. If it fails, something
 moved in the model or in the feed - find out which before adjusting the model
 to make it pass.
+
+`tests/fixtures/access-golden.json` is every level line, entrance sentence and
+verdict the access derivation produces across the 152 stations and every notice
+on record, and a real-corpus test asserts the regeneration matches. A change to a
+regex or a sentence that moves one fails it; regenerate with `golden`, read the
+diff, commit it with the change. A refreshed snapshot merged in `lifts-data`
+fails it too, on purpose, until the diff is read and the file regenerated here.
 
 The 500 KB initial-load budget is printed by every build and asserted by the
 render tests. It holds because individual outages live in per-station shards

@@ -26,7 +26,9 @@ class TestWrite(SiteModelCase):
         super().setUp()
         self.poll(T0, [lift(), escalator(), lift(station="Rush and Lusk", code="RLUSK")])
         self.poll(T0 + timedelta(hours=1), [lift(), escalator()])
-        self.poll(T0 + timedelta(days=1), [lift(planned=True, station="Bray", code="BRAY")])
+        bray = lift(planned=True, station="Bray", code="BRAY")
+        self.poll(T0 + timedelta(days=1), [bray])
+        self.poll(T0 + timedelta(days=1, hours=1), [bray])  # second miss closes the rest
         outages = self.load()
         self.site = self.dir / "site"
         self.data = render.write(self.site, outages, NOW, self.until)
@@ -60,10 +62,11 @@ class TestWrite(SiteModelCase):
         esc = d["stats"]["CNLLY"]["2026-08"]
         self.assertEqual(len(esc), 6)
         self.assertEqual(len(esc[5]), 31)
-        # Connolly's notice is the escalator's, so the lift bar stays clear -
-        # but the grade counts both kinds, so it is not a clean 100%.
+        # Connolly's notice is the escalator's: the lift bar stays clear and
+        # the grade is a clean 100%, the escalator's days being on its own bar
+        # and off the total.
         self.assertEqual(set(esc[0]) - set("89"), {"0"})
-        self.assertLess(esc[4], 100)
+        self.assertEqual(esc[4], 100)
 
     def test_a_shard_carries_every_outage_at_the_station_and_no_other(self):
         text = (self.site / "h" / "ATHY.js").read_text(encoding="utf-8")
@@ -83,13 +86,54 @@ class TestWrite(SiteModelCase):
         self.assertIn("no longer listed", page)
         self.assertIn(f'{render.BASE_URL}/s/rush-and-lusk.html', page)
 
-    def test_the_static_page_labels_the_two_bars_only_where_there_are_two(self):
+    def test_every_bar_says_which_kind_it_carries(self):
+        """Adjacency is the assertion. The legend carries both glyphs on every
+        page, so a bare "the page contains kind-lift" passes with the gutter
+        taken out of the bars entirely - it is the key it finds, not a bar."""
         page = (self.site / "s" / "dublin-connolly.html").read_text(encoding="utf-8")
-        self.assertIn("<span>Lifts</span>", page)
-        self.assertIn("<span>Escalators</span>", page)
+        self.assertIn('></i>Lifts</span><div class="bar tall"', page)
+        self.assertIn('></i>Escalators</span><div class="bar tall"', page)
         self.assertIn("escalator out of service", page)
+        # a station with no escalator notice says "lift" rather than nothing,
+        # and still does not claim an escalator the feed has never mentioned
         athy = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
-        self.assertNotIn("<span>Escalators</span>", athy)
+        self.assertIn('></i>Lifts</span><div class="bar tall"', athy)
+        self.assertNotIn("Escalators</span>", athy)
+        self.assertNotIn("Escalators in", athy)  # no escalator strip, only the key
+
+    def test_the_overview_bar_carries_its_glyph_too(self):
+        """The short bar has no static page to appear on - renderOverview builds
+        it in JS - so the only place its markup can be checked is here."""
+        row = render._bars("0" * 31, None, "2026-08", ())
+        self.assertIn(
+            '<i class="kind kind-lift" aria-hidden="true" title="Lift"></i><div class="bar"',
+            row,
+        )
+        self.assertNotIn("kind-escalator", row)
+        pair = render._bars("0" * 31, "1" * 31, "2026-08", ())
+        self.assertIn(
+            '<i class="kind kind-escalator" aria-hidden="true" title="Escalator"></i>'
+            '<div class="bar"',
+            pair,
+        )
+
+    def test_a_single_bar_reserves_the_same_gutter_as_a_pair(self):
+        """The 64px text label tried in August shortened one row's bar and put
+        its days out of line with the rest. A cell every bar carries cannot."""
+        athy = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
+        self.assertIn('<div class="bars labelled">', athy)
+        # only the pair splits the height; a lone bar keeps the whole of it
+        self.assertNotIn('class="bars labelled pair"', athy)
+        connolly = (self.site / "s" / "dublin-connolly.html").read_text(encoding="utf-8")
+        self.assertIn('<div class="bars labelled pair">', connolly)
+
+    def test_the_kind_key_is_not_the_day_key(self):
+        """Colour says what was listed, shape says which kind. Two keys on one
+        line, and neither may start explaining the other."""
+        self.assertIn("kind-lift", render.KIND_SPANS)
+        self.assertIn("kind-escalator", render.KIND_SPANS)
+        self.assertIn(render.KIND_SPANS, render.LEGEND_HTML)
+        self.assertIn(render.LEGEND_SPANS, render.LEGEND_HTML)
 
     def test_the_static_page_drops_the_listed_end_once_the_notice_is_down(self):
         # Bray's notice is still up at the last poll; Athy's came down with the
@@ -202,13 +246,16 @@ class TestStaleness(SiteModelCase):
         data, _, _ = render.build(outages, T0 + timedelta(days=3), self.until)
         self.assertTrue(data["stale"])
         page = render.station_page("ATHY", data, render.shard(outages, data["months"], self.until))
-        self.assertIn("collection has stopped", page)
+        self.assertIn(f'Data to <span class="stale">{data["observed"]}</span>', page)
 
     def test_a_fresh_build_does_not(self):
         self.poll(T0, [lift()])
         outages = self.load(now=T0 + timedelta(hours=3))
         data, _, _ = render.build(outages, T0 + timedelta(hours=3), self.until)
         self.assertFalse(data["stale"])
+        page = render.station_page("ATHY", data, render.shard(outages, data["months"], self.until))
+        self.assertIn(f'Data to {data["observed"]}<', page)
+        self.assertNotIn('class="stale"', page)
 
 
 class TestSlugs(unittest.TestCase):
@@ -228,12 +275,12 @@ class TestMonthSections(SiteModelCase):
     def setUp(self):
         super().setUp()
         self.poll(T0, [lift()])
-        self.poll(T0 + timedelta(hours=1), [])
+        self.drop(T0 + timedelta(hours=1))
         october = datetime(2026, 10, 5, 10, 0, tzinfo=UTC)
         # a notice of its own, not August's coming back: a reopened notice
         # still publishes its gap as listed (notes/site.md, Open)
         self.poll(october, [lift(start="2026-10-01T09:00:00")])
-        self.poll(october + timedelta(days=1), [])
+        self.drop(october + timedelta(days=1))
         self.now = datetime(2026, 11, 10, 12, 0, tzinfo=UTC)
         outages = self.load(now=self.now)
         self.site = self.dir / "site"
@@ -326,6 +373,14 @@ class TestBarLabel(unittest.TestCase):
 
 
 class TestLegend(unittest.TestCase):
+    def test_each_key_carries_its_own_name(self):
+        """The kind key and the day key were divided by a 1px rule and nothing
+        else, which divides them for an eye only: a screen reader heard one run
+        of seven items and was told the kinds were day-cell colours."""
+        for name in ("Which kind each bar carries", "What a day's colour means"):
+            self.assertIn(f'role="group" aria-label="{name}"', render.LEGEND_HTML)
+        self.assertEqual(2, render.LEGEND_HTML.count('class="keys"'))
+
     def test_the_grade_key_says_what_the_model_grades(self):
         self.assertEqual(
             [letter for letter, _ in render.GRADE_LABELS],
@@ -336,6 +391,9 @@ class TestLegend(unittest.TestCase):
             # grade, and a colour key to a colour nothing else uses said nothing
             self.assertIn(f'class="gradechip g-{letter}"', render.GRADE_SPANS)
             self.assertIn(f">{letter}</span>", render.GRADE_SPANS)
+        # The key names exactly what counts: the escalator bar is shown, not graded.
+        self.assertIn("<span>Lift availability</span>", render.GRADE_SPANS)
+        self.assertNotIn("escalator", render.GRADE_SPANS.lower())
 
     def test_the_grade_key_does_not_promise_an_empty_bar(self):
         """A is 100% of the days that counted. A planned-works notice inside its
@@ -551,3 +609,180 @@ class TestStepFreeChip(SiteModelCase):
     def test_the_app_chips_the_row_and_the_detail_head(self):
         markup = (Path(render.TEMPLATES) / "site.html").read_text(encoding="utf-8")
         self.assertEqual(markup.count("stepFreeChip("), 3)  # definition, row, detail
+
+
+class TestAccessLabels(SiteModelCase):
+    """The label is rebuilt in JS; the sentence is not. Both are pinned here."""
+
+    def test_the_two_renderers_use_the_same_access_labels(self):
+        markup = (Path(render.TEMPLATES) / "site.html").read_text(encoding="utf-8")
+        for state, label in render.ACCESS_LABEL.items():
+            self.assertIn(f'{state}: "{label}"', markup, state)
+
+    def test_the_escalator_label_says_who_lost_what(self):
+        label = render.ACCESS_LABEL["escalator"]
+        self.assertIn("lost", label)
+        self.assertIn("not step-free access", label)
+
+    def test_the_escalator_verdict_is_not_styled_as_good(self):
+        # Green said "fine" beside a label that now says a loss.
+        css = render.SITE_CSS.read_text(encoding="utf-8")
+        rules = dict(re.findall(r"^(\.acc-[a-z]+)\s*\{([^}]*)\}", css, re.M))
+        self.assertIn("--good", rules[".acc-alternative"])
+        self.assertNotIn("--good", rules[".acc-escalator"])
+        self.assertNotIn("--critical", rules[".acc-escalator"])
+
+    def test_the_access_card_says_which_list_each_leg_is_read_against(self):
+        self.poll(T0, [lift()])
+        self.poll(T0 + timedelta(hours=1), [lift()])
+        station = access_model.Station(
+            code="ATHY", name="Athy", slug="athy", latitude=None, longitude=None,
+            platform_access="Lift to platform 2",
+            ticket_office_access="Level from station entrance and concourse",
+            lift_platforms=frozenset({"2"}), claims_lift=True, denies_lift=False,
+        )
+        site = self.dir / "site"
+        data = render.write(site, self.load(), NOW, self.until, snapshot.Facts({"ATHY": station}))
+        page = (site / "s" / f"{data['slugs']['ATHY']}.html").read_text(encoding="utf-8")
+        self.assertIn("Into the station", page)
+        self.assertIn("read against the second list", page)
+        self.assertNotIn("worked out from the second list", page)
+
+
+class TestTheOverlapGuard(SiteModelCase):
+    """An escalator sentence must not quote a lift the row above shows was out.
+
+    Only `render.shard` holds all of a station's outages, so the flag is set
+    there and travels into the verdict; the sentence itself is still written
+    once, in lift_access.
+    """
+
+    STATION = {"station": "Dublin Connolly", "code": "CNLLY"}
+
+    def _facts(self):
+        prose = "<p>Lift or stairs to platforms 6 and 7</p>"
+        lift_platforms, claims, denies = access_model.read_platform_access(prose)
+        station = access_model.Station(
+            code="CNLLY", name="Dublin Connolly", slug="dublin-connolly", latitude=None,
+            longitude=None, platform_access=access_model.plain(prose), ticket_office_access="",
+            lift_platforms=lift_platforms, claims_lift=claims, denies_lift=denies,
+        )
+        return snapshot.Facts({"CNLLY": station})
+
+    def _escalator(self):
+        # `escalator()` writes its own concourse text; this one names a platform.
+        return lift(
+            head="Connolly - Escalator out of order",
+            text="The Escalator at platform 6 is out of service.",
+            **self.STATION,
+        )
+
+    def _escalator_sentence(self):
+        site = self.dir / "site"
+        render.write(site, self.load(), NOW, self.until, self._facts())
+        shard = json.loads(
+            (site / "h" / "CNLLY.js").read_text(encoding="utf-8").split("= ", 1)[1].rstrip(";\n")
+        )
+        records = {k[1]: k for rows in shard.values() for k in rows}
+        self.assertIn("escalator", records)
+        return records["escalator"][13][1]
+
+    def test_an_overlapping_lift_notice_reaches_the_escalator_sentence(self):
+        both = [
+            lift(text="The lift at platform 6 is out of service.", **self.STATION),
+            self._escalator(),
+        ]
+        self.poll(T0, both)
+        self.poll(T0 + timedelta(hours=1), both)
+        self.poll(T0 + timedelta(hours=2), [])
+        self.poll(T0 + timedelta(hours=3), [])
+        sentence = self._escalator_sentence()
+        self.assertIn("overlapped this one", sentence)
+        self.assertNotIn('"Lift or stairs', sentence)
+
+    def test_a_lift_that_came_down_as_the_escalator_went_up_is_not_an_overlap(self):
+        # Pearse, 13 August: the lift's close is dated to the poll the
+        # escalator was first seen at. Touching is not overlapping.
+        the_lift = lift(text="The lift at platform 6 is out of service.", **self.STATION)
+        the_escalator = self._escalator()
+        self.poll(T0, [the_lift])
+        self.poll(T0 + timedelta(hours=1), [the_lift])
+        self.poll(T0 + timedelta(hours=2), [the_escalator])
+        self.poll(T0 + timedelta(hours=3), [the_escalator])
+        self.poll(T0 + timedelta(hours=4), [])
+        self.poll(T0 + timedelta(hours=5), [])
+        sentence = self._escalator_sentence()
+        self.assertNotIn("overlapped this one", sentence)
+        self.assertIn('"Lift or stairs to platforms 6 and 7"', sentence)
+
+    def test_a_notice_first_seen_at_the_last_poll_overlaps_what_was_up(self):
+        # Zero minutes listed at the horizon: first_seen, end and the horizon
+        # coincide, and a half-open test would call it disjoint from the lift
+        # listed right beside it. listed_in has the same carve-out.
+        the_lift = lift(text="The lift at platform 6 is out of service.", **self.STATION)
+        self.poll(T0, [the_lift])
+        self.poll(T0 + timedelta(hours=1), [the_lift, self._escalator()])
+        self.assertIn("overlapped this one", self._escalator_sentence())
+        # And the mirror: the lift is the one first seen at the last poll.
+        self.setUp()
+        self.poll(T0, [self._escalator()])
+        self.poll(T0 + timedelta(hours=1), [self._escalator(), the_lift])
+        self.assertIn("overlapped this one", self._escalator_sentence())
+
+    def test_a_lift_closed_at_the_horizon_poll_is_not_up_at_it(self):
+        # The zero-minute case is decided by both notices being up at the last
+        # poll, not by the instants touching: a lift whose close is dated to
+        # that poll (one grace miss, or a grace of 1) had come down.
+        from types import SimpleNamespace as row
+        h = NOW
+        zero = row(first_seen=h, end=h, ongoing=True)
+        up = row(first_seen=h - timedelta(days=1), end=h, ongoing=True)
+        closed = row(first_seen=h - timedelta(days=1), end=h, ongoing=False)
+        self.assertTrue(render._overlaps(zero, up))
+        self.assertTrue(render._overlaps(up, zero))
+        self.assertFalse(render._overlaps(zero, closed))
+        self.assertFalse(render._overlaps(closed, zero))
+        self.assertTrue(render._overlaps(zero, zero))
+
+    def test_a_lift_at_another_station_is_not_an_overlap(self):
+        both = [lift(), self._escalator()]
+        self.poll(T0, both)
+        self.poll(T0 + timedelta(hours=1), both)
+        self.poll(T0 + timedelta(hours=2), [])
+        self.poll(T0 + timedelta(hours=3), [])
+        self.assertNotIn("overlapped this one", self._escalator_sentence())
+
+
+class TestTheOtherPlatformNote(SiteModelCase):
+    """The note travels inside the verdict sentence, so one build proves both
+    the static page and the shard the app reads. Issue #31.
+    """
+
+    def _build(self):
+        # Two polls: a notice first seen at the only poll sits on a zero-width
+        # observed window and lands in no month's shard.
+        item = lift(text="The lift at platform 2 is currently out of service.")
+        self.poll(T0, [item])
+        self.poll(T0 + timedelta(hours=1), [item])
+        prose = "<p>Level to platform 1<br>Lift to platform 2</p>"
+        lift_platforms, claims, denies = access_model.read_platform_access(prose)
+        station = access_model.Station(
+            code="ATHY", name="Athy", slug="athy", latitude=None, longitude=None,
+            platform_access=access_model.plain(prose), ticket_office_access="",
+            lift_platforms=lift_platforms, claims_lift=claims, denies_lift=denies,
+        )
+        site = self.dir / "site"
+        data = render.write(site, self.load(), NOW, self.until, snapshot.Facts({"ATHY": station}))
+        page = (site / "s" / f"{data['slugs']['ATHY']}.html").read_text(encoding="utf-8")
+        shard = (site / "h" / "ATHY.js").read_text(encoding="utf-8")
+        return page, json.loads(shard.split("= ", 1)[1].rstrip(";\n"))
+
+    def test_the_page_and_the_shard_carry_the_same_sentence(self):
+        note = 'Platform 1 needed no lift, so it kept step-free access: "Level to platform 1".'
+        page, shard = self._build()
+        self.assertIn("acc-lost", page)
+        self.assertIn(html_mod.escape(note), page)
+        records = next(iter(shard["2026-08"]))
+        state, sentence = records[13]
+        self.assertEqual(state, "lost")
+        self.assertIn(note, sentence)

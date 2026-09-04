@@ -7,10 +7,10 @@ out for every day of every month whether a notice was listed.
 
 That is the whole measurement. The feed carries no magnitude - a notice is
 either listed or it is not - so a day cell says only that, and the grade counts
-those days: the share of the days watched on which nothing was listed. The words
-the site uses are "listed" and "no longer listed", never "fixed": a notice
-vanishing means Irish Rail took it down, which is usually but not provably the
-same thing.
+those days: the share of the days watched on which no lift notice was listed.
+The words the site uses are "listed" and "no longer listed", never "fixed": a
+notice vanishing means Irish Rail took it down, which is usually but not
+provably the same thing.
 
 Every interval measured here is the one the notice was *listed* for. The start
 date Irish Rail writes on a notice is shown but never measured: it routinely
@@ -85,7 +85,8 @@ GRADE_BANDS = ((100, "A"), (95, "B"), (90, "C"), (75, "D"), (50, "E"), (0, "F"))
 # in the same poll (the README's "identity drift"). Those are one outage to a
 # reader. A notice that reappears a poll or more later is a separate row: the
 # gap is real information, since it is exactly what the site is measuring.
-# `merge_edits` folds only the same-poll case.
+# `merge_edits` folds only the same-poll case; the gap it must not fold
+# arrives already split, one outage per `listings` span.
 
 
 def parse_utc(value):
@@ -178,7 +179,8 @@ class Outage(NamedTuple):
     watched on the days between and the notice was not there.
     """
 
-    id: int  # the first message row it was built from
+    id: int  # the listings span it was built from; the first one, once merged
+    message_id: int  # the notice the span belongs to; spans of one notice share it
     code: str
     station: str
     kind: str  # 'lift' | 'escalator'
@@ -196,6 +198,9 @@ class Outage(NamedTuple):
     # is coloured by what was listed *that* day - so a planned-works notice
     # replaced by a fault does not repaint the planned days red.
     segments: tuple = ()
+    # The notice's planned time over all its stretches. A gap splits what is
+    # measured; it must not refresh what the grace excuses.
+    planned_total: timedelta = timedelta()
 
 
 def observed_until(conn):
@@ -218,22 +223,28 @@ def observed_until(conn):
 
 
 def _outage_from_row(row, until):
+    """One listing span as an outage.
+
+    A row is a span joined to its notice, not the notice: one that came back
+    after a gap has a row per stretch, and each is its own outage.
+    """
     kind = classify(row["head"])
     if kind is None:
         return None
     code, station = station_of(row)
-    first_seen = parse_utc(row["first_seen_at_utc"])
+    first_seen = parse_utc(row["opened_at_utc"])
     # An unparseable start falls back to when the notice was first listed.
     start = parse_utc(row["start_utc"]) or first_seen
-    ongoing = row["status"] == "open"
+    ongoing = row["closed_at_utc"] is None
     end = until if ongoing else parse_utc(row["closed_at_utc"])
     if end is None:
-        # A closed row always has closed_at_utc; guard anyway rather than
+        # A closed span always has closed_at_utc; guard anyway rather than
         # publish an outage with no end.
         end = parse_utc(row["last_seen_at_utc"])
     planned = is_planned(row["text_raw"])
     return Outage(
         id=row["id"],
+        message_id=row["message_id"],
         code=code,
         station=station,
         kind=kind,
@@ -247,6 +258,7 @@ def _outage_from_row(row, until):
         text=row["text_raw"],
         updates=(),
         segments=((first_seen, end, planned),),
+        planned_total=(end - first_seen) if planned else timedelta(),
     )
 
 
@@ -304,11 +316,20 @@ def _fold(chain):
         text=last.text,
         updates=tuple((o.first_seen, o.head, o.text) for o in chain[1:]),
         segments=tuple(seg for o in chain for seg in o.segments),
+        # By notice, not by span: `load_outages` already pooled each notice's
+        # spans, and a chain can hold two of them (A reissued as B, then back
+        # to A) which would count A's total twice.
+        planned_total=sum(
+            {o.message_id: o.planned_total for o in chain}.values(), timedelta()
+        ),
     )
 
 
 def load_outages(db_path, now):
-    """Every lift/escalator notice as an outage, newest first, and the horizon.
+    """Every stretch a lift/escalator notice was listed, newest first, and the horizon.
+
+    One outage per `listings` span, so a notice that came back is two outages
+    with the gap intact.
 
     `now` is only used when the run log is empty and there is nothing else to
     end the window at; everything measured stops at the horizon.
@@ -318,13 +339,22 @@ def load_outages(db_path, now):
     try:
         until = observed_until(conn) or now
         rows = conn.execute(
-            """SELECT id, head, text_raw, start_utc, end_utc, location_codes, event_stops,
-                      first_seen_at_utc, last_seen_at_utc, status, closed_at_utc
-               FROM messages ORDER BY first_seen_at_utc, id"""
+            """SELECT l.id AS id, l.message_id AS message_id,
+                      l.opened_at_utc, l.last_seen_at_utc, l.closed_at_utc,
+                      m.head, m.text_raw, m.start_utc, m.end_utc,
+                      m.location_codes, m.event_stops
+               FROM listings l JOIN messages m ON m.id = l.message_id
+               ORDER BY l.opened_at_utc, l.id"""
         ).fetchall()
     finally:
         conn.close()
     outages = [o for o in (_outage_from_row(r, until) for r in rows) if o is not None]
+    # The grace belongs to the notice, not to the stretch, so pool before
+    # the spans go their separate ways.
+    pooled = defaultdict(timedelta)
+    for o in outages:
+        pooled[o.message_id] += o.planned_total
+    outages = [o._replace(planned_total=pooled[o.message_id]) for o in outages]
     return merge_edits(outages), until
 
 
@@ -392,21 +422,17 @@ def day_marks(o, lo, hi):
     """(date, planned, counts) per day the notice was listed inside [lo, hi).
 
     `counts` is False only for planned works that ran inside `PLANNED_GRACE`
-    in total - every planned segment of the outage added up, because works
-    reissued every few days are still works that ran for a month and
-    `merge_edits` exists because Irish Rail reissue. Only the planned segments:
+    in total - every planned stretch of the notice added up, because works
+    reissued every few days, or dropped from the feed for an afternoon, are
+    still works that ran for a month. Only the planned stretches:
     a fault that replaces the works and runs for a fortnight is the fault's
     fault, and must not retract the grace the works had earned. It is a
     property of the notice rather than of the month, too, so a fortnight of
     works spanning a month end counts in both halves.
     """
-    works = sum(
-        (seg_end - seg_start for seg_start, seg_end, seg_planned in o.segments if seg_planned),
-        timedelta(),
-    )
     last = len(o.segments) - 1
     for i, (seg_start, seg_end, seg_planned) in enumerate(o.segments):
-        counts = not seg_planned or works > PLANNED_GRACE
+        counts = not seg_planned or o.planned_total > PLANNED_GRACE
         for day in _span_days(seg_start, seg_end, lo, hi, o.ongoing and i == last):
             yield day, seg_planned, counts
 
@@ -456,10 +482,8 @@ def station_month(outages, ym, now, until):
     arithmetic and the filter live in one place. `now` decides only what is
     still in the future; everything measured ends at `until`.
 
-    Both kinds count towards the grade. They keep separate bars, because a
-    working lift must not be painted by a broken escalator, but a day is a day
-    the station was short of a way up: Connolly reading 100% over two days of
-    escalator outage was the grade disagreeing with the bar under it.
+    The grade is the lift bar's alone. An escalator notice paints its own bar
+    and counts nothing, because an escalator was never a step-free route.
     """
     lo, hi = observed_window(ym, until)
     month_lo = month_bounds(ym)[0]
@@ -467,7 +491,7 @@ def station_month(outages, ym, now, until):
     faults = planned = lifts = escalators = 0
     ongoing = False
     marks = {"lift": {}, "escalator": {}}
-    against = set()  # days, either kind, that count against availability
+    against = set()  # lift days that count against availability
 
     for o in outages:
         if not listed_in(o, lo, hi):
@@ -491,7 +515,7 @@ def station_month(outages, ym, now, until):
                 code = DAY_PLANNED_LONG if counts else DAY_PLANNED
             if DAY_SEVERITY[code] > DAY_SEVERITY.get(kind_marks.get(day), 0):
                 kind_marks[day] = code
-            if counts:
+            if counts and o.kind == "lift":
                 against.add(day)
 
     cells, observed = _cells(marks["lift"], month_lo, now, until)
@@ -543,5 +567,11 @@ def national_month(outages, ym, now, until):
         "avail": availability(
             sum(s["observed"] for s in per_station), sum(s["against"] for s in per_station)
         ),
-        "ongoing": len({o.code for o in live if o.ongoing and o.end == hi}),
+        # Still listed when the window closed: the listing outran `hi`, or is
+        # open at the horizon (where its `end` sits exactly on `hi`). A closed
+        # notice with `end == hi` came down at the poll on the boundary, so it
+        # does not count - listings are half-open like every window here.
+        # Requiring `o.ongoing and o.end == hi` alone measured "open at the
+        # horizon, in the horizon's month": 0 for every fully past month.
+        "ongoing": len({o.code for o in live if o.end > hi or (o.ongoing and o.end == hi)}),
     }

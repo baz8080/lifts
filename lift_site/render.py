@@ -42,10 +42,10 @@ SITE_HTML = TEMPLATES / "site.html"
 STATION_HTML = TEMPLATES / "station.html"
 SITE_CSS = TEMPLATES / "site.css"
 
-# How far the data may lag the build before the page says so. Pushes land at
-# local midnight and noon, so with jitter and DST a build can legitimately see
-# ~14h-old data, while a dead collector shows 17h+ by the next morning cron.
-STALE_AFTER = timedelta(hours=16)
+# How far the data may lag the build before the page says so. Pushes land every
+# six hours, so with the timer's jitter and one poll interval the newest data can
+# legitimately be ~7h old; a single missed push shows 13h+.
+STALE_AFTER = timedelta(hours=10)
 
 # What a reader downloads before touching anything. Named once: the build
 # prints it, the build warns past it, and the render tests assert it.
@@ -189,7 +189,7 @@ def build(outages, now, until, facts=None):
         "blank": blank,
         "national": national,
         "current": current,
-        "legend": LEGEND_SPANS,
+        "legend": LEGEND_HTML,
         "grades": GRADE_SPANS,
         # The band table travels with the payload so the app derives a letter
         # the same way the static pages do, from the one table in the model.
@@ -198,7 +198,7 @@ def build(outages, now, until, facts=None):
     return data, by_station, months
 
 
-def case_record(o, facts=None):
+def case_record(o, facts=None, lift_listed_too=False):
     """One outage, as compact as it can be while staying readable in the file.
 
     The two durations are computed here, from the offset-aware instants, and
@@ -232,16 +232,37 @@ def case_record(o, facts=None):
         [[_short(when), head, text or ""] for when, head, text in o.updates],
         round((o.end - o.first_seen).total_seconds() / 3600.0, 4),
         lead,
-        _access(o, facts),
+        _access(o, facts, lift_listed_too),
     ]
 
 
-def _access(o, facts):
+def _access(o, facts, lift_listed_too=False):
     """[state, sentence] for one outage, or None when no snapshot is loaded."""
     if not facts:
         return None
-    result = facts.verdict(o.code, o.kind, o.text)
+    result = facts.verdict(o.code, o.kind, o.text, lift_listed_too)
     return [result.state, result.detail]
+
+
+def _overlaps(a, b):
+    """Were the two listed at the same time?
+
+    Half-open, or both still listed: a notice first seen at the last poll is
+    listed for zero minutes (`model.listed_in` has the same case), and the one
+    thing that puts it beside another notice is that both were up at that
+    poll. A lift whose close is dated to that poll was not.
+    """
+    return (a.first_seen < b.end and b.first_seen < a.end) or (a.ongoing and b.ongoing)
+
+
+def lift_listed_too(o, outages):
+    """Did a lift notice at this station overlap this outage?
+
+    Station-wide rather than per platform: coarser only withholds a claim.
+    """
+    return o.kind == "escalator" and any(
+        x.kind == "lift" and _overlaps(x, o) for x in outages
+    )
 
 
 def shard(outages, months, until, facts=None):
@@ -252,12 +273,16 @@ def shard(outages, months, until, facts=None):
     under a month and match the headline.
     """
     windows = [(ym,) + model.observed_window(ym, until) for ym in months]
+    # Computed here because this is the one place that holds all of a
+    # station's outages: an escalator sentence must not quote a lift the row
+    # above it shows was listed out at the same time.
     by_month = defaultdict(list)
     for o in sorted(outages, key=lambda o: (o.first_seen, o.id), reverse=True):
+        overlapped = lift_listed_too(o, outages)
         record = None
         for ym, lo, hi in windows:
             if model.listed_in(o, lo, hi):
-                record = case_record(o, facts) if record is None else record
+                record = case_record(o, facts, overlapped) if record is None else record
                 by_month[ym].append(record)
     return by_month
 
@@ -302,7 +327,7 @@ def summary_bits(first_seen, end, ongoing, start, listed_end, lead_days=None):
 ACCESS_LABEL = {
     "lost": "No step-free access",
     "alternative": "Another step-free way",
-    "escalator": "Not a step-free route",
+    "escalator": "A way up lost, not step-free access",
     "unknown": "Effect on step-free access unknown",
 }
 
@@ -333,9 +358,9 @@ def _access_html(code, data, facts):
     has read one wrong. That has already happened twice - see
     notes/station-access.md.
 
-    Both legs of the journey, because they are different fields and only one of
-    them is derived from. `ticketOfficeAccess` is how you reach the concourse
-    from the street, which is where Connolly's escalator is and where
+    Both legs of the journey, because they are different fields and a notice is
+    read against the one it names. `ticketOfficeAccess` is how you reach the
+    concourse from the street, which is where Connolly's escalator is and where
     `platformAccess` says nothing at all.
     """
     station = facts.station(code) if facts else None
@@ -369,8 +394,8 @@ def _access_html(code, data, facts):
         '<div class="card access"><h2>Getting to the platforms</h2>'
         f"{blocks}{earned}"
         f'<p class="src">{html.escape(ACCESS_CAVEAT)} '
-        "What this page says about step-free access is worked out from the second "
-        "list; the first is shown because a lift or escalator can be on either leg. "
+        "A notice that names a platform is read against the second list, and one "
+        "that names the concourse or entrance against the first. "
         f'<a href="{report}">{html.escape(CORRECTION_PROMPT)}</a></p></div>'
     )
 
@@ -501,28 +526,36 @@ def _bar_label(cells, ym, kind):
     return f"{what}: listed on {listed} of {days} watched"
 
 
-def _bars(cells, esc_cells, ym, partial, tall=False):
-    """One bar, or a pair when the station had an escalator notice that month.
-
-    The pair is labelled only on the drill-down, where the bars are tall and
-    there is room. On an overview row the label column would shorten that one
-    station's bar and knock its days out of line with every other row's.
+def _kind_cell(kind, tall):
+    """What names the strip beside it: a glyph, and the word too where there is
+    room for it.
     """
+    icon = f'<i class="kind kind-{kind}" aria-hidden="true"'
+    if not tall:
+        return f'{icon} title="{KIND_LABEL[kind]}"></i>'
+    return f"<span>{icon}></i>{KIND_LABEL[kind]}s</span>"
+
+
+def _bars(cells, esc_cells, ym, partial, tall=False):
+    """One bar, or a pair when the station had an escalator notice that month."""
     cls = "bar tall" if tall else "bar"
     lift = (
         f'<div class="{cls}" role="img" aria-label="{html.escape(_bar_label(cells, ym, "lift"))}">'
         f"{_day_cells(cells, ym, partial)}</div>"
     )
+    wrap = "bars labelled" if tall else "bars"
     if not esc_cells:
-        return lift
+        return f'<div class="{wrap}">{_kind_cell("lift", tall)}{lift}</div>'
     esc = (
         f'<div class="{cls}" role="img" '
         f'aria-label="{html.escape(_bar_label(esc_cells, ym, "escalator"))}">'
         f'{_day_cells(esc_cells, ym, partial, "escalator")}</div>'
     )
-    if not tall:
-        return f'<div class="bars">{lift}{esc}</div>'
-    return f'<div class="bars labelled"><span>Lifts</span>{lift}<span>Escalators</span>{esc}</div>'
+    # The pair splits one bar's height between them rather than doubling it.
+    return (
+        f'<div class="{wrap} pair">{_kind_cell("lift", tall)}{lift}'
+        f'{_kind_cell("escalator", tall)}{esc}</div>'
+    )
 
 
 # What each day-cell colour means. The swatches take their colours from the
@@ -539,6 +572,20 @@ LEGEND_ITEMS = (
 
 LEGEND_SPANS = "".join(
     f'<span><i class="{cls}"></i>{label}</span>' for cls, label in LEGEND_ITEMS
+)
+
+KIND_SPANS = "".join(
+    f'<span><i class="kind kind-{kind}" aria-hidden="true"></i>{kind}</span>'
+    for kind in ("lift", "escalator")
+)
+
+
+def _keys(name, spans):
+    return f'<span class="keys" role="group" aria-label="{name}">{spans}</span>'
+
+
+LEGEND_HTML = _keys("Which kind each bar carries", KIND_SPANS) + _keys(
+    "What a day\'s colour means", LEGEND_SPANS
 )
 
 # The grade key, keyed by the letter rather than by a colour swatch. A reader
@@ -560,17 +607,14 @@ GRADE_LABELS = (
     ("F", "under 50% available"),
 )
 
-GRADE_SPANS = "<span>Lift and escalator availability</span>" + "".join(
+GRADE_SPANS = "<span>Lift availability</span>" + "".join(
     f"<span>{_chip(letter, f'Grade {letter}')}{label}</span>"
     for letter, label in GRADE_LABELS
 )
 
 
 def _legend_html():
-    """The day key alone. The grade key is in the footer, under the words that
-    explain it: two legend rows stacked above the list read as one key with two
-    halves, and only the top half maps to anything in a bar."""
-    return f'<div class="legend">{LEGEND_SPANS}</div>'
+    return f'<div class="legend">{LEGEND_HTML}</div>'
 
 
 def _station_links(codes, data):
@@ -665,19 +709,18 @@ def station_page(code, data, by_month, listed_now=(), facts=None):
     # The page carries every month, so a chip beside the name has to say which
     # month it is the grade for - in the sub line and in its own label.
     graded = f"graded on {month_label(latest)}"
+    # Red says the record is not current. Why it is not is not something the page
+    # can know: a stalled build looks exactly like a stalled collector.
+    observed = html.escape(data["observed"])
+    if data["stale"]:
+        observed = f'<span class="stale">{observed}</span>'
     body = [
         '<a class="back" href="../index.html">← All stations</a>',
         '<div class="chead">',
         _chip(letter, f"Grade {letter} for {month_label(latest)}" if letter else "No grade yet"),
         f"<h1>{html.escape(name)}</h1>{_step_free_chip(code, facts)}</div>",
         f'<div class="sub">Irish Rail station code {html.escape(code)} · {graded}<br>'
-        f'Data to {html.escape(data["observed"])}'
-        + (
-            ' · <span class="stale">collection has stopped</span>'
-            if data["stale"]
-            else ""
-        )
-        + "</div>",
+        f"Data to {observed}</div>",
         _access_html(code, data, facts),
         _legend_html(),
     ]

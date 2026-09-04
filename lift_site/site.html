@@ -67,10 +67,10 @@
     </details>
 
     <details><summary>How the grade works</summary>
-    <p>Availability is the share of the days watched on which nothing was reported out at
-    that station - no lift and no escalator - and the grade is a band of it. Lifts and
-    escalators keep separate bars, so a working lift is never painted by a broken escalator,
-    but a day either kind was out is a day the station was short of a way up.</p>
+    <p>Availability is the share of the days watched on which no lift was reported out at
+    that station, and the grade is a band of it. Escalator notices get their own bar and do
+    not count against it: an escalator is not a step-free route, so an escalator bar can be
+    red under an A.</p>
     <p>Planned works are excused for their first week. Works still listed after that count
     against the station in full, and change colour on the bar to say so.</p>
     <div class="legend" id="gradekey"></div>
@@ -148,17 +148,22 @@ function barStrip(cells, ym, kind, cls) {
   return '<div class="' + cls + '" role="img" aria-label="' + esc(barLabel(cells, ym, kind)) +
     '">' + bar(cells, ym, kind) + "</div>";
 }
-// One bar, or a pair in a month the station had an escalator notice. Labelled
-// only where the bars are tall: a label column on an overview row would shorten
-// that one station's bar and knock its days out of line with every other row.
+function kindCell(kind, tall) {
+  var icon = '<i class="kind kind-' + kind + '" aria-hidden="true"';
+  if (!tall) return icon + ' title="' + KIND[kind] + '"></i>';
+  return "<span>" + icon + "></i>" + KIND[kind] + "s</span>";
+}
+// One bar, or a pair in a month the station had an escalator notice.
+// Mirrors render._bars.
 function bars(cells, esc, ym, tall) {
   var cls = tall ? "bar tall" : "bar";
+  var wrap = tall ? "bars labelled" : "bars";
   var lift = barStrip(cells, ym, "lift", cls);
-  if (!esc) return lift;
+  if (!esc) return '<div class="' + wrap + '">' + kindCell("lift", tall) + lift + "</div>";
   var stairs = barStrip(esc, ym, "escalator", cls);
-  if (!tall) return '<div class="bars">' + lift + stairs + "</div>";
-  return '<div class="bars labelled"><span>Lifts</span>' + lift +
-    "<span>Escalators</span>" + stairs + "</div>";
+  // The pair splits one bar's height between them rather than doubling it.
+  return '<div class="' + wrap + ' pair">' + kindCell("lift", tall) + lift +
+    kindCell("escalator", tall) + stairs + "</div>";
 }
 
 /* --- the grade ------------------------------------------------------------ */
@@ -263,7 +268,7 @@ function renderOverview() {
     // inside their grace are on the bar and off the total, so Tullamore ships
     // at 100% with two planned-works cells drawn on it.
     tile(n[4] == null ? "-" : n[4] + "%",
-         "of days with lifts and escalators available, across the stations named this month"),
+         "of days with lifts available, across the stations named this month"),
 
     // the latest month's counts are the live ones, so they read as the state of
     // the network now; a past month's are what it ended the month with
@@ -397,7 +402,7 @@ function summaryBits(firstSeen, end, ongoing, start, listedEnd, leadDays) {
 var ACCESS_LABEL = {
   lost: "No step-free access",
   alternative: "Another step-free way",
-  escalator: "Not a step-free route",
+  escalator: "A way up lost, not step-free access",
   unknown: "Effect on step-free access unknown"
 };
 
@@ -509,7 +514,7 @@ function boot() {
   curMonth = D.months[D.months.length - 1];
   START_ISO = D.start_iso;
   var natmeta = document.getElementById("natmeta");
-  natmeta.innerHTML = freshness(D.observed_iso, D.stale_hours, "collection has stopped");
+  natmeta.innerHTML = freshness(D.observed_iso, D.stale_hours);
   // the exact horizon, for whoever hovers the age chip; the header stamp it
   // replaces carried it in full
   natmeta.title = "Data to " + D.observed;

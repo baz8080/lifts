@@ -36,6 +36,16 @@ class StoreTestCase(unittest.TestCase):
         ).fetchone()
         return dict(row) if row else None
 
+    def _listings(self, key):
+        return [
+            (r["opened_at_utc"], r["last_seen_at_utc"], r["closed_at_utc"])
+            for r in self.store.conn.execute(
+                """SELECT l.* FROM listings l JOIN messages m ON m.id = l.message_id
+                   WHERE m.identity_key = ? ORDER BY l.opened_at_utc, l.id""",
+                (key,),
+            )
+        ]
+
 
 class TestWriteRaw(StoreTestCase):
     def test_writes_one_jsonl_line(self):
@@ -80,19 +90,20 @@ class TestDiffAndUpdateMessages(StoreTestCase):
         self.assertEqual(msg["status"], "open")
         self.assertEqual(msg["text_raw"], "updated wording")
 
-    def test_absent_message_closes_immediately_default_grace(self):
+    def test_absent_message_closes_after_the_default_grace(self):
+        """Two misses, and it closes at the first of them, not the second."""
         item = make_item()
         from lift_status.parse import derive_identity_key
 
         self._run([item], observed_at="2026-08-08T12:00:00Z")
-        diff = self._run([], observed_at="2026-08-08T12:30:00Z")
-        self.assertEqual(diff["closed"], 1)
+        self.assertEqual(self._run([], observed_at="2026-08-08T12:30:00Z")["closed"], 0)
+        self.assertEqual(self._run([], observed_at="2026-08-08T13:00:00Z")["closed"], 1)
         msg = self._message(derive_identity_key(item))
         self.assertEqual(msg["status"], "closed")
         self.assertEqual(msg["closed_at_utc"], "2026-08-08T12:30:00Z")
 
     def test_grace_period_delays_closure(self):
-        os.environ["LIFT_STATUS_GRACE_MISSES"] = "2"
+        os.environ["LIFT_STATUS_GRACE_MISSES"] = "3"
         try:
             item = make_item()
             from lift_status.parse import derive_identity_key
@@ -105,7 +116,8 @@ class TestDiffAndUpdateMessages(StoreTestCase):
             self.assertEqual(msg["consecutive_misses"], 1)
             self.assertEqual(msg["missing_since_at_utc"], "2026-08-08T12:30:00Z")
 
-            diff2 = self._run([], observed_at="2026-08-08T13:00:00Z")
+            self.assertEqual(self._run([], observed_at="2026-08-08T13:00:00Z")["closed"], 0)
+            diff2 = self._run([], observed_at="2026-08-08T13:30:00Z")
             self.assertEqual(diff2["closed"], 1)
             msg = self._message(derive_identity_key(item))
             self.assertEqual(msg["status"], "closed")
@@ -135,12 +147,88 @@ class TestDiffAndUpdateMessages(StoreTestCase):
         from lift_status.parse import derive_identity_key
 
         self._run([item], observed_at="2026-08-08T12:00:00Z")
-        self._run([], observed_at="2026-08-08T12:30:00Z")  # closes
+        self._run([], observed_at="2026-08-08T12:30:00Z")
+        self._run([], observed_at="2026-08-08T13:00:00Z")  # closes
         self._run([item], observed_at="2026-08-09T09:00:00Z")  # reopens, new incident
         msg = self._message(derive_identity_key(item))
         self.assertEqual(msg["status"], "open")
         self.assertIsNone(msg["closed_at_utc"])
         self.assertEqual(msg["reopen_count"], 1)
+
+    def test_a_reopen_starts_a_second_listing_rather_than_extending_the_first(self):
+        """identity_key is UNIQUE, so both stretches shared one row and the
+        fortnight between them was published as listed time."""
+        item = make_item()
+        from lift_status.parse import derive_identity_key
+
+        self._run([item], observed_at="2026-08-08T12:00:00Z")
+        self._run([], observed_at="2026-08-08T12:30:00Z")
+        self._run([], observed_at="2026-08-08T13:00:00Z")  # closes
+        self._run([item], observed_at="2026-08-22T09:00:00Z")  # back after a fortnight
+        self.assertEqual(
+            self._listings(derive_identity_key(item)),
+            [
+                ("2026-08-08T12:00:00Z", "2026-08-08T12:00:00Z", "2026-08-08T12:30:00Z"),
+                ("2026-08-22T09:00:00Z", "2026-08-22T09:00:00Z", None),
+            ],
+        )
+
+    def test_a_notice_seen_again_while_still_open_extends_its_listing(self):
+        item = make_item()
+        from lift_status.parse import derive_identity_key
+
+        self._run([item], observed_at="2026-08-08T12:00:00Z")
+        self._run([item], observed_at="2026-08-08T12:30:00Z")
+        self.assertEqual(
+            self._listings(derive_identity_key(item)),
+            [("2026-08-08T12:00:00Z", "2026-08-08T12:30:00Z", None)],
+        )
+
+    def test_a_miss_inside_the_grace_does_not_split_the_listing(self):
+        """A miss the grace absorbs must not read as a new outage."""
+        item = make_item()
+        from lift_status.parse import derive_identity_key
+
+        os.environ["LIFT_STATUS_GRACE_MISSES"] = "2"
+        try:
+            self._run([item], observed_at="2026-08-08T12:00:00Z")
+            self._run([], observed_at="2026-08-08T12:30:00Z")  # one miss, still open
+            self._run([item], observed_at="2026-08-08T13:00:00Z")
+        finally:
+            del os.environ["LIFT_STATUS_GRACE_MISSES"]
+        self.assertEqual(
+            self._listings(derive_identity_key(item)),
+            [("2026-08-08T12:00:00Z", "2026-08-08T13:00:00Z", None)],
+        )
+
+    def test_a_database_written_before_listings_existed_gains_a_span(self):
+        """An upgrade in place keeps the database and creates `listings`
+        empty, leaving notices already open with no span."""
+        item = make_item()
+        from lift_status.parse import derive_identity_key
+
+        self._run([item], observed_at="2026-08-08T12:00:00Z")
+        self.store.conn.execute("DELETE FROM listings")  # the pre-upgrade shape
+        self._run([item], observed_at="2026-08-08T12:30:00Z")
+        self.assertEqual(
+            self._listings(derive_identity_key(item)),
+            [("2026-08-08T12:00:00Z", "2026-08-08T12:30:00Z", None)],
+        )
+
+    def test_a_notice_that_predates_listings_gets_a_span_when_it_closes(self):
+        """Back-dating only on the seen-again path lost the notice entirely:
+        closed with no span, it reaches nothing that reads through one."""
+        item = make_item()
+        from lift_status.parse import derive_identity_key
+
+        self._run([item], observed_at="2026-08-08T12:00:00Z")
+        self.store.conn.execute("DELETE FROM listings")  # the pre-upgrade shape
+        self._run([], observed_at="2026-08-08T12:30:00Z")
+        self._run([], observed_at="2026-08-08T13:00:00Z")  # closes
+        self.assertEqual(
+            self._listings(derive_identity_key(item)),
+            [("2026-08-08T12:00:00Z", "2026-08-08T12:00:00Z", "2026-08-08T12:30:00Z")],
+        )
 
     def test_duplicate_identical_items_are_deduped_not_double_counted(self):
         item = make_item()

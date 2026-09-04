@@ -15,7 +15,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from lift_site import model, render
-from lift_status.store import Store
+from lift_status.store import DEFAULT_GRACE_MISSES, Store
 from tests.helpers import make_item
 
 _run_counter = itertools.count()
@@ -70,6 +70,15 @@ class SiteModelCase(unittest.TestCase):
         run_id = self.store.begin_run_success(f"run-{next(_run_counter)}", iso(at), 200)
         self.store.diff_and_update_messages(run_id, iso(at), items)
         self.store.finalize_run(run_id, iso(at), len(items), 0, 0)
+
+    def drop(self, at, every=timedelta(minutes=30)):
+        """Poll the notice away for good, starting at `at`.
+
+        One empty poll no longer closes anything, but the outage still ends at
+        `at`, the first poll it was absent from.
+        """
+        for i in range(DEFAULT_GRACE_MISSES):
+            self.poll(at + i * every, [])
 
     def fail_run(self, at):
         self.store.record_run_failure(
@@ -137,7 +146,7 @@ class TestListing(SiteModelCase):
         self.poll(T0, [lift()])
         self.poll(T0 + timedelta(minutes=30), [lift()])
         gone = T0 + timedelta(minutes=60)
-        self.poll(gone, [])
+        self.drop(gone)
         (o,) = self.load()
         self.assertEqual((o.first_seen, o.end, o.ongoing), (T0, gone, False))
         self.assertEqual(o.kind, "lift")
@@ -194,20 +203,73 @@ class TestMergeEdits(SiteModelCase):
         self.assertEqual(o.updates[0][0], edit)
 
     def test_a_reissue_takes_the_earliest_start_and_the_newest_works_flag(self):
-        # A corrected start changes the identity key too.
+        # A corrected start changes the identity key too. The replaced notice
+        # is only a miss at the reissuing poll, so the merge takes one more.
+        reissued = lift(start="2026-08-01T09:00:00", planned=True)
         self.poll(T0, [lift(start="2026-08-05T09:00:00")])
-        self.poll(T0 + timedelta(minutes=30), [lift(start="2026-08-01T09:00:00", planned=True)])
+        self.poll(T0 + timedelta(minutes=30), [reissued])
+        self.poll(T0 + timedelta(minutes=60), [reissued])
         (o,) = self.load()
         self.assertEqual(o.start, datetime(2026, 8, 1, 8, 0, tzinfo=UTC))
         self.assertTrue(o.planned)
 
     def test_a_notice_that_comes_back_a_poll_later_is_a_separate_outage(self):
         self.poll(T0, [lift()])
-        self.poll(T0 + timedelta(minutes=30), [])
-        self.poll(T0 + timedelta(minutes=60), [lift(start="2026-08-09T09:00:00")])
+        self.drop(T0 + timedelta(minutes=30))
+        self.poll(T0 + timedelta(days=1), [lift(start="2026-08-09T09:00:00")])
         outages = self.load()
         self.assertEqual(len(outages), 2)
         self.assertEqual([o.ongoing for o in outages], [True, False])  # newest first
+
+    def test_the_same_notice_coming_back_is_two_outages_with_the_gap_intact(self):
+        """The identity key is unchanged, so the collector reopens one row.
+
+        The reopen test alongside gives the returning notice a corrected
+        start, which makes it a new row instead, so nothing covered this.
+        """
+        self.poll(T0, [lift()])
+        self.drop(T0 + timedelta(minutes=30))
+        back = T0 + timedelta(days=14)
+        self.poll(back, [lift()])
+        outages = self.load()
+        self.assertEqual(len(outages), 2)
+        newest, oldest = outages
+        self.assertEqual(oldest.first_seen, T0)
+        self.assertEqual(oldest.end, T0 + timedelta(minutes=30))
+        self.assertFalse(oldest.ongoing)
+        self.assertEqual(newest.first_seen, back)
+        self.assertTrue(newest.ongoing)
+
+    def test_a_gap_splits_the_listing_without_refreshing_the_works_grace(self):
+        """Works that blink off the feed are still works that ran for a month."""
+        self.poll(T0, [lift(planned=True)])
+        for day in range(1, 10):
+            self.poll(T0 + timedelta(days=day), [lift(planned=True)])
+        self.drop(T0 + timedelta(days=10))
+        self.poll(T0 + timedelta(days=10, hours=1), [lift(planned=True)])
+        outages = self.load()
+        self.assertEqual(len(outages), 2)
+        # The short second stretch would sit inside the grace on its own.
+        self.assertLess(outages[0].end - outages[0].first_seen, model.PLANNED_GRACE)
+        for o in outages:
+            self.assertGreater(o.planned_total, model.PLANNED_GRACE)
+            self.assertTrue(all(counts for _, _, counts in model.day_marks(o, T0, NOW)))
+
+    def test_a_notice_reissued_and_reverted_counts_its_works_once(self):
+        """A chain can hold two spans of one notice, and the grace is pooled
+        per notice, so summing per span counted the reverted one twice."""
+        works = lift(planned=True)
+        reissued = lift(planned=True, head="Athy - Lifts out of order")
+        for i in range(4):
+            self.poll(T0 + timedelta(hours=12 * i), [works])
+        for i in range(4, 8):
+            self.poll(T0 + timedelta(hours=12 * i), [reissued])
+        for i in range(8, 12):
+            self.poll(T0 + timedelta(hours=12 * i), [works])
+        (o,) = self.load(now=T0 + timedelta(days=7))
+        self.assertEqual(len(o.segments), 3)
+        self.assertEqual(o.planned_total, o.end - o.first_seen)
+        self.assertLess(o.planned_total, model.PLANNED_GRACE)
 
     def test_a_reissue_merges_past_a_second_notice_still_up_at_the_station(self):
         # Two lifts listed at one station; one notice is reworded. The other,
@@ -221,6 +283,7 @@ class TestMergeEdits(SiteModelCase):
         b2 = dict(b, head="Athy - Lifts out of order")
         self.poll(T0, [b, a])
         self.poll(edit, [a, b2])
+        self.poll(edit + timedelta(minutes=30), [a, b2])
         outages = self.load()
         self.assertEqual(len(outages), 2)
         merged = [o for o in outages if o.updates]
@@ -251,7 +314,7 @@ class TestStationMonth(SiteModelCase):
 
     def test_cells_cover_the_month_and_mark_what_was_not_watched(self):
         self.poll(T0, [lift()])
-        self.poll(T0 + timedelta(days=2), [])
+        self.drop(T0 + timedelta(days=2))
         s = self.cells(self.load())
         self.assertEqual(len(s["cells"]), 31)
         # 1-7 August: before collection. 8-10: listed, the 10th only until the
@@ -295,23 +358,31 @@ class TestStationMonth(SiteModelCase):
         self.assertEqual(s["cells"][7], "5")
         self.assertIsNone(s["esc_cells"])
 
-    def test_an_escalator_notice_counts_towards_the_grade(self):
-        # Pearse in August 2026: the escalator listed for a fortnight while the
-        # lifts ran. The lift bar stays clear - a working lift is never painted
-        # by a broken escalator - but the days count, because the station was
-        # short of a way up on them.
+    def test_an_escalator_notice_paints_its_own_bar_and_not_the_grade(self):
+        # Pearse in August 2026 graded F on an escalator alone, beside a line
+        # saying the outage did not remove step-free access (issue #32).
         self.poll(T0, [escalator(station="Dublin Pearse", code="PERSE")])
         self.poll(T0 + timedelta(days=2), [escalator(station="Dublin Pearse", code="PERSE")])
         s = self.cells(self.load())
         self.assertEqual(set(s["cells"]) - set("89"), {"0"})
         self.assertEqual(s["esc_cells"][7:10], "111")
-        self.assertEqual((s["against"], s["avail"], s["grade"]), (3, 0, "F"))
+        self.assertEqual((s["against"], s["avail"], s["grade"]), (0, 100, "A"))
+
+    def test_a_lift_beside_an_escalator_counts_only_the_lifts_days(self):
+        esc = escalator(station="Dublin Pearse", code="PERSE")
+        self.poll(T0, [esc, lift(station="Dublin Pearse", code="PERSE")])
+        self.poll(T0 + timedelta(minutes=30), [esc])
+        self.poll(T0 + timedelta(hours=1), [esc])
+        self.poll(T0 + timedelta(days=2), [esc])
+        s = self.cells(self.load())
+        self.assertEqual((s["cells"][7:10], s["esc_cells"][7:10]), ("100", "111"))
+        self.assertEqual((s["observed"], s["against"], s["avail"], s["grade"]), (3, 1, 66, "E"))
 
     def test_planned_works_are_excused_for_a_week_and_not_a_day_longer(self):
         short = model.PLANNED_GRACE - timedelta(hours=1)
         self.poll(T0, [lift(planned=True)])
         self.poll(T0 + short, [lift(planned=True)])
-        self.poll(T0 + short + timedelta(minutes=30), [])
+        self.drop(T0 + short + timedelta(minutes=30))
         s = self.cells(self.load())
         self.assertEqual(s["cells"][7:15], "5" * 8)
         self.assertEqual((s["against"], s["avail"], s["grade"]), (0, 100, "A"))
@@ -320,7 +391,7 @@ class TestStationMonth(SiteModelCase):
         long = model.PLANNED_GRACE + timedelta(hours=1)
         self.poll(T0, [lift(planned=True)])
         self.poll(T0 + long, [lift(planned=True)])
-        self.poll(T0 + long + timedelta(minutes=30), [])
+        self.drop(T0 + long + timedelta(minutes=30))
         s = self.cells(self.load())
         # an hour past the grace and every day of it counts, the first week
         # included; the closing poll falls after Dublin midnight, so nine days
@@ -452,18 +523,40 @@ class TestStationMonth(SiteModelCase):
 
     def test_the_month_headline_counts_stations_and_their_availability(self):
         self.poll(T0, [lift(), escalator(), lift(code="BRAY", station="Bray")])
+        # Two polls without them, both still the 9th in Dublin: a third day
+        # watched would change what this counts.
+        self.poll(T0 + timedelta(days=1), [lift()])
         self.poll(T0 + timedelta(days=1, hours=1), [lift()])
         outages = self.load()
         n = model.national_month(outages, "2026-08", NOW, self.until)
         self.assertEqual(n["stations"], 3)
         self.assertEqual(n["outages"], 3)
         self.assertEqual((n["faults"], n["planned"]), (3, 0))
-        # Two days watched at each of the three stations, and all three are
-        # listed on both: Athy throughout, Bray closed at the poll on the 9th
-        # having been listed into it, and Connolly's escalator, which counts
-        # like a lift. So none of the six station-days is available.
-        self.assertEqual(n["avail"], 0)
+        # Two days watched at each of the three stations. Athy is listed
+        # throughout and Bray closed at the poll on the 9th having been listed
+        # into it; Connolly's escalator is on its own bar and off the total. So
+        # two of the six station-days are available, floored.
+        self.assertEqual(n["avail"], 33)
         self.assertEqual(n["ongoing"], 1)
+
+    def test_a_past_month_counts_the_stations_listed_when_it_ended(self):
+        """Issue #36: the "still out when the month ended" tile read 0 for
+        every past month, because the predicate could only be true in the
+        horizon's month. Athy runs into September and stays up, Tullamore runs
+        into September and closes there, Bray closes inside August: two
+        stations were listed when August ended."""
+        aug = [lift(), lift(code="TMORE", station="Tullamore"), lift(code="BRAY", station="Bray")]
+        self.poll(T0, aug)
+        self.poll(T0 + timedelta(days=2), aug[:2])
+        self.poll(datetime(2026, 9, 1, 9, 0, tzinfo=UTC), aug[:1])
+        self.poll(datetime(2026, 9, 2, tzinfo=UTC), aug[:1])
+        now = datetime(2026, 9, 3, tzinfo=UTC)
+        outages = self.load(now=now)
+        n = model.national_month(outages, "2026-08", now, self.until)
+        self.assertEqual(n["stations"], 3)
+        self.assertEqual(n["ongoing"], 2)
+        # and September's own count is only what is still up at the horizon
+        self.assertEqual(model.national_month(outages, "2026-09", now, self.until)["ongoing"], 1)
 
 
 class TestPartialDays(unittest.TestCase):
@@ -518,7 +611,7 @@ class TestShard(SiteModelCase):
         # a notice that has come down, "listed end 30 Dec" reads as if the
         # works were still running; the notice coming down is the signal.
         self.poll(T0, [lift()])
-        self.poll(T0 + timedelta(hours=1), [])
+        self.drop(T0 + timedelta(hours=1))
         (o,) = self.load()
         self.assertIsNone(render.case_record(o)[7])
 

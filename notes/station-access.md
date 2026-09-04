@@ -209,6 +209,9 @@ does not mention an escalator" at the one station where that line rendered, and
 it was false. The escalator check now reads both fields and the station page
 quotes both, labelled, because a lift or an escalator can be on either leg.
 
+**Settled 2026-09-03: both legs.** The paragraph below stood until then; § *The
+entrance leg, and who an escalator served* has what replaced it.
+
 **The derivation still models only the platform leg**, and that is a real limit
 rather than a tidy one: a lift outage at a station entrance would be reasoned
 about against prose that describes a different part of the building. No notice
@@ -224,19 +227,20 @@ an escalator in a notice would break the deduction. None is named in any of the
 escalator, the verdict now says so rather than implying the machine's role is
 known.
 
-**Still open: the grade.** `site.md` § *An escalator out is a day the station was
-short of a way up* counts escalator outages at the same weight as lift outages,
-so the grade and the station page disagree in public. Issue #32, with the
-numbers: Dublin Pearse is graded F, the worst band, on the strength of an
-escalator alone. The two rules were decided at different times against different
-questions and both look sound alone; the question under them is what the grade is
-for. Do not try to settle it from `platformAccess`, which mentions an escalator
-at 2 of 147 stations.
+**Settled 2026-09-03: the grade.** It counted escalator outages at the same
+weight as lift outages, so the grade and the station page disagreed in public:
+Dublin Pearse graded F, the worst band, on the strength of an escalator alone
+(issue #32). Escalator days are off the total now and the grade is named lift
+availability; `site.md` § *The grade is lift availability* has the numbers, the
+rejected options and the one escalator case that should knock, which
+`tests/test_site_real.py` guards. It was not settled from `platformAccess`,
+which mentions an escalator at 2 of 147 stations.
 
 ## The other platform is often still step-free, and the prose says so
 
-Not yet built. Recorded because it is the largest unclaimed win here and it is
-bigger than the exception list by an order of magnitude.
+Built 2026-09-01 (issue #31); the rule is at the end of this section. Recorded
+first because it was the largest unclaimed win here, bigger than the exception
+list by an order of magnitude.
 
 A lift out does not strand a station, it strands a *platform*. The other
 platform is frequently at street or car park level and needs no lift at all,
@@ -283,6 +287,45 @@ lift to platform 2 was out for twelve days, and platform 1 was level
 throughout" bounds how bad the outage was, which is exactly what an archive is
 for. That is derivable from the prose today.
 
+### The rule, as built (2026-09-01)
+
+`step_free_platforms(station)` splits the prose on `SENTENCE`, the split
+`implicated` already uses. A sentence contributes its platforms if it says
+`level` or `ramp(s)`, names a platform number, and mentions no lift ("lifts and
+ramps" is a sequence), no stairs, staircase, stairway or step, no footbridge,
+subway or escalator, and no "from platform" (a
+between-platforms link says nothing about the street leg: Dún Laoghaire's "Ramp
+access from Platform 2 to Platform 3").
+
+Only the stair wording excludes a sentence on the 2026-08-30 corpus (Gorey's
+"Level, stairs only to platform 2", Connolly's "Ramp or stairs to platform 5").
+The rest are guards against a rewording, drawn from wording the pages already
+use: 34 stations say step, 39 footbridge, 3 subway (the Irish word for a
+pedestrian underpass - Athlone's "Steps or lift and subway to platforms No. 2
+and 3"), 2 escalator. "Level crossing" was in the list and came out on
+2026-09-01: it appears nowhere in the prose, so it guarded against nothing.
+
+Containment, not an anchored "Level to": Cork's "Platforms 1, 2, 3 and 4 are
+level" is as direct a statement, and a dry run over all 152 stations found no
+sentence it reads wrongly. Sentences naming no number drop out - Limerick
+Junction's bare "Level", Dromod's "Level to main platform", Garryduff's "Ramp to
+Southbound platform" - which is consistent with direction staying out of scope.
+
+The note fires only on the plain-loss branch of `verdict`, and is withheld
+wherever the two hand-written sources disagree: at a lift-served platform, which
+neutralises Rush and Lusk's typo ("Level access to platform 1" beside "Lift and
+footbridge to platform 1"); at a platform the notice itself names (Athy's names
+1 and 2 where the page calls 1 level); and at a general lift claim, which gets
+no note at all (Bray, Lansdowne Road, Longford, Dalkey).
+
+The wording - "Platform 1 needed no lift, so it kept step-free access: 'Level to
+platform 1'." - is deliberately not the exception list's "another step-free
+way", which means the *same* platform stays reachable. Five lost verdicts gain
+it on the corpus as of 2026-09-01 (Pearse, Dún Laoghaire, Malahide,
+Portarlington, Tullamore); Athy's and Skerries' notices name the level platform
+themselves. It is re-derived from the live prose at every build, so a reworded
+page withdraws it.
+
 ## When it says "unknown"
 
 Both sources are hand-written and they disagree. On the corpus as of
@@ -297,9 +340,242 @@ discrepancy worth not papering over:
 | Portlaoise | prose puts the lift at platform 1; the notice says platform 2 |
 | Carlow | prose puts the lift at platform 2; the notice says platform 1 |
 
+A lift notice that names the way in is unknown where `ticketOfficeAccess` puts
+no lift there, or is blank. No notice on the corpus is of that shape.
+
 A notice naming more platforms than the page accounts for keeps what it knows
 rather than forfeiting everything: Athy's notice names 1 and 2, the page has a
 lift at 2 and calls 1 level, and platform 2 is still knowable.
+
+## The entrance leg, and who an escalator served - 2026-09-03
+
+Issue #33, the two follow-ups #30 left. Built on the corpus to 3 September:
+28 notices, three of them escalators (Pearse, Connolly, Tara Street).
+
+### Which leg a notice is about is read from its own text
+
+`leg_named` reads the notice: a platform number or the word "platform" is the
+platform leg; failing that, `concourse`, `entrance`, `booking hall`, `ticket
+office`, `ticket hall`, `car park` or `street level` is the entrance leg; a
+notice naming neither is unlocated. A platform wins over an entrance word,
+because `platformAccess` starts at the ticket office: "the lift from the
+concourse to platform 2" is that field's leg.
+
+Over the 24 distinct notice texts on record: 19 platform, 1 entrance (Connolly's
+"at the main concourse"), 4 unlocated (Malahide's "at Malahide Station",
+Docklands' "The lift is currently out of service", Tullamore, and Clonsilla's
+"on P2", which nothing here reads as a platform). No false entrance hits. The
+entrance list is built from one real example and the vocabulary of
+`ticketOfficeAccess` itself; a notice saying "main hall" or "foyer" falls to
+unlocated, which is the reading the site had before.
+
+### What `ticketOfficeAccess` has in it
+
+All 152 stations carry the field. 9 are blank (the Northern Ireland stations),
+26 say there is no ticket office, 89 say level, 21 say ramp. **Four name a
+lift**: Connolly ("Escalator, lift or stairs from Amiens Street and from LUAS
+stop. / Level access from car park. / Via main concourse."), Clondalkin ("Level
+or via lift"), Docklands ("Lift to ticket office") and Grand Canal Dock
+("Through main entrance building into the booking hall on platform 2 via stairs
+or lift"). **One names an escalator**: Connolly. The field is literally how to
+reach the ticket office, so "No ticket office" says nothing about the door, and
+is read as the page naming no lift there.
+
+Two shapes caught in the dry run. Kilcoole's field is the two words "Not level",
+which a filter that only looks for the word would quote as a level way in;
+`NEGATED` excludes any level or ramp sentence carrying "no" or "not", except a
+"No" before a number, which is how Carrigaloe and Dalkey label a platform.
+Athlone writes it "No.", and the sentence splitter used to take that for a full
+stop, so it no longer splits after one. That also surfaces two level platforms
+the split had been hiding, Banteer's "Level to Platform No. 1" and
+Booterstown's "Level to platform No. 1, city centre & northbound via station
+entrance"; neither station has had a notice, so nothing published moves. Grand Canal Dock's lift sentence names
+platform 2 on its way to naming the lift, so the entrance picker takes the first
+lift sentence whatever platforms it mentions; there is one way in.
+
+And one caught in review, twice. Pearse's way-in field names no lift, but its
+`platformAccess` carries "Lifts/stairs/Escalators from the Pearse Street
+entrance". A notice naming that entrance must not be told the page names no
+lift there, so `entrance_lift_sentence` reads both fields. The first fix sent
+such a notice to the platform reading instead, which published "Platform 1
+needed no lift ... Ramp to platform 1" for a lift that may be the way to the
+booking hall the ramp starts from. It is an entrance loss quoting the sentence,
+whichever field holds it. The one shape still read on the platform leg is a
+page whose entrance-word lift sentence names a platform ("Lift from the
+concourse to platform 2"): the page itself puts that lift on the platform leg.
+
+### A lift notice on the entrance leg
+
+Read against `ticketOfficeAccess` and nothing else, before the platform-leg lift
+claim is consulted, because a page can put a lift on the way in and claim none
+to the platforms. Where the field names a lift: **lost**, quoting the sentence,
+"so step-free access into the station was gone while this was listed", plus a
+level or ramped sentence from the same field when there is one that names no
+lift and nothing stepped (Connolly's "Level access from car park"). Where it
+names none, or is blank: **unknown**, saying which. Clondalkin's "Level or via
+lift" comes out lost, the Hazelhatch reading: the module does not parse
+connectives, and the quote lets a reader see the page's own words. The entrance
+note is worded "needed no lift" and never "kept step-free access", which the
+real-corpus guard from #31 reads against `lift_platforms`.
+
+No lift notice on record names the way in, so this is machinery for a notice
+that has not arrived, built because the escalator sentence below could not be
+written honestly without it.
+
+### Who an escalator outage affected
+
+The deduction stays and is all that is *known*: an escalator has steps, so it
+was never a step-free route, so losing it cannot lose one. The sentence now goes
+on to say who did lose something - "Anyone who finds a flight of stairs hard,
+or has a buggy, a suitcase or a stick, did lose a way up" - and then what the
+page puts on the same leg, because a lift to the platforms says nothing about
+the way in:
+
+| notice | leg | what the page puts there |
+|---|---|---|
+| Pearse, "at platform 2" | platform | "Lift or stairs to platform 2 (southbound)" |
+| Tara Street, "at platform 2" | platform | "Both platforms can be accessed by lifts, stairs or escalator" |
+| Connolly, "at the main concourse" | entrance | "Escalator, lift or stairs from Amiens Street and from LUAS stop", and "Level access from car park" |
+
+The lift sentence is picked specific-before-general, as `read_platform_access`
+reads the page, which is what keeps Pearse's summary "Via ramps, stairs,
+escalators, and lifts." out of the quote, and the phrase names the platforms
+the quoted sentence puts a lift at rather than the notice's (Athy's "Lift to
+platform 2" beside a notice naming 1 and 2). A platform the page calls level is
+a disagreement, not a way round: a level platform has no level change for an
+escalator to make, so the sentence says the notice and the page disagree, the
+rule every other disagreement here follows, and it says so even beside a
+general lift claim (Bray's "Use the lift or stairs" is not put on the way to
+the platforms the same page calls level). Every platform the notice names gets
+one of the three sentences, so a notice naming a level platform and a bare one
+says both. A platform with neither gets "names
+no lift or level way to platform N, so nothing on it says there was another way
+up", and a station whose page claims no lift at all says so by name. That last
+is the only-powered-way-up shape, which no station has and
+`tests/test_site_real.py` still guards for the grade. An unlocated escalator
+notice says the notice does not say where the escalator is.
+
+Every sentence says what the page *names*. None says a lift was working, which
+the page cannot know; a real-corpus test forbids "still had", "remains",
+"available" and "working" in every verdict.
+
+### The one thing the site knows that the page does not
+
+A lift notice at the same station listed while the escalator was. Quoting "the
+page puts a lift on the way to platform 2 as well" under a row that shows that
+lift out would be the page contradicting itself, so `render.shard`, the one
+place that holds all of a station's outages, sets `lift_listed_too` and the
+sentence becomes "..., though a lift notice at this station overlapped this
+one". It says no more than that: the flag is station-wide, so which lift was out
+is not established and the sentence does not say. Half-open intervals, or both
+still listed: a notice first seen at the last poll is listed for zero minutes,
+and what puts it beside another notice is that both were up at that poll, not
+that the instants touch. Pearse's lift came down at the poll its escalator went
+up (13 August, 10:30Z), which is touching, not overlapping, and there are zero
+overlaps on the corpus. The real-corpus test asserts the flag against its own
+interval arithmetic over the station's rows, not against that count. `report`
+has no listings and never sets it.
+
+### On the page
+
+The label reads "A way up lost, not step-free access" in place of "Not a
+step-free route", which read as nothing happened. The box loses its green
+border for a neutral one: neither the red of a loss nor the green of a way
+round. The access card's caveat says which list each leg is read against.
+
+### Rejected
+
+- **Parsing "or" as a choice on the entrance leg.** The module refuses
+  connectives everywhere else for a reason that holds here: "Level or via lift"
+  may well be a choice, but nothing distinguishes it from a sequence in the
+  text, and the safe reading costs one wasted check.
+- **A hand-reviewed list of entrance alternatives**, like `STEP_FREE_ALTERNATIVES`.
+  Four fields name a lift and none has had a notice; nothing to review yet.
+- **A fifth verdict state** for an escalator with no other way up. The label
+  carries the distinction the reader needs, and the grade rule for that case is
+  settled in `site.md` and guarded.
+- **Weighting the grade** for the people an escalator serves. #43 settled the
+  grade as the lift bar's; this is the page saying who is off it.
+
+A future notice of the shape "lift at the Townsend Street entrance" at Tara
+Street would read as the entrance leg against a field that does not mention that
+entrance (the stairs-only line sits in `platformAccess`) and come out unknown.
+That is the safe direction.
+
+## How reliable this is, honestly - 2026-09-03
+
+Written after building the entrance leg, because the question came up and the
+answer belongs where the next reader will look. The short form: defensible as
+an annotation on an outage archive, with the safeguards below, and not as
+anything a traveller should act on.
+
+**Why it is defensible at all.** The alternative is not a better source but
+silence: every structured source is empty (§ Why scraping prose is the only
+option). A reading of the prose beats silence only if the error direction is
+controlled, and that is the whole design: default to "gone", say "unknown"
+freely, quote the sentence each claim rests on, carry the caveat and the
+correction link on every page that makes a derived claim, and keep the grade
+independent of all of it. A reader can falsify any verdict against the quoted
+words. Remove the quoting or the one-directional bias and it stops being
+defensible.
+
+**By class of sentence, on the corpus to 3 September (27 distinct notices).**
+
+- *"Step-free access was gone"* (18 of 27). The strongest part: one direct
+  sentence and one notice. Its failure mode is a wrong page, and the page has
+  already produced a typo (Rush and Lusk), a self-contradiction (Limerick
+  Junction) and an omission (Connolly's escalator). Six of 27 verdicts are
+  unknown for exactly that reason. That figure is honest, and it is also the
+  reliability ceiling of the source.
+- *"Platform 1 needed no lift"* and *"Level access from car park"*. Direct
+  statements, but "level" is Irish Rail's word. Nobody has checked one of
+  these against the station: distance, gates, opening hours, whether the route
+  is usable with a buggy in the rain. The correction link is the only feedback
+  channel and it has never fired.
+- *The escalator sentence's second half* (3 of 27). "The page puts a lift on
+  the way to platform 2 as well" is true of the page. What a reader infers is
+  that the lift worked. The overlap guard covers the one thing the site knows,
+  but the feed is not complete (notices appear and vanish in batches), so a
+  lift out that Irish Rail never posted is invisible. The site controls its
+  words, not the inference.
+- *The entrance leg* (0 lift notices, 1 escalator notice). Built from one real
+  example, on a field that is literally about reaching the ticket office; at
+  26 stations it says there is no office, so a sixth of the network is unknown
+  on that leg by construction. Treat it as untested machinery until a notice
+  exercises it.
+
+**What the code's own history says.** Three review passes on the day this was
+built found nine, six and five findings in about a thousand lines of this
+kind of logic, and one fix was itself a regression. Every rule tested against
+the corpus was later found to have a wording it had not seen ("platform No 1",
+"Not level", "No." mid-sentence). The unit tests mostly pin strings their
+author wrote; the checks that caught the real regressions compared the level
+lines and the report across all 152 stations against `main`, by hand. That
+comparison is now `tests/fixtures/access-golden.json` and a test, so a regex
+or a sentence that moves anything is a diff in the PR that moved it. Assume
+wording gaps remain: the corpus is 152 pages, 28 notices, three escalators.
+
+**The golden file's trade-off.** It lives here and not in `lifts-data`,
+because the regressions it guards are code changes and the regeneration must
+land in the same PR. So a refreshed snapshot merged in `lifts-data` turns this
+repository's CI red until someone regenerates the file and reads the diff. That
+is the monthly report made mandatory rather than advisory. Skipping on a
+snapshot mismatch was considered and rejected: the guard would be silently off
+from the first refresh nobody regenerated after.
+
+A new notice on the feed is the one thing the test lets through. The first
+version failed on any notice the file had not seen, and the corpus gained 21
+distinct texts in 26 days with CI reading `lifts-data` at its head, so every
+PR here would have gone red within days for nothing it did. A notice is pinned
+at the next regeneration; until then it is covered by the real-corpus checks
+that need no file (every quote on the page, no forbidden word, lost only where
+the page puts a lift). A notice that vanishes from the database still fails,
+because the logs are append-only and that can only mean a bad checkout.
+
+**What would raise reliability.** Ground truth, which no amount of parsing
+supplies: a dozen verdicts checked at the station, or against any source Irish
+Rail publishes beyond the page. Until then the site should keep saying, wherever
+it says anything derived, that it is a careful reading and not a survey.
 
 ## The sources, and the ones that are closed
 

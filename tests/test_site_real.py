@@ -12,13 +12,14 @@ from __future__ import annotations
 import calendar
 import json
 import os
+import re
 import sqlite3
 import tempfile
 import unittest
 from datetime import UTC, datetime
 from pathlib import Path
 
-from lift_access import fetch, snapshot
+from lift_access import fetch, golden, snapshot
 from lift_access import model as access_model
 from lift_site import model, render
 from lift_status.store import DB_FILENAME
@@ -61,10 +62,15 @@ class TestRealCorpus(unittest.TestCase):
         self.assertEqual(self.until, model.parse_utc(row["t"]))
         self.assertLessEqual(model.COLLECTION_START, self.until)
 
-    def test_every_lift_or_escalator_notice_is_on_the_site_exactly_once(self):
-        rows = self.conn.execute("SELECT id, head FROM messages").fetchall()
+    def test_every_listing_span_is_on_the_site_exactly_once(self):
+        # Spans, not notices: a notice that came back must reach the site as
+        # two outages, or the gap is republished as listed time.
+        rows = self.conn.execute(
+            """SELECT l.id AS id, m.head AS head
+               FROM listings l JOIN messages m ON m.id = l.message_id"""
+        ).fetchall()
         wanted = {r["id"] for r in rows if model.classify(r["head"])}
-        # Merged reissues carry the id of their first notice; the rest of the
+        # Merged reissues carry the id of their first span; the rest of the
         # chain is inside `updates`. Count the ids the outages account for.
         seen = []
         for o in self.outages:
@@ -72,7 +78,7 @@ class TestRealCorpus(unittest.TestCase):
         self.assertEqual(len(seen), len(set(seen)))
         # Every outage on the site came from a notice that is a lift/escalator.
         self.assertTrue(set(seen) <= wanted)
-        # And every such notice is either an outage or folded into one.
+        # And every such span is either an outage or folded into one.
         folded = sum(len(o.updates) for o in self.outages)
         self.assertEqual(len(seen) + folded, len(wanted))
 
@@ -169,11 +175,135 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
                 continue
             self.assertEqual(self.facts.verdict(o.code, o.kind, o.text).state, "escalator")
 
+    def test_an_escalator_notice_only_lands_where_the_page_claims_a_lift(self):
+        # An escalator that is the only powered way up is the one escalator
+        # outage that should knock the grade, and no station has been of that
+        # shape. notes/site.md § The grade is lift availability. A station
+        # missing from the snapshot is "unknown", not "no", and is the previous
+        # test's failure rather than this one's.
+        for o in self.outages:
+            if o.kind != "escalator":
+                continue
+            self.assertNotEqual(
+                self.facts.has_lift(o.code),
+                "no",
+                f"{o.station} ({o.code}) has an escalator notice and a page that claims no "
+                "lift: the only-powered-way-up case. Build the rule in "
+                "lift_site.model.station_month rather than loosening this test.",
+            )
+
     def test_every_station_with_a_lift_notice_is_in_the_snapshot(self):
         # locationCodes and irishrail.ie's stationCode are the same code space.
         # If that ever stops being true this is where it shows up.
         missing = sorted({o.code for o in self.outages} - set(self.facts.stations))
         self.assertEqual(missing, [], "notice codes with no station in the snapshot")
+
+    def test_the_kept_platform_note_never_overclaims(self):
+        # Issue #31's weaker claim, held to the same one-directional rule: the
+        # sentence is on the live page, and neither the notice nor the page puts
+        # the platform behind a lift.
+        for o in self.outages:
+            station = self.facts.station(o.code)
+            result = self.facts.verdict(o.code, o.kind, o.text)
+            if "kept step-free access" not in result.detail:
+                continue
+            self.assertEqual(result.state, "lost", o.head)
+            self.assertNotIn(access_model.ALL_PLATFORMS, station.lift_platforms, o.head)
+            for platform, sentence in access_model.step_free_platforms(station):
+                if f'"{sentence}"' not in result.detail:
+                    continue
+                self.assertIn(sentence, station.platform_access, o.head)
+                self.assertNotIn(platform, result.platforms, o.head)
+                self.assertNotIn(platform, station.lift_platforms, o.head)
+                self.assertNotIn(platform, access_model.affected_platforms(o.text), o.head)
+
+    def test_only_a_lost_verdict_says_a_platform_kept_access(self):
+        for o in self.outages:
+            result = self.facts.verdict(o.code, o.kind, o.text)
+            if result.state != "lost":
+                self.assertNotIn("kept step-free access", result.detail, o.head)
+
+    def test_every_escalator_verdict_names_who_lost_a_way_up(self):
+        # Issue #33: the deduction alone read as nothing happened.
+        for o in self.outages:
+            if o.kind == "escalator":
+                detail = self.facts.verdict(o.code, o.kind, o.text).detail
+                self.assertIn("did lose a way up", detail, o.head)
+                self.assertIn("Irish Rail's page", detail, o.head)
+
+    def test_every_quoted_sentence_is_on_the_live_page(self):
+        # Both legs now: the #31 check above reads only platformAccess.
+        for o in self.outages:
+            station = self.facts.station(o.code)
+            detail = self.facts.verdict(o.code, o.kind, o.text).detail
+            prose = " ".join(f"{station.platform_access} {station.ticket_office_access}".split())
+            for quote in re.findall(r'"([^"]+)"', detail):
+                self.assertIn(" ".join(quote.split()), prose, o.head)
+
+    def test_an_entrance_lift_is_lost_only_where_the_page_puts_a_lift_there(self):
+        for o in self.outages:
+            result = self.facts.verdict(o.code, o.kind, o.text)
+            if o.kind == "lift" and result.leg == access_model.ENTRANCE_LEG:
+                station = self.facts.station(o.code)
+                if result.state == "lost":
+                    self.assertTrue(access_model.entrance_lift(station), o.head)
+                else:
+                    self.assertEqual(result.state, "unknown", o.head)
+
+    def test_no_verdict_says_a_lift_remained(self):
+        for o in self.outages:
+            detail = self.facts.verdict(o.code, o.kind, o.text).detail.lower()
+            for phrase in ("still had", "remains", "was working", "available", "unaffected"):
+                self.assertNotIn(phrase, detail, o.head)
+
+    def test_the_overlap_flag_is_set_from_the_stations_own_rows(self):
+        # Asserted against what the station's own rows say, not against today's
+        # count (zero: Pearse's lift came down at the poll its escalator went
+        # up), so the first real overlap turns the sentence and not this test.
+        months = model.month_list(model.COLLECTION_START, max(self.now, self.until))
+        by_code = {}
+        for o in self.outages:
+            by_code.setdefault(o.code, []).append(o)
+        for code, outages in by_code.items():
+            if not any(o.kind == "escalator" for o in outages):
+                continue
+            # Its own interval arithmetic, not render's, so a wrong _overlaps
+            # shows up here: listed at the same instant, or both still up.
+            expected = {
+                o.id: o.kind == "escalator" and any(
+                    x.kind == "lift"
+                    and (
+                        max(x.first_seen, o.first_seen) < min(x.end, o.end)
+                        or (x.ongoing and o.ongoing)
+                    )
+                    for x in outages
+                )
+                for o in outages
+            }
+            by_month = render.shard(outages, months, self.until, self.facts)
+            for rows in by_month.values():
+                for record in rows:
+                    if record[1] != "escalator":
+                        continue
+                    detail = record[13][1]
+                    if expected[record[0]]:
+                        self.assertNotIn(' as well: "', detail, code)
+                    else:
+                        self.assertNotIn("overlapped this one", detail, code)
+
+    def test_the_golden_file_is_what_the_derivation_says_today(self):
+        # Why a tracked file and not an assertion: lift_access/golden.py.
+        stored = json.loads(golden.PATH.read_text(encoding="utf-8"))
+        current = golden.build(self.facts, golden.notices(DB_PATH))
+        changes = golden.differences(stored, current)
+        self.assertEqual(
+            changes,
+            [],
+            "the derivation no longer matches tests/fixtures/access-golden.json. If the "
+            "change is intended (a code change, or a refreshed snapshot), regenerate with "
+            "`python -m lift_access --data-dir <data-dir> golden`, read the diff, and commit "
+            "it with the change:\n  " + "\n  ".join(changes),
+        )
 
     def test_the_verdict_reaches_the_shard(self):
         months = model.month_list(model.COLLECTION_START, max(self.now, self.until))

@@ -262,6 +262,9 @@ lives here instead. And the Pearse example at the end of this section is stale
 - Pearse now grades F / 22% on its escalator, and Tullamore is the station
 that carries an A over planned-works cells.
 
+**Amended again 2026-09-03.** The number is lift notices alone once more, and
+the key says so; see "The grade is lift availability" at the end of this file.
+
 "5 days listed" was a raw count: it says nothing about whether that is bad,
 and a 31-day month and a 20-day partial one are not comparable by it. The
 number on a row is now the share of the days watched on which no lift notice
@@ -362,9 +365,17 @@ the overview, because "a notice up right now" is the first sort key.
 **Reversed 2026-08-29.** See "An escalator out is a day the station was short
 of a way up" below: both kinds count now, and only the bars stay split.
 
+**Reinstated 2026-09-03.** The lifts-only rule stands again, with the grade
+named for what it counts; see "The grade is lift availability" at the end of
+this file.
+
 Rejected: labelling the two strips on an overview row. The label column
 shortened that one station's bar and knocked its days out of line with every
 other row's. The labels stay on the drill-down, where the bars are tall.
+
+**Superseded 2026-09-01.** See "The bars say which kind" below: a label column
+reserved on every row cannot knock one row out of line with the others, and
+what appears in it on an overview row is a glyph rather than a word.
 
 Two layout bugs came out of it, both on phones. statusui's 640px reflow places
 `.bar` by grid area, which inside the new `.bars` wrapper put both strips on
@@ -407,6 +418,10 @@ case against it was Connolly: an escalator listed on 17 and 18 August, two
 green **A / 100% available** chip on the row above them. The grade
 contradicted the bar underneath it, and no reader was going to resolve that in
 the site's favour.
+
+**Reversed 2026-09-03.** See "The grade is lift availability" at the end of
+this file. The body below stands: its account of what the grade can and cannot
+claim is still what the new section leans on.
 
 **The grade is not step-free-access availability, and this note is the place
 that says so.** Wheelchair users cannot use an escalator - every operator
@@ -513,3 +528,306 @@ target was the site explaining its own methodology to someone who had not
 asked - the reasoning is above, under The grade is availability, and that is
 where it belongs. And "a notice names a lift in prose" was answering a
 question in the vocabulary of the person who wrote the parser.
+
+## The bars say which kind - 2026-09-01
+
+Issue #28. Two bars, and nothing on the page saying which was which. The
+`aria-label` said it, the day-cell caption said it on hover, and neither is
+visible on a phone at rest. A lone bar was no better off: a station with only a
+lift bar did not say it was a lift bar either, so this was never only about the
+pairs.
+
+Every bar now sits in a `.bars` wrapper whose first column is a fixed 15px, and
+that column carries a glyph: MDI `elevator` for the lift, MDI `escalator` for
+the escalator. On the station page, where the bars are tall, the glyph keeps its
+word beside it in a 78px column.
+
+**This supersedes the label rejection under One bar per kind.** A 64px text
+column was tried on 2026-08-28 and reverted because it appeared on the one
+station that had two bars and shortened that station's bar, putting its day 14
+over every other row's day 15. The column being present on *every* row is the
+whole fix: measured across the August overview, all 15 rows start their days at
+the same x at 980px and at 500px, paired and unpaired alike. Nothing about the
+earlier attempt was wrong except that it was conditional.
+
+A lone tall bar is 40px and a pair is 18 + 3 + 18, so `.bars.pair` and not
+`.bars` carries the height override: wrapping every bar without that would have
+halved the height of every unpaired bar on every station page.
+
+### Merging the two bars again was the other option, and it is still the bug
+
+Reducing the overview to one bar and splitting only on the drill-down was
+considered and rejected for the reason the bars split in the first place: at
+Pearse on 13 August the lift came back and the escalator did not, and a merged
+cell paints a working lift as broken. Which is also what the glyph would have
+had nothing to point at.
+
+### The glyph is aria-hidden
+
+The strip's `aria-label` already opens "Lifts in August 2026: ...". An
+`aria-label` on the glyph beside it would make a screen reader say the kind
+twice for one bar. The glyph carries a `title` on the overview, for a mouse; a
+screen reader gets the kind from the sentence that was already there.
+
+`elevator` over `elevator-passenger`: three shapes rather than five, and at 15px
+the detail is gone and only the silhouette is left, where a box against the
+escalator's diagonal is the largest difference available.
+
+### Shape is a second key, not an extension of the colour key
+
+The day key says what was listed and says nothing about which kind, deliberately
+- there is a test holding it to that. So the kinds are their own key beside it:
+two questions, two keys. `LEGEND_SPANS` stays kind-free and `LEGEND_HTML`
+composes the two, which is also what ships in `data.js`, so the app's legend
+still cannot drift from the static pages'.
+
+Each key is a `role="group"` with a name, because the first attempt divided them
+with a 1px rule and nothing else. That divides them for an eye only: a screen
+reader heard one run of seven items and was told the kinds were day-cell
+colours, which is the confusion the split exists to prevent. The rule is gone
+too, and not only because the names replace it. The two keys stop sharing a line
+at **885px** - a common laptop width, and far above any breakpoint this site
+has - so a rule between them hangs off the end of the first key more often than
+it sits between them. Twenty-eight pixels, twice the gap between items in a key,
+says the same thing at every width. It is scoped with `:has(.keys)` so the grade
+key in the footer keeps its own spacing, and so a browser without `:has` falls
+back to the plain gap rather than to a margin that indents the second key.
+
+The glyphs are CSS masks rather than markup. The path data then lives once, in
+the stylesheet both renderers already inline, and `render._bars` and site.html's
+`bars()` only ever emit a class name - two mirrored functions with one less
+thing to drift on. Cost is about 730 bytes on an initial load of 67 KB.
+Licensing is in the README: MDI is Apache 2.0, as is this repo.
+
+## A notice that came back was published as never having left - 2026-09-02
+
+Midleton read oddly: a planned-works block running from the day collection
+began to the end of August, then gone. That one turned out to be real, and the
+page already said so. Chasing it found a different notice broken.
+
+Portlaoise was published as **16 days listed, F, 29% available**. The lift was
+listed for 20 hours from 10 August, absent from **672 consecutive successful
+polls** over the next fortnight, then listed again for 22 hours from 25 August.
+Two short outages a fortnight apart, published as one continuous sixteen-day
+one. It grades **D, 83%** now. Thurles was 17 days and F; it was two hours in
+August, eight days of nothing, then nine days, and grades E. Clondalkin
+Fonthill, the Dublin Pearse escalator and Athy had the same shape, smaller.
+
+### The gap fell out between the collector and the site
+
+`identity_key` is `UNIQUE` on `messages`, which is what makes a notice the same
+notice across polls. So when one comes back, `diff_and_update_messages` had
+nowhere to put the second appearance but the row already there: it cleared
+`closed_at_utc`, bumped `reopen_count` and left `first_seen_at_utc` alone. The
+site then read one row as one listing, `first_seen` to `closed_at`, and the
+absence in the middle vanished.
+
+`reopen_count` recorded that this had happened - six times in the first month,
+five of them lift or escalator notices - but nothing downstream read it, and no
+test covered it. The one test that looked like it did,
+`test_a_notice_that_comes_back_a_poll_later_is_a_separate_outage`, gives the
+returning notice a corrected start, which changes the identity key and so makes
+a genuinely new row. The same-identity return, which is the common case, was
+never exercised.
+
+This was never a raw-log problem. Every gap is in the JSONL exactly as
+collected, which is the whole point of the invariant: the fix is a `rebuild`,
+not a correction anyone has to write down.
+
+### One row per stretch, not one per notice
+
+A `listings` table now holds one row per stretch a notice was continuously on
+the feed: `opened_at_utc`, `last_seen_at_utc`, `closed_at_utc`. A reopen opens
+a new row instead of reviving the old one, and the site builds one outage per
+row. `messages` keeps its own `first_seen`/`closed_at`, which still answer "when
+did we first ever see this notice" - a different question, and not the one the
+bars ask.
+
+Rejected: **deriving the gaps in the site** by walking runs against
+`last_seen_at_utc`. It would have kept the schema still, but it puts the
+collector's knowledge in the renderer and needs a scan of every run per notice.
+The collector is the thing that watches the feed; when a notice stopped being
+on it is the collector's fact to record.
+
+Also rejected: **dropping `UNIQUE` and inserting a fresh `messages` row each
+time**. The identity key is what makes reissue detection work in the first
+place, and a row per appearance would have duplicated the notice's text and
+start across every stretch for no gain.
+
+### One missed poll is the feed blinking - grace goes to 2
+
+Splitting the listing made a flaw visible that the reopen had been hiding.
+Athy's lift has been listed continuously since collection began, but it was
+absent from exactly one poll on 21 August and back 29 minutes later. With
+`LIFT_STATUS_GRACE_MISSES` at `1`, that closed and reopened the notice, and
+the site published two outages: one "no longer listed 21 Aug", another
+starting half an hour later. That reads as fixed, then broken again, which is
+the one claim this site must never make.
+
+The default is `2` now. The gaps in the corpus sort into 1, 9, 79, 388 and 672
+polls, so the cut has nothing near it on either side, and the second miss only
+confirms the close: `closed_at_utc` is still `missing_since`, the first poll
+the notice was absent from. The cost is that an outage ending is recognised a
+poll late, which a 30-minute cadence cannot resolve anyway, and that a
+same-poll reissue takes one more poll to merge. Both self-correct at the next
+poll and neither survives a `rebuild`.
+
+Rejected: **setting it in the env** on the Pi and in the workflows. `rebuild`
+replays under whatever value is set when it runs, so the published history and
+the collector would have had to be kept in step by hand, in three places, with
+nothing to catch them drifting.
+
+### The Pi keeps its database across an upgrade
+
+`install-native.sh` copies files over a running collector and does not
+rebuild, so a Pi that upgrades has `messages` rows and, because
+`CREATE TABLE IF NOT EXISTS` makes it empty, no `listings` at all. Nothing
+published would notice - CI rebuilds from the raw logs on every deploy - but
+the collector's own database would hold open notices that no longer reach
+the site at all, having no span to be read through.
+
+So a notice with no open span gets one, back-dated to the `first_seen` its row
+already carries. That is the best the database can say without a replay, it
+needs nothing from whoever runs the upgrade, and it is a no-op once every row
+has a span.
+
+Both paths need it, which the first cut got wrong: it back-dated only when a
+notice was seen again, so one that went away and never came back was closed
+with no span and vanished from the site rather than being briefly wrong. A
+span is ensured wherever the collector is about to extend or close one.
+
+### The grace is earned per notice and spent per stretch
+
+Splitting the listing split the planned-works grace with it, and that was wrong
+in the other direction. The Dublin Pearse escalator dropped off the feed for
+four hours on 26 August after thirteen days up. As two outages it read as
+thirteen days plus a fresh four-day stretch, and the four days fell inside the
+week's grace and stopped counting: 20% available became 41%, on a notice
+nothing had changed about.
+
+So `Outage` carries `planned_total`, the notice's planned listed time pooled
+over all its stretches before they separate, and `day_marks` spends the grace
+against that. A gap now splits what is measured without refreshing what is
+excused. Pearse is back to 20%, which is the number it should have had all
+along, and works that blink off the feed for an afternoon cannot farm a new
+grace week by doing it. This is the same reasoning `merge_edits` already rests
+on - works reissued every few days are still works that ran for a month - so
+the two now say it the same way.
+
+## The grade is lift availability, and an escalator notice stops knocking - 2026-09-03
+
+The corpus is 26 days (8 August to 3 September 2026, 1,216 runs, horizon
+05:00Z on the 3rd), 32 outages across 25 stations, of which four are escalator
+notices at three stations: Pearse twice, Connolly, and Tara Street since 2
+September. All three stations claim a lift on their irishrail.ie page.
+
+Issue #32. This reverses "An escalator out is a day the station was short of a
+way up" above and reinstates the rule under "One bar per kind": the grade is
+the lift bar's alone.
+
+### The chip and the sentence disagreed
+
+Pearse's page for August carried an F on the chip and, on the escalator outage
+under it, "an escalator is moving stairs, so it was not a step-free route to
+begin with and its being out did not remove one". Both true. The explainer
+said "no lift and no escalator" and was accurate too. But the chip is what a
+reader takes in, and one letter was answering two questions for two
+populations: a wheelchair user read Pearse's F as a bad month for them, when
+their lift was out for five days inside the works grace and the F was the
+escalator's alone.
+
+### One condition, and a name
+
+`station_month` collects `against` from lift days only. The escalator keeps
+its strip, its colours and its count on the tiles; it just paints nothing on
+the letter. `national_month` goes through `station_month`, so the headline
+follows.
+
+The key reads "Lift availability", not "step-free availability", which the
+issue proposed. The grade counts notices, not access: a lift out at Raheny or
+Cork still knocks it though Irish Rail's page names a ramp round that lift, and
+the six of 24 verdicts that come back `unknown` knock it too, because the safe
+direction is to count them. A name that promised step-free would be claiming
+what `lift_access` is at pains not to.
+
+### Why the 2026-08-29 objection no longer holds
+
+What killed lifts-only the first time was Connolly reading A / 100% directly
+above two red cells, with nothing on the row saying the red cells were an
+escalator's. Since "The bars say which kind" (2026-09-01) every bar carries its
+glyph in a gutter the same width on every row, the kinds are their own legend
+key, and the grade key beside the chip says what is graded. Red escalator cells
+under a green lift chip now read as two facts about two machines rather than
+one contradiction.
+
+The overview sort is unchanged: a station with any notice up leads, then the
+least available. Tara Street sits at the top today with an A beside its red
+escalator strip, which is the correct shape for a station whose lift is fine
+and whose escalator is out.
+
+### The denominator is still the stations named
+
+The headline averages over the stations the feed named that month, whatever
+kind of notice named them, so a station with only an escalator notice is in it
+at 100% lift-available. Review asked whether that pads the number. It moves it:
+narrowing to stations with a lift notice gives 75% instead of 76% for August
+(20 stations, Connolly out) and 53% instead of 61% for September so far (5
+stations, Tara Street out). Kept as is, because the tile says "across the
+stations named this month" and the overview lists exactly those stations, so
+the headline is the sum of the rows a reader can see; a station shown on the
+list at 100% and missing from the number above it would be the page
+disagreeing with itself. The denominator that was refused on 2026-08-28 was
+"every station on the network", which the feed never names. A station it did
+name is not invented.
+
+### The numbers
+
+| month | station | shipped | lifts only |
+|---|---|---|---|
+| August 2026 | Dublin Connolly | C, 91% | A, 100% |
+| August 2026 | Dublin Pearse | F, 20% | A, 100% |
+| August 2026 | national, 21 stations | 72% | 76% |
+| September so far | Tara Street | F, 33% | A, 100% |
+| September so far | national, 6 stations | 50% | 61% |
+
+The issue's own table read 21%, 67% and 70%; it was measured before the
+listings split of 2026-09-02, which moved Portlaoise, Thurles and Clondalkin.
+
+### Rejected
+
+- **A fractional weight for escalators.** Nothing to calibrate it against, and
+  the bands exist so a reader can reconstruct the number by counting days on
+  the bar. A coefficient makes the letter a number nobody can check.
+- **Two grades.** The most accurate, and it costs a second chip on every row
+  and a decision about which one sorts the overview, for a distinction the feed
+  has shown at three stations.
+- **Wording only.** The wording was already accurate and fixed nothing, because
+  the chip is what is read.
+- **A grade driven by the access verdict**, knocking only where `verdict` says
+  `lost`. The site builds with no station snapshot at all, six of 24 verdicts
+  are `unknown`, and the number would then move on a monthly scrape of prose
+  rather than on the feed.
+
+### The case that should knock: the only powered way up
+
+An escalator notice counts against a station's availability only where the
+escalator is the only powered way up, which on this network is a station whose
+Irish Rail page does not claim a lift. Stairs only is a real loss for the
+people an escalator serves: anyone who can manage a flight with difficulty, or
+has a buggy, a suitcase or a stick. No station in the corpus is of that shape;
+Pearse, Connolly and Tara Street all claim a lift. So the rule is written here
+and not coded. `tests/test_site_real.py`, which CI runs against the checked-out
+corpus and snapshot, fails the day an escalator notice appears at a station
+whose page claims no lift, and that failure is the signal
+to build the rule in `station_month`, which will then need the station facts
+the site is built to run without. It is not a signal to loosen the test.
+
+Issue #33, saying who an escalator outage did affect, stays open, and it is
+what makes dropping escalators from the letter honest rather than a dodge: the
+group an escalator serves is off the grade and, for now, off the page.
+
+**Settled 2026-09-03.** #33 landed the same day: every escalator verdict now
+says who lost a way up and what Irish Rail's page puts on the same leg, and a
+lift notice that names the way in is read against `ticketOfficeAccess`.
+`notes/station-access.md` § *The entrance leg, and who an escalator served*.
+The only-powered-way-up rule above is unchanged and still guarded.
