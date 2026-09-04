@@ -37,6 +37,13 @@ class Export(unittest.TestCase):
         self.assertEqual(rows["TOY:p1"]["wheelchair_boarding"], 2)
         self.assertEqual(rows["TOY:p2"]["wheelchair_boarding"], 1)
 
+    def test_an_incomplete_graph_says_unknown_not_no(self):
+        g, _ = build([line({"type": "retract", "id": "to-p1", "of": "edge"}),
+                      line({"type": "edge", "id": "back", "mode": "unsurveyed", "from": "side",
+                            "to": "hall"})])
+        rows = {r["stop_id"]: r for r in gtfs.stop_rows(g)}
+        self.assertEqual(rows["TOY:p1"]["wheelchair_boarding"], 0)
+
     def test_pathway_modes(self):
         rows = {r["pathway_id"]: r for r in gtfs.pathway_rows(self.g)}
         self.assertEqual(rows["TOY:way-in"]["pathway_mode"], 1)
@@ -45,7 +52,7 @@ class Export(unittest.TestCase):
         self.assertEqual(rows["TOY:up-esc"]["pathway_mode"], 4)
         self.assertEqual(rows["TOY:up"]["pathway_mode"], 5)
         self.assertEqual(rows["TOY:barrier"]["pathway_mode"], 6)
-        self.assertEqual(rows["TOY:side-gate"]["pathway_mode"], 1)
+        self.assertEqual(rows["TOY:side-gate"]["pathway_mode"], 2)  # a wheelchair does not fit
         self.assertEqual(rows["TOY:ramp-p3"]["max_slope"], 8)
         self.assertNotIn("TOY:back", rows)
 

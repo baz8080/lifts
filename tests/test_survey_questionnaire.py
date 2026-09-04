@@ -60,5 +60,5 @@ class TheForm(unittest.TestCase):
 
     def test_no_em_dash(self):
         for text in (self.pearse, self.athy, questionnaire.DEFINITIONS, questionnaire.COMMON):
-            self.assertNotIn("—", text)
-            self.assertNotIn("–", text)
+            self.assertNotIn("\u2014", text)
+            self.assertNotIn("\u2013", text)

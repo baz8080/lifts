@@ -143,13 +143,24 @@ def write_golden(args):
         print("golden needs both a station snapshot and a rebuilt database", file=sys.stderr)
         return 1
     notices = golden.notices(db_path)
-    _write_document(golden.PATH, golden.build(facts, notices))
     data = survey.load(args.data_dir)
+    if data.problems:
+        # A skipped line would regenerate as a silent retraction; refuse before
+        # either file is written so the diff a reviewer reads is the real one.
+        for problem in data.problems:
+            print(f"error: {problem}", file=sys.stderr)
+        print("golden refuses to write while the survey has lines it cannot read",
+              file=sys.stderr)
+        return 1
+    _write_document(golden.PATH, golden.build(facts, notices))
     if data:
         _write_document(
             golden.GRAPH_PATH,
             golden.build_graph(facts, data, notices, survey.digest(args.data_dir)),
         )
+    elif data.path is not None:
+        print(f"warning: {data.path} holds no observations; {golden.GRAPH_PATH.name} left as is",
+              file=sys.stderr)
     return 0
 
 

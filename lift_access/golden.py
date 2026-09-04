@@ -151,10 +151,12 @@ GRAPH_PATH = PATH.with_name("graph-golden.json")
 def build_graph(facts, survey_data, notices, fingerprint):
     """What the survey-derived graphs say, for the surveyed stations and their notices.
 
-    Its own file, keyed on the survey files' fingerprint rather than the station
-    snapshot: a survey append must not fail the station golden, and the station
-    golden must not move when a survey line lands. Same document shape as
-    `build`, so `differences`, `new_notices` and `dumps` apply unchanged.
+    Its own file, keyed on the survey files' fingerprint and not on the station
+    snapshot: a survey append must not fail the station golden, a refreshed
+    snapshot must not fail this one by name alone (a page quote that expired
+    with it still fails it, on the fact that went), and the station golden must
+    not move when a survey line lands. Same document shape as `build`, so
+    `differences`, `new_notices` and `dumps` apply unchanged.
     """
     from . import graph as graph_module
 
@@ -192,7 +194,7 @@ def build_graph(facts, survey_data, notices, fingerprint):
             "detail": result.detail,
         })
     return {
-        "snapshot": f"{facts.path.name if facts and facts.path else None}+survey@{fingerprint}",
+        "snapshot": f"survey@{fingerprint}",
         "stations": stations,
         "verdicts": verdicts,
     }

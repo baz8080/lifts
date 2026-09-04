@@ -100,8 +100,13 @@ class Reachability(unittest.TestCase):
         self.assertEqual(reached["1"], ("way-in", "to-p1"))
         self.assertEqual(reached["2"], ("way-in", "up", "down"))
 
+    def test_a_confirmed_lift_beats_a_ramp_only_the_page_vouches_for(self):
+        self.assertEqual(graph.step_free_platforms(self.g)["3"], ("way-in", "lift-to-p3"))
+
     def test_the_route_with_the_fewest_lifts_is_the_one_described(self):
-        self.assertEqual(graph.step_free_platforms(self.g)["3"], ("way-in", "ramp-p3"))
+        g, _ = build([line({"type": "edge", "id": "ramp-p3", "mode": "ramp", "from": "hall",
+                            "to": "p3"})])
+        self.assertEqual(graph.step_free_platforms(g)["3"], ("way-in", "ramp-p3"))
 
     def test_a_gate_a_wheelchair_does_not_fit_is_not_step_free(self):
         self.assertFalse(graph.step_free(self.g.edges["side-gate"]))
@@ -184,6 +189,22 @@ class Verdicts(unittest.TestCase):
         self.assertIn("nobody has confirmed", result.detail)
         self.assertIn('Irish Rail\'s page: "Ramp or lift to platform 3"', result.detail)
 
+    def test_the_alternative_named_is_the_confirmed_one(self):
+        # A confirmed detour beside the page-only ramp: the state comes from
+        # the detour, so the detail must name it and not the shorter ramp.
+        g, _ = build([
+            line({"type": "node", "id": "yard", "kind": "generic", "name": "the yard"}),
+            line({"type": "edge", "id": "to-yard", "mode": "walkway", "from": "hall",
+                  "to": "yard"}),
+            line({"type": "edge", "id": "yard-p3", "mode": "walkway", "from": "yard",
+                  "to": "p3"}),
+        ])
+        result = self.check(graph.verdict(g, "lift", "The lift at platform 3 is out."))
+        self.assertEqual(result.state, "alternative")
+        self.assertIn("then a level walk to the yard, then a level walk to platform 3",
+                      result.detail)
+        self.assertNotIn("ramp", result.detail)
+
     def test_a_confirmed_route_round_the_lift_is_an_alternative(self):
         g, _ = build([line({"type": "edge", "id": "ramp-p3", "mode": "ramp", "from": "hall",
                             "to": "p3", "slope": 8})])
@@ -258,11 +279,11 @@ class Contradictions(unittest.TestCase):
         self.assertIn("lift lift-z is recorded but no edge belongs to it",
                       graph.contradictions(g))
 
-    def test_equipment_on_both_legs(self):
-        g, _ = build([line({"type": "edge", "id": "odd", "mode": "lift", "from": "main",
-                            "to": "hall", "equipment": "lift-c"})])
-        self.assertIn("lift lift-c is on both the platforms and the way in",
-                      graph.contradictions(g))
+    def test_a_lift_from_the_street_to_a_platform_is_a_real_shape(self):
+        # Longford's platform 2 is reached by a lift from the road bridge.
+        g, _ = build([line({"type": "edge", "id": "road-lift", "mode": "lift", "from": "main",
+                            "to": "p2", "equipment": "lift-c"})])
+        self.assertEqual(graph.contradictions(g), [])
 
     def test_a_level_platform_on_the_page_with_no_route_in_the_survey(self):
         g, _ = build([line({"type": "retract", "id": "to-p1", "of": "edge"})])

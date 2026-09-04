@@ -1877,6 +1877,17 @@
    "text": "The lift at platform 2 is out of service. Iarnród Éireann Irish Rail apologies for the inconvenience caused."
   },
   {
+   "code": "ENNIS",
+   "detail": "Irish Rail's page for Ennis does not mention a lift, so which platforms this one serves is not recorded.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "unknown",
+   "text": "The lift on platform 2 is currently out of order. Iarnród Éireann apologise for any inconvenience caused."
+  },
+  {
    "code": "GCDK",
    "detail": "Platform 3 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
    "kind": "lift",
@@ -1956,15 +1967,14 @@
   },
   {
    "code": "MDLTN",
-   "detail": "Platforms 1, 2 are reached by lift, and Irish Rail's page names no other step-free way to them, so step-free access was gone while this was listed.",
+   "detail": "Platform 1 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
    "kind": "lift",
    "leg": "platform",
    "platforms": [
-    "1",
-    "2"
+    "1"
    ],
    "state": "lost",
-   "text": "The lifts at platform 1 and 2 are temporarily unavailable due to planned works. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+   "text": "The lift at platform 1 is currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
   },
   {
    "code": "MHIDE",

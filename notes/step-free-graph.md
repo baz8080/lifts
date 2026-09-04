@@ -226,17 +226,22 @@ A passenger asks two questions, *can I get to my platform without steps* and
 *what happens if the lift is out*, so the layout answers those first, per
 platform, in sentences, and puts the inventory after. `prose CODE` renders a
 surveyed station in it, so the proposal arrives with worked examples and a
-fact the layout cannot say is a test failure. Athy, from the seed:
+fact the layout cannot say is a test failure. The confidence gate applies to
+it as to the verdict: a page-only route reads "according to Irish Rail's
+page, which nobody has confirmed", and the qualifier goes when a person
+confirms the route. Athy, from the seed:
 
 ```
 Getting to the platforms without steps
 
-Platform 1: yes. A level walk to the concourse or ticket office, then a
-level walk to platform 1.
+Platform 1: yes, according to Irish Rail's page, which nobody has
+confirmed. A level walk to the concourse or ticket office, then a level
+walk to platform 1.
 
-Platform 2: yes, by lift. A level walk to the concourse or ticket office,
-then a lift to platform 2. If the lift is out of service there is no
-step-free way to platform 2.
+Platform 2: yes, by lift, according to Irish Rail's page, which nobody has
+confirmed. A level walk to the concourse or ticket office, then a lift to
+platform 2. If the lift is out of service there is no step-free way to
+platform 2.
 
 Getting into the station
 

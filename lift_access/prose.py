@@ -4,7 +4,9 @@ The proposal to Irish Rail (`notes/step-free-graph.md` § A format to propose)
 is a fixed order of questions answered in sentences, one per platform, with
 the failure case in the same breath. Rendering the graph in that layout does
 two jobs: the pilot stations become worked examples, and a fact the layout
-cannot say is a test failure rather than a silent omission.
+cannot say is a test failure rather than a silent omission. The confidence
+gate applies here as it does to the verdict: a route with a page-only edge on
+it is "yes, according to Irish Rail's page, which nobody has confirmed".
 """
 
 from __future__ import annotations
@@ -25,6 +27,13 @@ def _cap(text):
 
 def _lift_ids(graph, route):
     return sorted({graph.edges[e].equipment for e in route if graph.edges[e].mode == "lift"})
+
+
+def _unconfirmed(graph, route):
+    return any(graph.edges[e].confidence not in g.CONFIRMED for e in route)
+
+
+UNCONFIRMED = "according to Irish Rail's page, which nobody has confirmed"
 
 
 def _ways(graph, node, stepped_only):
@@ -53,16 +62,22 @@ def _platform_paragraph(graph, label, node, route):
                 f" Recorded so far: {', and '.join(ways)}." if ways else "")
         return f"{heading}: {body}\n"
     lifts = _lift_ids(graph, route)
+    yes = "yes, by lift" if lifts else "yes"
+    if _unconfirmed(graph, route):
+        yes += f", {UNCONFIRMED}"
+    text = f"{heading}: {yes}. {_cap(g.describe_route(graph, route))}."
     if not lifts:
-        return f"{heading}: yes. {_cap(g.describe_route(graph, route))}.\n"
+        return text + "\n"
     removed = frozenset(e for lift in lifts for e in graph.edges_of(lift))
     without = g.routes(graph, removed).get(node)
-    text = f"{heading}: yes, by lift. {_cap(g.describe_route(graph, route))}."
-    if without is not None:
-        text += f" If the lift is out of service: {g.describe_route(graph, without)}."
-    else:
+    if without is None:
         text += (f" If the lift is out of service there is no step-free way to "
                  f"platform {label}.")
+    elif _unconfirmed(graph, without):
+        text += (f" If the lift is out of service the page names a way round "
+                 f"({g.describe_route(graph, without)}) that nobody has confirmed.")
+    else:
+        text += f" If the lift is out of service: {g.describe_route(graph, without)}."
     return text + "\n"
 
 

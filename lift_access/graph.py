@@ -211,13 +211,15 @@ def _neighbours(graph, removed, confirmed_only):
 def routes(graph, removed=frozenset(), confirmed_only=False):
     """node id -> the edges of one step-free route from an entrance, for every node reached.
 
-    The route with the fewest lifts wins, then the fewest edges: Connolly's way
-    in has a lift, an escalator, stairs and a level walk from the car park side
-    by side, and the one to describe is the one that needs no machine.
+    A route somebody confirmed beats one only the page vouches for, then the
+    fewest lifts, then the fewest edges: Connolly's way in has a lift, an
+    escalator, stairs and a level walk from the car park side by side, and the
+    one to describe is the one that needs no machine; and a confirmed lift is a
+    better answer than an unconfirmed ramp, whose turn comes when the lift is out.
     """
     neighbours = _neighbours(graph, removed, confirmed_only)
     best = {}
-    heap = [((0, 0), start, ()) for start in sorted(graph.entrances())]
+    heap = [((0, 0, 0), start, ()) for start in sorted(graph.entrances())]
     heapq.heapify(heap)
     while heap:
         cost, here, path = heapq.heappop(heap)
@@ -226,7 +228,8 @@ def routes(graph, removed=frozenset(), confirmed_only=False):
         best[here] = path
         for there, edge in neighbours[here]:
             if there not in best:
-                step = (cost[0] + (edge.mode == "lift"), cost[1] + 1)
+                step = (cost[0] + (edge.confidence not in CONFIRMED),
+                        cost[1] + (edge.mode == "lift"), cost[2] + 1)
                 heapq.heappush(heap, (step, there, path + (edge.id,)))
     return best
 
@@ -460,6 +463,9 @@ def verdict(graph, kind, text):
 
     result = outcome(graph, kind, text)
     kept = routes(graph, frozenset(result.removed))
+    # The state was decided on confirmed edges only, so the route the detail
+    # names must be one of those, not the shorter page-only one `kept` prefers.
+    confirmed = routes(graph, frozenset(result.removed), confirmed_only=True)
     parts = []
     which = model._join([describe_equipment(graph, item) for item in joined])
     if result.lost:
@@ -479,7 +485,7 @@ def verdict(graph, kind, text):
             f"{label} is read as lost too."
         )
     for label in result.alternative:
-        route = describe_route(graph, kept[graph.platforms()[label]])
+        route = describe_route(graph, confirmed[graph.platforms()[label]])
         parts.append(f"Platform {label} kept a step-free way: {route}.")
     if result.unaffected:
         subject = _platforms(result.unaffected)
@@ -523,19 +529,6 @@ def contradictions(graph, station=None):
     for item in graph.equipment.values():
         if item.id not in used:
             out.append(f"{item.kind} {item.id} is recorded but no edge belongs to it")
-    entrances = set(graph.entrances())
-    platform_nodes = set(graph.platforms().values())
-    for item in graph.equipment.values():
-        legs = set()
-        for edge_id in graph.edges_of(item.id):
-            edge = graph.edges[edge_id]
-            ends = {edge.start, edge.end}
-            if ends & entrances:
-                legs.add("the way in")
-            if ends & platform_nodes:
-                legs.add("the platforms")
-        if len(legs) > 1:
-            out.append(f"{item.kind} {item.id} is on both {' and '.join(sorted(legs))}")
     labels = [n.platform for n in graph.nodes.values() if n.kind == "platform"]
     for label in sorted(set(labels)):
         if labels.count(label) > 1:
