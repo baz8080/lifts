@@ -17,7 +17,13 @@ uv run python -m lift_status --data-dir <dir> stats
 uv run python -m lift_site --data-dir <dir>             # build out/site/
 uv run python -m lift_access --data-dir <dir> refresh   # station facts (monthly, not on the Pi)
 uv run python -m lift_access --data-dir <dir> report    # every verdict beside its source prose
-uv run python -m lift_access --data-dir <dir> golden    # regenerate tests/fixtures/access-golden.json
+uv run python -m lift_access --data-dir <dir> golden    # regenerate tests/fixtures/access-golden.json (and graph-golden.json)
+uv run python -m lift_access --data-dir <dir> questionnaire [CODE...]  # the step-free access form, prefilled
+uv run python -m lift_access --data-dir <dir> seed CODE --write        # draft survey/<CODE>.jsonl from the page
+uv run python -m lift_access --data-dir <dir> validate                 # check the observation log and its graphs
+uv run python -m lift_access --data-dir <dir> graph-report             # graph verdicts beside prose verdicts
+uv run python -m lift_access --data-dir <dir> prose CODE               # a surveyed station as Irish Rail could publish it
+uv run python -m lift_access --data-dir <dir> gtfs --out DIR           # every surveyed station as GTFS pathways
 uv run --group dev ruff check
 uv run python -m unittest discover -s tests -t .
 ```
@@ -157,6 +163,8 @@ merged with `sort -u`.
 | GTFS, GTFS-R, the NTA developer API, NaPTAN, PTIMS and OSM all carry no station accessibility data, and the GTFS fields Google and Apple read for accessible routing are absent too. Scraping the prose is the last resort, not the lazy option | `notes/station-access.md` § Why scraping prose is the only option |
 | NeTEx and SIRI-FM are the formats that would carry this. Ireland publishes neither, and 2017/1926 only obliges publishing data that already exists. NeTEx appearing is the one thing worth watching for | `notes/station-access.md` § The regulation |
 | The design layer is shared with uisce and esb via `../statusui`, a uv git dependency pinned in `uv.lock` - edit upstream, then `../statusui/rollout.sh` bumps all three sites. Vendored copies were tried first and drifted within a day. `lift_site/site.css` is this site's own | `notes/site.md` § The vendored copy became a pinned dependency; statusui's README |
+| Station access is labelled by hand into an append-only observation log, `lifts-data/survey/<CODE>.jsonl`, one line per fact with who, when and from what; a hand-maintained `stations.json` stays the failure mode. The graph replays the log, last line for a key wins, and says "another step-free way" only on a route every edge of which a person confirmed, so a page-seeded graph never says more than the prose. The site does not read it yet | `notes/step-free-graph.md` |
+| The Metro Nation Dublin rail map is not a source: undefined "step-free", already behind the network, nothing it says survives one survey answer | `notes/step-free-graph.md` § What was learned |
 
 Decisions go in `notes/`, dated, with the rejected alternatives and their
 numbers. Add a row here when one closes something off - this file carries
@@ -199,6 +207,12 @@ on record, and a real-corpus test asserts the regeneration matches. A change to 
 regex or a sentence that moves one fails it; regenerate with `golden`, read the
 diff, commit it with the change. A refreshed snapshot merged in `lifts-data`
 fails it too, on purpose, until the diff is read and the file regenerated here.
+
+`tests/fixtures/graph-golden.json` does the same for the observation log in
+`lifts-data/survey/`: every surveyed station's step-free routes and the graph
+verdict for every notice there, keyed on a fingerprint of the survey files
+rather than the snapshot, so a line appended to a log fails this file and not
+the other. `golden` writes both.
 
 The 500 KB initial-load budget is printed by every build and asserted by the
 render tests. It holds because individual outages live in per-station shards

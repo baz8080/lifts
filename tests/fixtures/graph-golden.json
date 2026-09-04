@@ -1,0 +1,137 @@
+{
+ "snapshot": "irishrail-20260901.jsonl+survey@9af88d2ce08d",
+ "stations": {
+  "ATHY": {
+   "complete": true,
+   "contradictions": [],
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Athy",
+   "never": [],
+   "observations": 8,
+   "problems": [],
+   "step_free_platforms": {
+    "1": "a level walk to the concourse or ticket office, then a level walk to platform 1",
+    "2": "a level walk to the concourse or ticket office, then a lift to platform 2"
+   }
+  },
+  "CNLLY": {
+   "complete": true,
+   "contradictions": [],
+   "lift_platforms": [
+    "6",
+    "7"
+   ],
+   "name": "Dublin Connolly",
+   "never": [
+    "5"
+   ],
+   "observations": 26,
+   "problems": [],
+   "step_free_platforms": {
+    "1": "a level walk to the concourse or ticket office, then a level walk to platform 1",
+    "2": "a level walk to the concourse or ticket office, then a level walk to platform 2",
+    "3": "a level walk to the concourse or ticket office, then a level walk to platform 3",
+    "4": "a level walk to the concourse or ticket office, then a level walk to platform 4",
+    "6": "a level walk to the concourse or ticket office, then a lift to platform 6",
+    "7": "a level walk to the concourse or ticket office, then a lift to platform 7"
+   }
+  },
+  "CNOCK": {
+   "complete": true,
+   "contradictions": [],
+   "lift_platforms": [],
+   "name": "Castleknock",
+   "never": [
+    "2"
+   ],
+   "observations": 7,
+   "problems": [],
+   "step_free_platforms": {
+    "1": "a ramp to the concourse or ticket office, then a level walk to platform 1"
+   }
+  },
+  "HZLCH": {
+   "complete": true,
+   "contradictions": [],
+   "lift_platforms": [],
+   "name": "Hazelhatch and Celbridge",
+   "never": [],
+   "observations": 4,
+   "problems": [],
+   "step_free_platforms": {}
+  },
+  "PERSE": {
+   "complete": true,
+   "contradictions": [],
+   "lift_platforms": [
+    "2"
+   ],
+   "name": "Dublin Pearse",
+   "never": [],
+   "observations": 15,
+   "problems": [],
+   "step_free_platforms": {
+    "1": "a level walk to the concourse or ticket office, then a ramp to platform 1",
+    "2": "a level walk to the concourse or ticket office, then a lift to platform 2"
+   }
+  }
+ },
+ "verdicts": [
+  {
+   "code": "ATHY",
+   "detail": "Platform 2 is reached by the lift between the concourse or ticket office and platform 2 and the survey records no other step-free way to it, so step-free access was gone while this was listed. Platform 1 never needed this lift. The notice also names platform 1, which no recorded lift touches. Irish Rail's page: \"Lift to platform 2\".",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "Lifts at platforms 1 and 2 are currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "CNLLY",
+   "detail": "An escalator is moving stairs, so it was not a step-free route to begin with and its being out did not remove one. Anyone who finds a flight of stairs hard, or has a buggy, a suitcase or a stick, did lose a way up. The survey records a lift between the station entrance and the concourse or ticket office as well; the feed says nothing about whether that lift ran.",
+   "kind": "escalator",
+   "leg": "entrance",
+   "platforms": [],
+   "state": "escalator",
+   "text": "The Escalator at the main concourse is currently out of service. Iarnród Éireann Irish Rail apologise for any inconvenience caused."
+  },
+  {
+   "code": "HZLCH",
+   "detail": "The survey records no lift matching this notice and no lift at all, so what it served is not established.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2",
+    "3"
+   ],
+   "state": "unknown",
+   "text": "The lift to Platform 2 and 3 is currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "PERSE",
+   "detail": "The survey records no escalator matching this notice (escalators recorded: escalator-entrance-2), so what it served is not established.",
+   "kind": "escalator",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "unknown",
+   "text": "The escalator at platform 2 is temporarily unavailable due to planned works. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "PERSE",
+   "detail": "Platform 2 is reached by the lift between the concourse or ticket office and platform 2 and the survey records no other step-free way to it, so step-free access was gone while this was listed. Platform 1 never needed this lift. Irish Rail's page: \"Lift or stairs to platform 2 (southbound)\".",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "The lift at platform 2 is temporarily unavailable due to planned works. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  }
+ ]
+}
