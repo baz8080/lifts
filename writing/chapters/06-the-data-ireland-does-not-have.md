@@ -1,5 +1,5 @@
 # 06. The data Ireland does not have
-*~11 min read · issue #24 and PR #30 · 29 to 30 August 2026*
+*~9 min read · issue #24 and PR #30 · 29 to 30 August 2026*
 
 *Where we are:* the site counts lift outages and grades stations on them (chapters 04 and 05).
 This chapter is about the question it could not answer, which is what any of that *means*, and

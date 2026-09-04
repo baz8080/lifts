@@ -25,7 +25,9 @@ what was used instead, and how reading one hand-typed sentence the wrong way pub
 opposite of the truth.
 
 The chapters are deliberately back-loaded. The collector and the site get one each, the shared
-design layer gets one short one, and four carry the problem that arrived at the end.
+design layer gets one short one, four carry the problem that arrived at the end, and three more
+cover the four days in early September when every question the fourth of those left open was
+answered.
 
 ## Who it is for
 
@@ -95,7 +97,7 @@ the fact about this feed that forced it)**. The four that anchor chapters:
 | The operator's start time | publication time, re-stamped, so every duration is a floor | back-dated by hours, immutable, and measured from | back-dated by **months**, shown as their claim, colours nothing | Rush and Lusk is dated 451 days before its first sighting, over days the feed was polled every 30 minutes and the notice was absent |
 | How big an event is | people inside a 500 m circle | ESB's own count of customers off | there is no size: a notice is listed or it is not | the feed carries no count of anything |
 | What anchors the grade | its own thresholds on person-hours | ESB's published 4-hour / 95% charter aim | its own bands, counted in days | the PRM TSI sets a duty to hold a written policy, not a percentage, and Irish Rail publishes no availability figure |
-| What is allowed to knock the grade | `KNOCK_CATS`, binary: health notices knock, discolouration shows and does not | planned works excluded, because the regulator excludes them; storm days kept, and said out loud | planned works excused for one week then counted in full; escalators knock, and whether they should is open | nobody excluded anything on our behalf, so every exclusion had to be argued from the data |
+| What is allowed to knock the grade | `KNOCK_CATS`, binary: health notices knock, discolouration shows and does not | planned works excluded, because the regulator excludes them; storm days kept, and said out loud | planned works excused for one week then counted in full; escalators counted for five days, then stopped | nobody excluded anything on our behalf, so every exclusion had to be argued from the data, twice |
 
 That last row is the spine of the back half of the series.
 
@@ -115,6 +117,9 @@ That last row is the spine of the back half of the series.
 | **availability** | uptime, score | the share of days watched with nothing reported out at that station |
 | **grade** | rating, mark | the A to F letter, station-month only |
 | **step-free** | wheelchair-accessible, accessible | a route with no steps on it. The narrower, checkable claim |
+| **a way up** | vertical access, circulation | what an escalator provides and a lift also provides. Losing one is not losing step-free access |
+| **a leg** | a segment, a stage | street to concourse, or concourse to platform. Irish Rail keeps them in separate fields |
+| **a stretch** | a span, a run | one continuous period a notice was on the feed. A notice can have several |
 | **the prose** | the description, the blurb | Irish Rail's hand-written `platformAccess` and `ticketOfficeAccess` fields |
 | **the water site / the power site** | uisce / esb (except as repo names) | the two siblings |
 
@@ -147,11 +152,16 @@ PRs, commit subjects, `notes/` sections and code functions used; each figure's s
 
 ## Working method
 
-Session 0 (31 August 2026) drafted the whole series in one pass from the repository's own
-history: the commit messages, the pull request bodies, the three files in `notes/`, the README
-and the open issues. Unlike the esb series it had the corpus to hand, so the figures were
-re-measured rather than lifted: `rebuild`, a site build and `lift_access report` were run
-against `../lifts-data` at its 31 August state, and `figures.md` marks which rows came from
-that and which are quoted at the date they were first measured.
+Session 0 (31 August 2026) drafted chapters 00 to 09 and the closing in one pass from the
+repository's own history: the commit messages, the pull request bodies, the three files in
+`notes/`, the README and the open issues. Unlike the esb series it had the corpus to hand, so
+the figures were re-measured rather than lifted.
 
-`PROGRESS.md` is the ledger for any later session.
+Session 1 (4 September 2026) merged `main` and extended the series over pull requests #37 to
+#45. All four issues chapter 09 described as open had closed within four days of it being
+written, so that chapter was reframed as the argument at the time with forward pointers, three
+chapters were added, and the closing was renumbered 10 to 13. Every current figure was
+re-measured against `../lifts-data` at its 4 September state.
+
+`figures.md` marks which rows come from a measurement and which are quoted at the date they
+were first measured. `PROGRESS.md` is the ledger for any later session.

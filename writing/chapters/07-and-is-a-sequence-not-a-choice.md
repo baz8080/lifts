@@ -1,5 +1,5 @@
 # 07. "and" is a sequence, not a choice
-*~12 min read · PR #30 · 30 August 2026*
+*~10 min read · PR #30 · 30 August 2026*
 
 *Where we are:* chapter 06 established that the only source for what an Irish rail station has
 is a hand-typed field on irishrail.ie. This chapter is about reading it, and about the reading
@@ -203,7 +203,9 @@ a link to correct it.
 
 Two things were left open on purpose, and both are chapter 09: the grade still counts escalator
 days at full weight, on the same page where an escalator notice is told it removed nothing, and
-the derivation reasons about only one leg of the journey.
+the derivation reasons about only one leg of the journey. Both were closed on 3 September, in
+chapters 11 and 12, and chapter 12 also carries the thing this chapter's caveat gestures at
+without measuring: a written account of how far the derivation can be trusted.
 
 Before that, chapter 08 is about what the review of this branch found, which was the same bug
 three times.

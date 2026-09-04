@@ -1,5 +1,5 @@
 # 04. A grade with nothing to borrow
-*~10 min read · PR #18 · 28 August 2026*
+*~9 min read · PR #18 · 28 August 2026*
 
 *Where we are:* the site shows day bars anchored to observed listings (chapter 02) in a shared
 design (chapter 03). Every row ends in a raw count, and this chapter is about why that count
@@ -97,9 +97,9 @@ chip and the bar cannot disagree, which turns out to matter in chapter 05.
 
 ### Planned works get a week, and then they count
 
-Planned works were masking the thing the site measures. They sit for months: of 24 outages on
-record as of 31 August 2026, 6 are planned works, and Midleton's has been listed continuously
-since 12 August.
+Planned works were masking the thing the site measures. They sit for months: of the 24 outages
+on record as of 31 August 2026, 6 were planned works, and Midleton's had been listed
+continuously since 12 August.
 
 The rule that landed: **works listed seven days or less in total cost nothing; past that, every
 listed day counts, including the first week.** A week is a plausible maintenance window, and

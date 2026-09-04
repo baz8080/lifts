@@ -1,9 +1,16 @@
 # 09. What one letter cannot say
-*~10 min read · issues #28, #31, #32, #33 · open as of 31 August 2026*
+*~11 min read · issues #28, #31, #32, #33 · open as of 31 August 2026, all closed by 3 September*
 
 *Where we are:* the site grades stations (chapters 04 and 05) and says what each outage did to
 step-free access (chapter 07). This chapter is about the four things still open, and it is
 written as reasoning rather than as a backlog, because the reasoning is the part worth reading.
+
+> **All four closed within four days of this being written**, between 1 and 3 September 2026.
+> The chapter is kept as the argument stood on 31 August, because the arguments are what the
+> issues were for and each one shaped what got built: chapter 11 answers #28 and #32, and
+> chapter 12 answers #31 and #33. Where a decision has since gone a particular way, a line says
+> so and points forward. The figures here are as measured on 31 August, before the listing
+> split of chapter 10 moved several of them.
 
 ## The sharpest one: an F beside a sentence saying access was fine
 
@@ -60,7 +67,8 @@ Measured on the corpus in the issue (30 Aug 2026):
 4. **Two grades.** The most accurate and the most complexity, and the site has been deliberate
    about carrying one number.
 
-Option 1 is the recommendation, and the precedent is the water site. Its `KNOCK_CATS` is
+Option 1 is the recommendation, and it is what shipped on 3 September (chapter 11). The
+precedent is the water site. Its `KNOCK_CATS` is
 **binary**: health-relevant quality notices knock the grade, discolouration shows on the bar and
 does not. No coefficient. That is the honest way to say "this matters less" without inventing a
 number calibrated against nothing.
@@ -87,7 +95,8 @@ genuinely stopped by a flight of stairs, and the site currently has no vocabular
 group at all.
 
 So the fix is paired with **saying who an escalator outage did affect**, which is issue #33,
-and the two should land together.
+and the two should land together. They landed ten hours apart, which is close enough: chapter
+11 is #32 and chapter 12 is #33.
 
 That is derivable rather than guessable: whether the platforms the escalator served still had a
 lift, a ramp or a level route. Run against both cases on record, nobody was stranded. But
@@ -191,6 +200,17 @@ None of them is a bug. All of them are decisions that were made correctly agains
 being asked at the time, and that a later question has made uncomfortable. That is what the
 `notes/` directory is for, and it is why these are issues with the numbers in them rather than
 todos.
+
+### What actually happened next
+
+All four closed between 1 and 3 September, and the order surprised me. **#28, the one dismissed
+above as "the small one", turned out to be the blocker.** The argument that had kept escalators
+in the grade was never really about what a grade should measure; it was that Connolly's row gave
+a reader no way to tell whose red cells those were. Fixing the row removed the argument. That is
+chapter 11.
+
+#31 and #33 landed the same day and are chapter 12, along with something neither issue asked
+for: a written account of how far any of this derivation can be trusted.
 
 ## Notes
 

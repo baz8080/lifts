@@ -1,9 +1,9 @@
-# Outline - 9 posts plus intro and closing, chronological
+# Outline - 12 posts plus intro and closing, chronological
 
 Each entry: PRs and dates, thesis, concepts boxed, worked example, and the three-way contrast
-the chapter must state. The repo's history is small enough to read directly (139 commits, 26
-merged pull requests, three `notes/` files, five open issues), so there is no `sources/`
-extraction as the uisce series needed; `figures.md` is the registry.
+the chapter must state. The repo's history is small enough to read directly (182 commits, 36
+merged pull requests, four `notes/` files, no open issues), so there is no `sources/` extraction
+as the uisce series needed; `figures.md` is the registry.
 
 The series' standing mandate, on top of the shared rules: **every fork from the sibling sites
 is stated as (uisce's approach, esb's approach, ours, and the fact about this feed that forced
@@ -12,7 +12,8 @@ it).** The four that anchor chapters are tabulated in `README.md`.
 The shape of the series is the argument. Chapters 01 to 05 are the site anyone would expect:
 collect, measure, publish, grade. Chapters 06 to 09 are what happened when the site tried to
 say what any of it *meant*, which is the part that was not foreseen and is the reason this
-series exists separately from the other two.
+series exists separately from the other two. Chapters 10 to 12 are the four days in early
+September when everything chapter 09 left open closed, in an order nobody predicted.
 
 ---
 
@@ -147,7 +148,7 @@ stations carrying a `level` tag. **Concept.** A guard that passes because what i
 absent. **Example.** The rebuild transcript, before and after. **Contrast.** The one chapter
 with no sibling contrast, and it says so.
 
-## Ch 09 - What one letter cannot say · issues #28, #31, #32, #33
+## Ch 09 - What one letter cannot say · issues #28, #31, #32, #33 · open 31 Aug, all closed by 3 Sep
 
 **Thesis.** The open work, written as reasoning rather than a backlog, because the reasoning is
 the interesting part. #32 is the sharp one: Dublin Pearse is graded F, the worst band on the
@@ -162,11 +163,55 @@ also carries the entrance leg, which is a real limit: the derivation reasons abo
 leg only, and Connolly's escalator is named in a field it never reads. #31 is the largest
 unclaimed win, an order of magnitude bigger than the exception list. And direction labelling is
 refused on principle: this is an archive, not a travel planner. **Concept.** One number, two
-populations.
+populations. Kept as the argument stood on 31 August, with forward pointers, because every issue
+closed within four days and the arguments are what shaped what got built.
 
-## Ch 10 - Closing
+## Ch 10 - Two ways the page lied about time · PRs #39, #42, #44 · 2 to 3 Sep
+
+**Thesis.** Two false statements about time, neither the collector's fault. The page read
+"collection has stopped" when the *build* had: GitHub's scheduled runs were landing four to ten
+hours late every day, so the site now builds on the data landing and the crons are a fallback,
+pushes went six-hourly and the threshold followed 16 h to 10 h. And a notice that vanished and
+came back unchanged was published as never having left, because the unique identity key left
+nowhere to put the second appearance: Portlaoise as one sixteen-day outage rather than two short
+ones a fortnight apart. A `listings` table holds one row per stretch; grace goes to 2 because
+Athy blinked for a single poll; the planned total is pooled across stretches so a gap cannot
+launder a grace week. **Concepts.** The age on the page is the age of the data, not of the
+build; a test that exercises the easy half. **Example.** The four-hour blip that would have
+taken Pearse from 20% to 41%. **Contrast.** The build-clock and horizon split is shared with
+both siblings; this is the first time the *publishing* half of it broke here.
+
+## Ch 11 - The grade narrows to lifts · PRs #38, #43 · 1 to 3 Sep
+
+**Thesis.** The order is the point: #28, filed as the least interesting item on the list, was
+the blocker. Reserving a 15px kind gutter on *every* row (the 28 August attempt was right except
+that it was conditional) means red escalator cells under a green lift chip read as two facts
+rather than a contradiction, which was the entire argument that had kept escalators in the
+grade. So escalators come off the letter, and the key says "Lift availability" and not the
+issue's "step-free availability", because the grade counts notices and a quarter of the access
+verdicts are unknown. The only-powered-way-up case is written down with a test that fails the
+day it applies. The denominator question a review raised, and why it was kept. **Concepts.** A
+conditional column is a misalignment; a rule with no instance, written down and guarded.
+**Example.** Pearse and Connolly at A over red escalator strips. **Contrast.** uisce's binary
+`KNOCK_CATS`, now matched rather than cited.
+
+## Ch 12 - Both legs, and who was on the stairs · PRs #37, #45 · 3 Sep
+
+**Thesis.** #31 and #33, and what came out of them. A lost verdict names the platform that
+needed no lift, quoting the sentence, withheld wherever the two sources disagree. A notice's own
+text says which leg it is about (19 platform, 1 entrance, 4 unlocated over 24 texts), and the
+entrance leg is read against `ticketOfficeAccess`, where four of 152 stations name a lift. The
+escalator verdict says who lost a way up in those words, quotes what the page names on the same
+leg, and never says a lift was working; the overlap guard covers the one thing the site knows.
+The golden file, born of two fixes that were themselves regressions, and its deliberate cost.
+Then the section that matters most: a dated, honest account of reliability by class of claim.
+**Concepts.** Reading a claim against the right leg; what the code's own history says about the
+code. **Example.** Connolly's full verdict sentence. **Contrast.** None, and it says so.
+
+## Ch 13 - Closing
 
 What the site can say and what it cannot, in two lists. The three-way table in full, as the
 series' deliverable. The settled-decisions table in plain language. The moral, which is not
-either sibling's: *collect first, and publish no meaning you cannot source.* Glossary of every
-concept box.
+either sibling's: *collect first, and publish no meaning you cannot source*, with a coda on why
+writing the rejected alternatives down is what made September's four days cheap. Glossary of all
+20 concept boxes.

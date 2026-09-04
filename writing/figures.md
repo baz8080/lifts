@@ -8,10 +8,15 @@ Unlike the two sibling series, this one had the data to hand, so the current fig
 measured rather than lifted. Historical figures are quoted as measured on their stated date and
 say so where the number has since moved.
 
-## Measured 31 August 2026 (Session 0)
+## Measured 4 September 2026 (Session 1)
 
-Run from `/Users/barry/Code/lifts` with `../lifts-data` pulled to `999922e` ("Message data
-through 2026-08-31T11:16:31Z"), then:
+Session 0's measurement was taken on 31 August. Everything in this section was re-run on
+4 September after merging `main`, because pull requests #37 to #45 moved most of it: the
+listings split of chapter 10 changed several grades, and chapter 11 took escalators off the
+letter. Where a chapter quotes a 31 August figure it says so and the row is in the "quoted at
+the date they were measured" section below.
+
+Run from `/Users/barry/Code/lifts` with `../lifts-data` pulled to its 4 September state, then:
 
 ```bash
 python -m lift_status --data-dir ../lifts-data rebuild
@@ -24,44 +29,48 @@ python -m lift_access --data-dir ../lifts-data report
 
 | Figure | Value | How |
 |---|---|---|
-| Runs recorded | 1,084 | `stats` |
-| Run outcomes | 1,081 ok, 3 unreachable | `stats` |
-| Coverage | 2026-08-08T21:30:55Z to 2026-08-31T11:01:41Z | `stats` |
-| Collection horizon at build | 2026-08-31 11:01Z, 3.0 h behind the build | site build |
-| Messages tracked | 234 (7 open, 227 closed, 6 reopened at least once) | `stats` |
-| Messages classifying as lift or escalator | 24 of 234 (22 lift, 2 escalator) | `lift_site.model.classify` over `messages` |
-| Unidentifiable items | 264 | `stats` |
-| Raw log size | 2.9 MiB | `stats` |
-| Outages after merging | 24, across 21 stations | site build |
-| Planned works | 6 of 24 | site build |
-| Escalator outages | 2 of 24 | site build |
-| Listed at the horizon | 4 lift notices at 4 stations, 0 escalator | site build |
+| Runs recorded | 1,264 | `stats` |
+| Run outcomes | 1,261 ok, 3 unreachable | `stats` |
+| Coverage | 2026-08-08T21:30:55Z to 2026-09-04T05:01:41Z | `stats` |
+| Collection horizon at build | 2026-09-04 05:01Z, 4.1 h behind the build | site build |
+| Messages tracked | 281 (4 open, 277 closed, 4 reopened at least once) | `stats` |
+| Listings (one row per stretch on the feed) | 285 across 281 messages; 4 messages have more than one | `listings` table |
+| Unidentifiable items | 323 | `stats` |
+| Raw log size | 3.2 MiB | `stats` |
+| Outages after merging | 34, across 27 stations | site build |
+| Notices on record for the access report | 30 | `report` |
+| Listed at the horizon | 2 lift and 1 escalator notice across 3 stations | site build |
+| `LIFT_STATUS_GRACE_MISSES` default | 2 | `lift_status/store.py:24` |
 
 ### The site
 
 | Figure | Value | How |
 |---|---|---|
-| `index.html` | 59.8 KB | site build |
-| `data.js` | 4.5 KB | site build |
-| Initial load | 64.3 KB against a 500 KB budget | site build |
-| Station pages | 578.7 KB over 21 files | site build |
-| Shards | 10.8 KB over 21 files, largest `PERSE.js` at 0.9 KB | site build |
-| Aggregate availability, August 2026 | 67% | `data.js` `national["2026-08"]` |
-| National row | 21 stations, 24 outages, 18 faults, 6 planned, 67%, 4 ongoing | same |
-| Grade mix, 21 station-months | A 1, B 1, C 5, D 5, E 4, F 5 | `data.js` `stats` against `bands` |
-| Availabilities, sorted | 0, 0, 20, 25, 29, 54, 66, 70, 70, 83, 87, 87, 87, 87, 91, 91, 91, 91, 91, 95, 100 | same |
-| Dublin Pearse | F, 20%: 6 lift cells inside grace, 19 escalator cells overrun, 24 days watched | same |
-| Dublin Connolly | C, 91%: 0 lift cells, 2 red escalator cells | same |
-| Tullamore | A, 100%, over four planned-works cells | same |
+| `index.html` | 58.9 KB | site build |
+| `data.js` | 5.7 KB | site build |
+| Initial load | 64.6 KB against a 500 KB budget | site build |
+| Station pages | 726.6 KB over 27 files | site build |
+| Shards | 17.5 KB over 27 files, largest `PERSE.js` at 1.8 KB | site build |
+| `STALE_AFTER` | 10 hours | `lift_site/render.py:48` |
+| Lift availability, August 2026 | 76% | `data.js` `national["2026-08"]` |
+| August national row | 21 stations, 28 outages, 21 faults, 7 planned, 76%, 2 still out at month end | same |
+| Lift availability, September so far | 62% | `data.js` `national["2026-09"]` |
+| September national row | 8 stations, 8 outages, 7 faults, 1 planned, 62%, 3 ongoing | same |
+| Grade mix, August, 21 station-months | A 3, B 1, C 4, D 6, E 5, F 2 | `data.js` `stats` against `bands` |
+| August availabilities, sorted | 0, 0, 54, 54, 70, 70, 70, 83, 83, 87, 87, 87, 87, 91, 91, 91, 91, 95, 100, 100, 100 | same |
+| Grade mix, September so far, 8 station-months | A 2, D 3, E 1, F 2 | same |
+| Dublin Pearse, August | A, 100%, over an escalator strip | same |
+| Dublin Connolly, August | A, 100%, over an escalator strip | same |
+| Tara Street, September so far | A, 100%, over an escalator strip | same |
+| Portlaoise, August (after the listings split) | D, 83% | same |
 | Band table | A 100, B 95, C 90, D 75, E 50, F 0 | `data.js` `bands` |
 
 ### Listings and start dates
 
 | Figure | Value | How |
 |---|---|---|
-| Outages whose start predates their first sighting | 23 of 24 | `lift_site.model.load_outages`, `first_seen - start` |
-| ... by seven days or more | 12 of 24 | same |
-| Longest lead: Rush and Lusk | 451.6 days | same |
+| Longest lead: Rush and Lusk | 451.6 days, from a start of 2025-05-14 08:00Z against a first sighting at the very first poll, 2026-08-08T21:30:55Z | `lift_site.model.load_outages` |
+| Outages whose start predates their first sighting, 31 Aug | 23 of 24, 12 by seven days or more | same, measured 31 Aug 2026 |
 | Next four leads | Docklands 253.4, Dublin Pearse lift 242.9, Hazelhatch 237.6, Thurles 197.4 | same |
 | Further leads quoted | Pearse escalator 146.1, Ballinasloe 123.9, Skerries 118.5, Ballybrophy 100.5 | same |
 | The one negative lead | Tullamore, minus 2.3 days (works announced in advance) | same |
@@ -78,28 +87,58 @@ python -m lift_access --data-dir ../lifts-data report
 | Stations in the snapshot | 152 | `stations/irishrail-20260830.jsonl` |
 | Stations recorded as having a lift | 57 | `report`, `model.has_lift` |
 | Stations recorded as having none | 95 | same |
+| Station snapshots on record | `irishrail-20260830.jsonl`, `irishrail-20260901.jsonl` | `lifts-data/stations/` |
 | Prose mentioning "lift" before boilerplate stripping | 61 | `model.LIFT` over `platform_access` |
 | ... after stripping | 58 | `model.strip_boilerplate` then `model.LIFT` |
 | Difference explained | 3 boilerplate-only (Greystones, Killiney, Donabate), then Dromod's explicit denial | `notes/station-access.md` |
 | `platformAccess` naming an escalator | 2 of 152: Tara Street, Dublin Pearse | `model.ESCALATOR` |
 | `ticketOfficeAccess` naming an escalator | 1: Dublin Connolly | same |
 | Stations with any `ticketOfficeAccess` text | 143 of 152 | snapshot |
-| Verdicts across the 24 notices | 16 lost, 6 unknown, 2 escalator | `report` |
-| The six unknown | Carlow, Greystones (x2), Limerick Junction, Portlaoise, Rush and Lusk | `report` |
+| Verdicts across the 30 notices | 20 lost, 7 unknown, 3 escalator | `report` |
+| The seven unknown | Carlow, Greystones (x2), Kilkenny, Limerick Junction, Portlaoise, Rush and Lusk | `report` |
+| Lost verdicts carrying a kept-platform note | 5: Dublin Pearse, Dún Laoghaire, Malahide, Portarlington, Tullamore | `report`, grep for "needed no lift" |
 | Step-free pill rendered on the live site | never; `stepfree` is empty | `data.js` |
 
 ### The repository
 
 | Figure | Value | How |
 |---|---|---|
-| Commits on `main` | 139 | `git log --oneline \| wc -l` |
-| Commits with a `Co-Authored-By` trailer | 88 (61 Claude Opus 5, 27 Claude Fable 5) | `git log --format='%b' \| grep -o 'Co-Authored-By: [^<]*' \| sort \| uniq -c` |
-| Merged pull requests | 28, numbered to #34 | GitHub, `baz8080/lifts` |
-| Open issues | #28, #31, #32, #33 | GitHub |
-| Test count | 287, all passing with `LIFT_STATUS_DATA_DIR` set | `python -m unittest discover -s tests -t .` |
-| `notes/` files | site · station-access · accessible-routes | `ls notes/` |
+| Commits on `main` | 182 | `git log --oneline \| wc -l` |
+| Commits with a `Co-Authored-By` trailer | 121, across five Claude model identifiers (73 Opus 5, 27 Fable 5, 9 Fable 5.1, 9 Opus 5 1M, 3 unversioned) | `git log --format='%b' \| grep -o 'Co-Authored-By: [^<]*' \| sort \| uniq -c` |
+| Merged pull requests | 36, numbered to #45 | GitHub, `baz8080/lifts` |
+| Open issues | none | GitHub |
+| Test count | 390, all passing with `LIFT_STATUS_DATA_DIR` set | `python -m unittest discover -s tests -t .` |
+| `notes/` files | site · station-access · accessible-routes · publish-cadence | `ls notes/` |
 | First commit | 2026-08-08 | `git log --reverse` |
 | Em dashes in `writing/` | 0 | `scripts/no-em-dash.sh` |
+
+## Measured 31 August 2026 (Session 0), quoted by chapters 00 to 09
+
+Kept because chapters 02, 05, 07 and 09 quote the corpus as it stood before the September
+changes, and say so where they do.
+
+| Figure | Value |
+|---|---|
+| Runs / outcomes | 1,084; 1,081 ok, 3 unreachable |
+| Coverage | 2026-08-08T21:30:55Z to 2026-08-31T11:01:41Z |
+| Messages tracked | 234, of which 24 classify as lift or escalator (22 lift, 2 escalator) |
+| Unidentifiable items | 264 |
+| Outages after merging | 24 across 21 stations; 6 planned, 2 escalator |
+| Aggregate availability, August | 67%, with escalators counting |
+| Grade mix, 21 station-months | A 1, B 1, C 5, D 5, E 4, F 5 |
+| Availabilities, sorted | 0, 0, 20, 25, 29, 54, 66, 70, 70, 83, 87, 87, 87, 87, 91, 91, 91, 91, 91, 95, 100 |
+| Dublin Pearse | F, 20%: 6 lift cells inside grace, 19 escalator cells overrun, 24 days watched |
+| Dublin Connolly | C, 91%: 0 lift cells, 2 red escalator cells |
+| Tullamore | A, 100%, over four planned-works cells |
+| Verdicts across 24 notices | 16 lost, 6 unknown, 2 escalator |
+| Listing durations | 6.5 h (Portarlington) to 541.5 h (Athy, Midleton); median 62.25 |
+| Initial load | 64.3 KB |
+| Commits / trailers / tests | 139 / 88 / 287 |
+
+Several of these are not merely stale, they were **wrong**, and chapter 10 is why: Portlaoise's
+29%, Thurles' 25% and Clondalkin's grade all included a fortnight the notice was not on the
+feed. The August aggregate and the grade mix moved again in chapter 11 when escalators stopped
+counting.
 
 ## Quoted at the date they were measured (not re-run)
 
@@ -209,6 +248,55 @@ python -m lift_access --data-dir ../lifts-data report
 | Platforms that would need hand labelling | roughly 120 | same |
 | `ticketOfficeAccess` present | 143 of 152 stations | issue #33 |
 | Stations naming an escalator | Pearse and Tara Street in `platformAccess`, Connolly in `ticketOfficeAccess`; all three also have lifts | same |
+
+### Ch 10
+
+| Figure | Value | Source |
+|---|---|---|
+| Cron actual start times, week to 1 Sep | `40 5` at 10:24, 10:39, 11:46, 11:48, 13:38, 16:46, 17:41; `40 12` at 16:51, 16:53, 16:56, 19:13, 22:33, 22:36 | PR #39, `notes/publish-cadence.md`, 2 Sep 2026 |
+| Normal jitter before 26 Aug | runs started 05:58 to 06:06Z against a `40 5` cron | same |
+| The reported string | a 10:24Z build saw data to 23:22Z; a 16:53Z build saw data to 11:19Z; 21.5 h old by 09:47 | same |
+| Push cadence and worst-case age | six-hourly, capping age at about 7 h against about 13 h before | same |
+| `STALE_AFTER` | 16 h to 10 h | same |
+| Live lag measured while implementing | 10.2 h at 09:12Z | same |
+| Portlaoise as published | 16 days listed, F, 29% available | PR #42, 3 Sep 2026 |
+| What actually happened at Portlaoise | 20 h from 10 Aug, absent from 672 consecutive successful polls, 22 h from 25 Aug | same |
+| Grade moves from the split | Portlaoise F 29% to D 83%; Thurles F 25% to E 54%; Clondalkin F to E 70%; Pearse and Midleton unmoved | same |
+| Reopens the counter had recorded | 6 in the first month, 5 of them lift or escalator notices | `notes/site.md`, 2 Sep 2026 |
+| Athy's blink | absent from exactly one poll on 21 Aug, back 29 minutes later | same |
+| Gap sizes in the corpus | 1, 9, 79, 388 and 672 polls | same |
+| Midleton's real block | 1,087 consecutive successful polls, no gaps | PR #42 |
+| The pooled planned total | without it, a 4-hour blip took the Pearse escalator from 20% to 41% | same |
+| The double-counted chain total | 5.5 days of works reported as 9 | same |
+
+### Ch 11
+
+| Figure | Value | Source |
+|---|---|---|
+| The reverted label column | 64px, appeared on the one station with two bars, put its day 14 over every other row's day 15 | PR #38, 1 Sep 2026 |
+| The gutter | 15px on every row, 84px with the word on station pages | same |
+| Alignment measured | all 21 August rows start their days at the same x at 980px and 500px | same |
+| Glyph cost | about 730 bytes on a 68 KB initial load | same |
+| Review findings on that branch | 6, including three tests that passed with the feature removed | same |
+| Grade moves from taking escalators off | Connolly C 91% to A 100%; Pearse F 20% to A 100%; August national 72% to 76%; Tara Street F 33% to A 100%; September national 50% to 61% | PR #43, 3 Sep 2026, corpus to 05:00Z |
+| The narrower denominator that was rejected | 75% instead of 76% for August, 53% instead of 61% for September | same |
+| Stations claiming a lift among the escalator three | Pearse, Connolly and Tara Street all claim one, so the only-powered-way-up rule has no instance | same |
+
+### Ch 12
+
+| Figure | Value | Source |
+|---|---|---|
+| Lost verdicts gaining a kept-platform note | 5: Pearse, Dún Laoghaire, Malahide, Portarlington, Tullamore | PR #37, 3 Sep 2026 |
+| Stations naming a platform reached without a lift | 32 of the 57 that claim a lift | same, and issue #31 |
+| Leg detection over 24 distinct notice texts | 19 platform, 1 entrance (Connolly), 4 unlocated, no false entrance hits | PR #45, 3 Sep 2026 |
+| `ticketOfficeAccess` across 152 stations | 9 blank, 26 no ticket office, 89 level, 21 ramp; 4 name a lift (Connolly, Clondalkin, Docklands, Grand Canal Dock), 1 names an escalator (Connolly) | same |
+| Escalator verdicts that moved | 3: Pearse, Connolly, Tara Street; no lift verdict moved | same |
+| Overlaps found by the guard | 0. Pearse's lift listing closed at the exact poll its escalator's opened, 2026-08-13T10:30:46Z | same |
+| Review passes and findings | 9, then 6, then 5, then 4; two fixes were themselves regressions | same |
+| The regressions caught by hand | Carrigaloe's and Dalkey's "platform No 1" lines dropped; Banteer's and Booterstown's hidden by a split at "No." | same |
+| Corpus growth in distinct notice texts | 21 in 26 days | same |
+| Reliability by class, corpus to 3 Sep (27 notices) | 18 lost, 6 unknown, 3 escalator; entrance leg has 0 lift notices and 1 escalator notice | `notes/station-access.md` § How reliable this is, honestly, 3 Sep 2026 |
+| Stations with no ticket office | 26 of 152, so a sixth of the network is unknown on the entrance leg by construction | same |
 
 ## Open `[verify:]` items
 

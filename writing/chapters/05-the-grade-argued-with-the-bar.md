@@ -59,7 +59,9 @@ The bars still split by kind, for the reason they always did.
 
 On the corpus that day the change moved aggregate availability from 70% to 66%: Connolly from
 A to C, and Dublin Pearse from A to **F**, at 22%. Chapter 09 is about why that F is a problem
-even though every step to it was correct.
+even though every step to it was correct, and chapter 11 is where it was undone: on 3 September
+escalators came back out of the grade, and both stations returned to A. What changed in between
+was not the argument but the row, which is the interesting part.
 
 ### One colour said two opposite things
 
@@ -146,8 +148,8 @@ data preferred it.
 > is not doing that work, and that is checkable rather than assertable: 60 and 40 produce the
 > same split, which is what "lands in a gap" means operationally.
 
-The grade mix moved from A 1, B 1, C 5, D 5, F 9 to **A 1, B 1, C 5, D 5, E 4, F 5**, and it
-still reads that way as of 31 August 2026.
+The grade mix moved from A 1, B 1, C 5, D 5, F 9 to **A 1, B 1, C 5, D 5, E 4, F 5**. It still
+read that way on 31 August; chapters 10 and 11 move it twice more.
 
 The pin bump for the sixth chip shipped in the same pull request rather than a follow-up,
 because the band table and the chip that renders it are two halves of one change. It brought

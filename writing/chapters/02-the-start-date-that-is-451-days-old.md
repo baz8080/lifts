@@ -108,6 +108,12 @@ older is still listed when the newer arrives.
 No lift notice has needed the merge yet. Non-lift ones have: `Station currently closed` became
 `Station currently CLOSED` became `Station is OPEN`, three ids in a row.
 
+That rule was right and the machinery under it was not. A notice that vanished and came back
+**unchanged** could not become a second row, because the derived identity key is unique, so the
+collector revived the old row and the gap disappeared. Portlaoise was published as sixteen
+continuous days when it was two short outages a fortnight apart. Chapter 10 is that bug and the
+listings table that fixed it.
+
 ### `end` is shown, not used
 
 For most notices `end` is a placeholder near the end of the calendar year. A handful look real.

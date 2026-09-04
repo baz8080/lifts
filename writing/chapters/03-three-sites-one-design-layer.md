@@ -85,6 +85,10 @@ pushes, which is about 14 hours, and below a missed midnight push, which would s
 more. A threshold has to be sized to the cadence it is watching, or it either cries wolf or
 never fires.
 
+The cadence changed under it a week later, when GitHub's scheduled builds turned out to be
+running four to ten hours late every day. Pushes went six-hourly, the build moved to firing on
+the data landing rather than on a clock, and the threshold followed to 10 hours. Chapter 10.
+
 And the Python floor was written down and then checked (PR #13). `requires-python` says 3.11,
 because that is what Raspberry Pi OS bookworm ships and the collector has to run there. The
 development interpreter is 3.14. A floor that is only declared is a floor that drifts, so the

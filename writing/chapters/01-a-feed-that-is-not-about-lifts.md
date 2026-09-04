@@ -1,5 +1,5 @@
 # 01. A feed that is not about lifts
-*~8 min read · PR #1 · 8 to 18 August 2026*
+*~7 min read · PR #1 · 8 to 18 August 2026*
 
 *Where we are:* nothing exists yet. This chapter is the collector: what it writes down, in what
 order, and the one property everything else depends on.

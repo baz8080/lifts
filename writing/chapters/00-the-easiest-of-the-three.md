@@ -1,8 +1,8 @@
 # 00. The easiest of the three
-*~6 min read · the whole series · 8 to 31 August 2026*
+*~7 min read · the whole series · 8 August to 4 September 2026*
 
 *Where we are:* the beginning. This post says what the site answers, what it turned out to
-cost, and how the eleven posts are arranged.
+cost, and how the fourteen posts are arranged.
 
 ## The question
 
@@ -16,8 +16,8 @@ listing which stations broke most this year, or how long an outage typically run
 the same lift keeps failing.
 
 So this repository writes it down. A Raspberry Pi in a hallway asks the feed what is listed,
-every 30 minutes, and appends the answer to a file. As of 31 August 2026 that file holds 1,084
-runs over 23 days, from which 24 lift and escalator outages across 21 stations have been
+every 30 minutes, and appends the answer to a file. As of 4 September 2026 that file holds 1,264
+runs over 27 days, from which 34 lift and escalator outages across 27 stations have been
 reconstructed, and the site built from it is at
 [baz8080.github.io/lifts](https://baz8080.github.io/lifts). It is the third site of a family:
 [uisce](https://github.com/baz8080/uisce) does the same for Uisce Éireann's water notices, and
@@ -61,8 +61,9 @@ That is the story this series is arranged around.
 
 ## How the posts are arranged
 
-Eleven, deliberately back-loaded. The first five are the site anyone would expect. The last
-four are what happened when it tried to mean something.
+Fourteen, deliberately back-loaded. The first five are the site anyone would expect. Chapters
+06 to 09 are what happened when it tried to mean something, and the last three are the four days
+in September when everything 09 left open was closed.
 
 | # | Title | What it covers |
 |---|---|---|
@@ -74,8 +75,11 @@ four are what happened when it tried to mean something.
 | 06 | The data Ireland does not have | Every source checked, why the absence is lawful, and what it costs |
 | 07 | "and" is a sequence, not a choice | Reading the prose, and the misreading that nearly shipped |
 | 08 | The same bug, three times | A review pass, and one bug shape found in three places |
-| 09 | What one letter cannot say | The open questions, and why they are hard |
-| 10 | Closing | What the site can and cannot say, and the three-way table |
+| 09 | What one letter cannot say | Four open questions, and why they are hard |
+| 10 | Two ways the page lied about time | A build that stalled, and a gap in a listing that vanished |
+| 11 | The grade narrows to lifts | The 15 pixels that let escalators leave the letter |
+| 12 | Both legs, and who was on the stairs | Which platform kept access, who lost a way up, and how far to trust any of it |
+| 13 | Closing | What the site can and cannot say, and the three-way table |
 
 Each post stands alone. Every number in them carries a source and a date, and every figure has
 a row in `figures.md` saying where it came from. Where the three sites did the same job
@@ -84,30 +88,34 @@ because none of those splits is taste.
 
 ## What the site says today
 
-As of 31 August 2026, over 23 days of collection:
+As of 4 September 2026, over 27 days of collection:
 
-- **24 outages across 21 stations**, of which 6 are planned works and 2 are escalators.
-- **67% aggregate availability** across the stations named in August. That is the share of
-  watched days on which nothing was reported out at those stations, and the denominator is
-  stated on the page, because the feed names a station only when something is wrong with it.
-- The grade mix across 21 station-months: **A 1, B 1, C 5, D 5, E 4, F 5**.
-- Four lift notices were still up at the last poll, at four stations.
-- Of the 24 outages, **16** are worked out to have removed step-free access to at least one
-  platform, **2** were escalators, and **6** come back `unknown` because Irish Rail's own two
-  sources disagree with each other.
+- **34 outages across 27 stations**, of which 8 are planned works and 3 are escalators.
+- **76% availability** across the 21 stations named in August, and 62% across the 8 named in
+  September so far. That is the share of watched days on which no lift was reported out at those
+  stations, and the denominator is stated on the page, because the feed names a station only
+  when something is wrong with it.
+- The August grade mix across 21 station-months: **A 3, B 1, C 4, D 6, E 5, F 2**.
+- Of the 30 notices on record, **20** are worked out to have removed step-free access to at
+  least one platform, **3** were escalators, and **7** come back `unknown` because Irish Rail's
+  own two sources disagree with each other.
 
-That last row is the one I would point at. Six of twenty-four is a quarter of everything on the
-site, and every one of the six is a real contradiction between a notice and a station page:
-a page whose access description is the single word "Level" at a station whose lifts keep
+That last row is the one I would point at. Seven of thirty is nearly a quarter of everything on
+the site, and every one of the seven is a real contradiction between a notice and a station
+page: a page whose access description is the single word "Level" at a station whose lifts keep
 breaking, a page that lists platform 1 twice and never mentions platform 2, two stations where
 the notice and the page put the lift on opposite platforms. The site prints "unknown" for all
-six rather than guessing, and chapter 07 is about why that is the only defensible thing to do.
+seven rather than guessing, and chapter 07 is about why that is the only defensible thing to do.
+
+Both of the grade figures above moved twice in the first week of September, once because a bug
+was making several stations look far worse than they were and once because escalators stopped
+counting towards the letter. Chapters 10 and 11.
 
 ## One note on how it was built
 
 This repository was written with AI assistance, mostly Claude Code, working against
-instructions and review rather than unattended. Of 139 commits on `main` as of 31 August 2026,
-88 carry a `Co-Authored-By` trailer: 61 Claude Opus 5 and 27 Claude Fable 5. The design
+instructions and review rather than unattended. Of 182 commits on `main` as of 4 September 2026,
+121 carry a `Co-Authored-By` trailer, across five Claude model identifiers. The design
 decisions, the corrections and the arguments in `notes/` are the interesting part and are
 mine; several of the wrong turns in this series were caught by a human reading the output and
 saying "no, that station does not work like that". Chapter 07 is one of those, and it is the
@@ -117,10 +125,10 @@ That is the last time the process is mentioned. The rest is about the data.
 
 ## Notes
 
-- Figures measured 31 August 2026 by rebuilding `../lifts-data` and running the site build and
-  `python -m lift_access report`. Registered in `figures.md`.
+- Figures measured 4 September 2026 by rebuilding `../lifts-data` and running the site build
+  and `python -m lift_access report`. Registered in `figures.md`.
 - Commit and trailer counts: `git log --oneline | wc -l` and a grep for `Co-Authored-By`,
-  31 August 2026.
+  4 September 2026.
 - The regulation quoted is Commission Delegated Regulation (EU) 2017/1926, Annex; the clause is
   read in full in chapter 06.
 - Sibling series: [uisce #43](https://github.com/baz8080/uisce/pull/43),
