@@ -189,3 +189,9 @@ Hand-curating station accessibility by hand from photographs, station visits
 or Wikipedia. It would be a second source with no provenance, no refresh and
 no way to audit, attached to a site whose entire discipline is that every
 number traces back to a recorded observation. Better to say nothing.
+
+**Revisited 2026-09-04.** Those three objections became the design: an
+append-only observation log with who, when and from what on every line, page
+lines that expire with the page, and a golden fixture that makes every change
+a read diff. What stays out is the thing this paragraph named, a
+hand-maintained file with none of that. [`step-free-graph.md`](step-free-graph.md).
