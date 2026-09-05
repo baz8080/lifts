@@ -622,9 +622,11 @@ def thin_days(db_path, until, minimum=FULL_DAY_RUNS):
     """Dublin dates the collector reached the feed fewer than `minimum` times.
 
     A day with two successful polls and a day with forty-eight paint the same
-    cells. The days at either end of collection are short by nature and are
-    left out; anything else here is a gap inside a day that the page cannot
-    show. Returns [(date, runs)], oldest first.
+    cells, and so does a day with none: `_cells` paints every day between the
+    start and the horizon, so the walk is over the calendar and not over the
+    runs, or the worst gap of all is the one never named. The days at either
+    end of collection are short by nature and are left out. Returns
+    [(date, runs)], oldest first.
     """
     conn = sqlite3.connect(str(db_path))
     try:
@@ -636,5 +638,10 @@ def thin_days(db_path, until, minimum=FULL_DAY_RUNS):
     per_day = defaultdict(int)
     for (started,) in rows:
         per_day[_local(parse_utc(started)).date()] += 1
-    ends = {_local(COLLECTION_START).date(), _local(until).date()}
-    return [(d, n) for d, n in sorted(per_day.items()) if n < minimum and d not in ends]
+    first, last = _local(COLLECTION_START).date(), _local(until).date()
+    out, day = [], first + timedelta(days=1)
+    while day < last:
+        if per_day.get(day, 0) < minimum:
+            out.append((day, per_day.get(day, 0)))
+        day += timedelta(days=1)
+    return out

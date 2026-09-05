@@ -825,48 +825,44 @@ def _entry_updated(o):
     return o.first_seen if o.ongoing else o.end
 
 
-def _entry_summary(o, facts, lift_listed_too=False):
-    lead = None
-    if o.start.astimezone(DUBLIN).date() < o.first_seen.astimezone(DUBLIN).date():
-        lead = (o.first_seen - o.start).days
-    bits = summary_bits(
-        _short(o.first_seen), _short(o.end), o.ongoing, _short(o.start),
-        _short(o.listed_end) if o.ongoing else None, lead,
-    )
-    hours = (o.end - o.first_seen).total_seconds() / 3600.0
-    joined = "; ".join(bits)
+def _entry_summary(record):
+    """The words in a feed entry, from the same case record the pages print.
+
+    Built on `case_record` rather than beside it: the durations and the lead
+    are computed there on the offset-aware instants, and a feed that did its
+    own arithmetic could disagree with the page it links to.
+    """
+    _, _, _, first_seen, end, ongoing, start, listed_end, _, text, _, hours, lead, access = record
+    joined = "; ".join(summary_bits(first_seen, end, ongoing, start, listed_end, lead))
     parts = [
-        f"Listed {_hours(hours)}" + (" so far" if o.ongoing else ""),
+        f"Listed {_hours(hours)}" + (" so far" if ongoing else ""),
         joined[0].upper() + joined[1:],
     ]
-    if o.text:
-        parts.append(o.text)
-    access = _access(o, facts, lift_listed_too)
+    if text:
+        parts.append(text)
     if access:
         parts.append(f"{ACCESS_LABEL.get(access[0], access[0])}: {access[1]}")
     return ". ".join(p.rstrip(".") for p in parts) + "."
 
 
-def _at_station(o, outages):
-    """The outages `lift_listed_too` may look across: the same station's only.
+def overlap_flags(by_station):
+    """{outage id: a lift notice at the same station overlapped it}, once per build.
 
-    `shard` hands it one station's list already; the feed and the CSV hold every
-    station's, and a lift out in Cork must not withhold a sentence about an
-    escalator in Connolly.
+    Computed per station, as `shard` does, because the feed and the CSV hold
+    every station's outages and a lift out in Cork must not withhold a sentence
+    about an escalator in Connolly.
     """
-    return [x for x in outages if x.code == o.code]
+    return {o.id: lift_listed_too(o, rows) for rows in by_station.values() for o in rows}
 
 
-def atom_feed(title, page_url, feed_url, outages, until, slugs, facts=None, pool=None):
-    """An Atom feed of outages, newest news first.
+def atom_feed(title, page_url, feed_url, outages, until, slugs, overlapped, facts=None, limit=None):
+    """An Atom feed of outages, newest news first, the most recent `limit` of them.
 
     Entries are keyed by the case anchor on the station page, which is also
     where the link goes, so the id is a real address and stays stable across
     rebuilds. The feed is dated to the horizon rather than the build clock: a
-    rebuild that saw no new data has no news. `pool` is every outage the overlap
-    check may see; the capped national feed passes the uncapped list.
+    rebuild that saw no new data has no news.
     """
-    pool = outages if pool is None else pool
     ns = "http://www.w3.org/2005/Atom"
     ET.register_namespace("", ns)
     feed = ET.Element(f"{{{ns}}}feed")
@@ -884,7 +880,7 @@ def atom_feed(title, page_url, feed_url, outages, until, slugs, facts=None, pool
     ET.SubElement(author, f"{{{ns}}}uri").text = BASE_URL + "/"
 
     ordered = sorted(outages, key=lambda o: (_entry_updated(o), o.id), reverse=True)
-    for o in ordered:
+    for o in ordered[:limit]:
         url = f"{BASE_URL}/s/{slugs[o.code]}.html#m{o.id}"
         entry = ET.SubElement(feed, f"{{{ns}}}entry")
         heading = o.head if o.ongoing else f"{o.head} (no longer listed)"
@@ -897,7 +893,7 @@ def atom_feed(title, page_url, feed_url, outages, until, slugs, facts=None, pool
         if o.planned:
             ET.SubElement(entry, f"{{{ns}}}category", term="planned-works")
         ET.SubElement(entry, f"{{{ns}}}summary").text = _entry_summary(
-            o, facts, lift_listed_too(o, _at_station(o, pool))
+            case_record(o, facts, overlapped[o.id])
         )
     return '<?xml version="1.0" encoding="utf-8"?>\n' + ET.tostring(feed, encoding="unicode") + "\n"
 
@@ -909,7 +905,7 @@ CSV_COLUMNS = (
 )
 
 
-def outages_csv(outages, facts=None):
+def outages_csv(outages, overlapped, facts=None):
     """Every outage the site shows, one row each, for whoever wants the numbers.
 
     Same rows as the site: merged reissues are one outage with a count. The
@@ -922,7 +918,7 @@ def outages_csv(outages, facts=None):
     writer = csv.writer(out, lineterminator="\n")
     writer.writerow(CSV_COLUMNS)
     for o in sorted(outages, key=lambda o: (o.first_seen, o.id)):
-        access = _access(o, facts, lift_listed_too(o, _at_station(o, outages))) or ("", "")
+        access = _access(o, facts, overlapped[o.id]) or ("", "")
         writer.writerow([
             o.code, o.station, o.kind, int(o.planned),
             _rfc3339(o.first_seen), "" if o.ongoing else _rfc3339(o.end), int(o.ongoing),
@@ -958,13 +954,13 @@ def write(site_dir, outages, now, until, facts=None):
     (site_dir / "data.js").write_text(
         "window.LIFT_DATA = " + _dumps(data) + ";\n", encoding="utf-8"
     )
-    (site_dir / CSV_NAME).write_text(outages_csv(outages, facts), encoding="utf-8")
-    # Newest news first and capped; the whole record is in the CSV.
-    recent = sorted(outages, key=lambda o: (_entry_updated(o), o.id), reverse=True)
+    overlapped = overlap_flags(by_station)
+    (site_dir / CSV_NAME).write_text(outages_csv(outages, overlapped, facts), encoding="utf-8")
+    # Capped; the whole record is in the CSV.
     (site_dir / "feed.xml").write_text(
         atom_feed(
             FEED_TITLE, f"{BASE_URL}/", f"{BASE_URL}/feed.xml",
-            recent[:FEED_ENTRIES], until, data["slugs"], facts, pool=outages,
+            outages, until, data["slugs"], overlapped, facts, limit=FEED_ENTRIES,
         ),
         encoding="utf-8",
     )
@@ -992,7 +988,7 @@ def write(site_dir, outages, now, until, facts=None):
                 f"Lift outages at {data['stations'][code]} station",
                 f"{BASE_URL}/s/{data['slugs'][code]}.html",
                 f"{BASE_URL}/s/{data['slugs'][code]}.xml",
-                by_station.get(code, []), until, data["slugs"], facts,
+                by_station.get(code, []), until, data["slugs"], overlapped, facts,
             ),
             encoding="utf-8",
         )

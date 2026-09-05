@@ -88,11 +88,12 @@ class TestWrite(SiteModelCase):
         updated = [e.find("a:updated", ns).text for e in entries]
         self.assertEqual(updated, sorted(updated, reverse=True))
         # the archive is in the CSV, uncapped
-        rows = list(csv.DictReader((site / "outages.csv").open(encoding="utf-8")))
+        rows = list(csv.DictReader((site / "outages.csv").read_text(encoding="utf-8").splitlines()))
         self.assertEqual(len(rows), render.FEED_ENTRIES + 3 + 4)
 
     def test_the_csv_has_one_row_per_outage_and_leaves_an_open_end_blank(self):
-        rows = list(csv.DictReader((self.site / "outages.csv").open(encoding="utf-8")))
+        text = (self.site / "outages.csv").read_text(encoding="utf-8")
+        rows = list(csv.DictReader(text.splitlines()))
         self.assertEqual(len(rows), 4)
         self.assertEqual(list(rows[0]), list(render.CSV_COLUMNS))
         by_code = {r["code"]: r for r in rows}

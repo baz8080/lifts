@@ -132,7 +132,8 @@ class TestRealCorpus(unittest.TestCase):
             feed = ET.parse(self.site / "s" / f"{self.data['slugs'][code]}.xml").getroot()
             per_station += len(feed.findall("a:entry", ns))
         self.assertEqual(per_station, len(self.outages))
-        rows = list(csv.DictReader((self.site / "outages.csv").open(encoding="utf-8")))
+        text = (self.site / "outages.csv").read_text(encoding="utf-8")
+        rows = list(csv.DictReader(text.splitlines()))
         self.assertEqual(len(rows), len(self.outages))
         self.assertEqual(
             sum(1 for r in rows if r["ongoing"] == "1"), sum(o.ongoing for o in self.outages)

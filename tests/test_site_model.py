@@ -681,8 +681,9 @@ class TestTheCollectorChecks(SiteModelCase):
             self.assertIsNotNone(model.classify(head), head)
 
     def test_a_day_with_few_polls_is_named_and_the_short_ends_are_not(self):
-        # The first day of collection is short by nature. The 10th had two polls
-        # out of forty-eight; the 11th had a full day.
+        # The first day of collection is short by nature. The 9th had no poll at
+        # all, the 10th two out of forty-eight, the 11th a full day. A day with
+        # none is painted like the rest, so it has to be named like the rest.
         self.poll(T0, [lift()])
         for i in range(2):
             at = datetime(2026, 8, 10, 12, 0, tzinfo=UTC) + i * timedelta(minutes=30)
@@ -692,4 +693,6 @@ class TestTheCollectorChecks(SiteModelCase):
         self.poll(datetime(2026, 8, 12, 9, 0, tzinfo=UTC), [lift()])
         self.load()
         thin = model.thin_days(self.dir / "lift_status.db", self.until)
-        self.assertEqual(thin, [(datetime(2026, 8, 10).date(), 2)])
+        self.assertEqual(
+            thin, [(datetime(2026, 8, 9).date(), 0), (datetime(2026, 8, 10).date(), 2)]
+        )

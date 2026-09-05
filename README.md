@@ -148,12 +148,10 @@ this repository stored there as the secret `SITE_BUILD_TOKEN`. Without it the
 dispatch fails visibly on each push and the site falls back to the cron.
 
 The station facts the access verdicts are read from are refreshed monthly by
-`.github/workflows/refresh-stations.yml` in `lifts-data`, which runs
-`lift_access refresh` from a checkout of this repository and opens a pull request
-with the new snapshot. Merging it fails the golden test here until the diff has
-been read and `lift_access golden` rerun, which is the intended order. That
-workflow needs "Allow GitHub Actions to create and approve pull requests"
-enabled in `lifts-data`'s Actions settings.
+`.github/workflows/stations.yml`, which opens a pull request against
+`lifts-data` with the new snapshot and attaches the verdict report. Merging it
+fails the golden test here until the diff has been read and `lift_access golden`
+rerun, which is the intended order.
 
 Pages needs enabling once, under **Settings → Pages → source "GitHub Actions"**.
 GitHub disables the cron after 60 days without a commit to *this* repository -
