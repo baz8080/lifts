@@ -15,7 +15,7 @@ uv run python -m lift_status --data-dir <dir> poll      # one collection pass
 uv run python -m lift_status --data-dir <dir> rebuild   # replay JSONL into lift_status.db
 uv run python -m lift_status --data-dir <dir> stats
 uv run python -m lift_site --data-dir <dir>             # build out/site/
-uv run python -m lift_access --data-dir <dir> refresh   # station facts (monthly, not on the Pi)
+uv run python -m lift_access --data-dir <dir> refresh   # station facts (monthly; lifts-data's refresh-stations.yml does it)
 uv run python -m lift_access --data-dir <dir> report    # every verdict beside its source prose
 uv run python -m lift_access --data-dir <dir> golden    # regenerate tests/fixtures/access-golden.json
 uv run --group dev ruff check
