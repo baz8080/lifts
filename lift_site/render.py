@@ -282,24 +282,28 @@ def lift_listed_too(o, outages):
     )
 
 
-def shard(outages, months, until, facts=None):
+def shard(outages, months, until, facts=None, overlapped=None):
     """Every outage at one station, grouped by month.
 
     An outage is listed under every month it overlaps, which is exactly the set
     of months `station_month` counts it in - so a reader can count the rows
     under a month and match the headline.
+
+    `overlapped` is {id: a lift notice overlapped it}; `write` computes it once
+    for every station and passes it in, so the shard, the feed and the CSV read
+    one flag. A caller with one station's list may leave it to be worked out
+    here: an escalator sentence must not quote a lift the row above it shows was
+    listed out at the same time.
     """
     windows = [(ym,) + model.observed_window(ym, until) for ym in months]
-    # Computed here because this is the one place that holds all of a
-    # station's outages: an escalator sentence must not quote a lift the row
-    # above it shows was listed out at the same time.
+    if overlapped is None:
+        overlapped = {o.id: lift_listed_too(o, outages) for o in outages}
     by_month = defaultdict(list)
     for o in sorted(outages, key=lambda o: (o.first_seen, o.id), reverse=True):
-        overlapped = lift_listed_too(o, outages)
         record = None
         for ym, lo, hi in windows:
             if model.listed_in(o, lo, hi):
-                record = case_record(o, facts, overlapped) if record is None else record
+                record = case_record(o, facts, overlapped[o.id]) if record is None else record
                 by_month[ym].append(record)
     return by_month
 
@@ -969,7 +973,7 @@ def write(site_dir, outages, now, until, facts=None):
     listed_now = [c for c in data["stations"] if any(o.ongoing for o in by_station.get(c, []))]
 
     for code in data["stations"]:
-        by_month = shard(by_station.get(code, []), months, until, facts)
+        by_month = shard(by_station.get(code, []), months, until, facts, overlapped)
         # Shards are keyed by station code, which is short and URL-safe; the
         # static pages take the name so their URLs read well.
         (site_dir / "h" / f"{code}.js").write_text(

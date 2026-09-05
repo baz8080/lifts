@@ -149,9 +149,12 @@ dispatch fails visibly on each push and the site falls back to the cron.
 
 The station facts the access verdicts are read from are refreshed monthly by
 `.github/workflows/stations.yml`, which opens a pull request against
-`lifts-data` with the new snapshot and attaches the verdict report. Merging it
-fails the golden test here until the diff has been read and `lift_access golden`
-rerun, which is the intended order.
+`lifts-data` with the new snapshot and attaches the verdict report. It writes to
+that other repository, so it needs a fine-grained token with **Contents: write**
+and **Pull requests: write** on `lifts-data`, stored here as the secret
+`LIFTS_DATA_TOKEN`; without it the run fails at the checkout step. Merging the
+PR fails the golden test here until the diff has been read and `lift_access
+golden` rerun, which is the intended order.
 
 Pages needs enabling once, under **Settings → Pages → source "GitHub Actions"**.
 GitHub disables the cron after 60 days without a commit to *this* repository -

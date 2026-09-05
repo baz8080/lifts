@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import html as html_mod
+import io
 import json
 import re
 import unittest
@@ -88,12 +89,12 @@ class TestWrite(SiteModelCase):
         updated = [e.find("a:updated", ns).text for e in entries]
         self.assertEqual(updated, sorted(updated, reverse=True))
         # the archive is in the CSV, uncapped
-        rows = list(csv.DictReader((site / "outages.csv").read_text(encoding="utf-8").splitlines()))
+        rows = list(csv.DictReader(io.StringIO((site / "outages.csv").read_text(encoding="utf-8"))))
         self.assertEqual(len(rows), render.FEED_ENTRIES + 3 + 4)
 
     def test_the_csv_has_one_row_per_outage_and_leaves_an_open_end_blank(self):
         text = (self.site / "outages.csv").read_text(encoding="utf-8")
-        rows = list(csv.DictReader(text.splitlines()))
+        rows = list(csv.DictReader(io.StringIO(text)))
         self.assertEqual(len(rows), 4)
         self.assertEqual(list(rows[0]), list(render.CSV_COLUMNS))
         by_code = {r["code"]: r for r in rows}
