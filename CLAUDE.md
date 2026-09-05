@@ -156,6 +156,7 @@ merged with `sort -u`.
 | OpenStreetMap was carried as a second opinion and removed: it changed no verdict, its one signal was redundant, and it has no `level` tags outside the Dublin termini | `notes/station-access.md` § OpenStreetMap |
 | GTFS, GTFS-R, the NTA developer API, NaPTAN, PTIMS and OSM all carry no station accessibility data, and the GTFS fields Google and Apple read for accessible routing are absent too. Scraping the prose is the last resort, not the lazy option | `notes/station-access.md` § Why scraping prose is the only option |
 | NeTEx and SIRI-FM are the formats that would carry this. Ireland publishes neither, and 2017/1926 only obliges publishing data that already exists. NeTEx appearing is the one thing worth watching for | `notes/station-access.md` § The regulation |
+| A station with a notice up at the horizon is tagged "Lift out" or "Escalator out" on its row and header, from a kind mask in the stats row; the feeds and the CSV sit beside the pages and off the initial load; a notice mentioning a lift that `classify` rejects fails the real-corpus test | `notes/site.md` § What a reader can take away |
 | The design layer is shared with uisce and esb via `../statusui`, a uv git dependency pinned in `uv.lock` - edit upstream, then `../statusui/rollout.sh` bumps all three sites. Vendored copies were tried first and drifted within a day. `lift_site/site.css` is this site's own | `notes/site.md` § The vendored copy became a pinned dependency; statusui's README |
 
 Decisions go in `notes/`, dated, with the rejected alternatives and their
@@ -189,9 +190,11 @@ files; the prose outside the repo is on whoever is writing it.
 
 `tests/test_site_real.py` runs the pipeline against the real corpus: every
 lift/escalator notice appears on the site exactly once, the shards add up to
-the headline, the horizon is the last successful run. If it fails, something
+the headline, the horizon is the last successful run, and no notice whose text
+mentions a lift or escalator is one `classify` rejects. If it fails, something
 moved in the model or in the feed - find out which before adjusting the model
-to make it pass.
+to make it pass. A classifier miss is a notice to read: widen `KIND_PATTERNS`
+if it belongs on the site, add the head to the test's ignore set if it does not.
 
 `tests/fixtures/access-golden.json` is every level line, entrance sentence and
 verdict the access derivation produces across the 152 stations and every notice

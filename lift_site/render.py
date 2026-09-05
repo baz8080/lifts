@@ -10,14 +10,18 @@ never put a per-outage record in `data.js`.
 
 from __future__ import annotations
 
+import csv
 import html
+import io
 import urllib.parse
 from collections import defaultdict
 from datetime import timedelta
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 import statusui
 
+from lift_access import fetch
 from lift_access import model as access_model
 from lift_status.parse import DUBLIN
 
@@ -52,6 +56,19 @@ STALE_AFTER = timedelta(hours=10)
 BUDGET_BYTES = 500 * 1024
 
 KIND_LABEL = {"lift": "Lift", "escalator": "Escalator"}
+
+# The tag beside a station's name while a notice is up, keyed by the stats
+# row's kind mask. "Out", not "fixed" or "working": it repeats what the notice
+# says, and the title says when that was true. Mirrored in site.html's nowTag().
+NOW_LABEL = {1: "Lift out", 2: "Escalator out", 3: "Lift and escalator out"}
+NOW_TITLE = "Listed as out of order when we last checked"
+
+FEED_TITLE = "Irish Rail Lift Outages"
+# The national feed is capped: the site is meant to run for years and a feed
+# reader wants the recent past, not the archive. A station's own feed carries
+# every outage it has had, because that list stays short.
+FEED_ENTRIES = 50
+CSV_NAME = "outages.csv"
 
 slug = statusui.slug
 month_label = statusui.month_label
@@ -113,10 +130,10 @@ def build(outages, now, until, facts=None):
             if s["faults"] or s["planned"]:
                 # Five fields, and no more, plus the escalator bar in the
                 # months that had one: the page reads m[0]..m[5], and every
-                # byte here is in the initial load for every station.
+                # byte here is in the initial load for every station. m[3] is
+                # the kinds listed at the horizon (NOW_KIND), 0 when none.
                 per_month[ym] = [
-                    s["cells"], s["faults"], s["planned"],
-                    1 if s["ongoing"] else 0, s["avail"],
+                    s["cells"], s["faults"], s["planned"], s["now"], s["avail"],
                 ]
                 if s["esc_cells"]:
                     per_month[ym].append(s["esc_cells"])
@@ -387,13 +404,16 @@ def _access_html(code, data, facts):
         if note
         else ""
     )
-    report = html.escape(
-        correction_url(data["stations"][code], code, data["slugs"][code])
-    )
+    name = data["stations"][code]
+    report = html.escape(correction_url(name, code, data["slugs"][code]))
+    # Linked, not just named: the caveat asks the reader to check the reading,
+    # and the reader cannot without the page it was read from.
+    source = html.escape(fetch.station_url(station.slug))
     return (
         '<div class="card access"><h2>Getting to the platforms</h2>'
         f"{blocks}{earned}"
-        f'<p class="src">{html.escape(ACCESS_CAVEAT)} '
+        f'<p class="src">Quoted from <a href="{source}">Irish Rail&#x27;s page for '
+        f"{html.escape(name)}</a>. {html.escape(ACCESS_CAVEAT)} "
         "A notice that names a platform is read against the second list, and one "
         "that names the concourse or entrance against the first. "
         f'<a href="{report}">{html.escape(CORRECTION_PROMPT)}</a></p></div>'
@@ -493,6 +513,15 @@ def _step_free_chip(code, facts):
     return (
         f'<span class="sfchip" role="img" aria-label="{html.escape(STEP_FREE_TITLE)}" '
         f'title="{html.escape(STEP_FREE_TITLE)}">{STEP_FREE_CHIP}</span>'
+    )
+
+
+def _now_tag(mask):
+    """The "Lift out" tag, or nothing. Mirrored in site.html's nowTag()."""
+    if not mask:
+        return ""
+    return (
+        f'<span class="tag-f nowtag" title="{NOW_TITLE}">{NOW_LABEL[mask]}</span>'
     )
 
 
@@ -714,13 +743,15 @@ def station_page(code, data, by_month, listed_now=(), facts=None):
     observed = html.escape(data["observed"])
     if data["stale"]:
         observed = f'<span class="stale">{observed}</span>'
+    page_slug = data["slugs"][code]
     body = [
         '<a class="back" href="../index.html">← All stations</a>',
         '<div class="chead">',
         _chip(letter, f"Grade {letter} for {month_label(latest)}" if letter else "No grade yet"),
-        f"<h1>{html.escape(name)}</h1>{_step_free_chip(code, facts)}</div>",
+        f"<h1>{html.escape(name)}</h1>{_step_free_chip(code, facts)}"
+        f"{_now_tag(stats.get(latest, [0, 0, 0, 0])[3])}</div>",
         f'<div class="sub">Irish Rail station code {html.escape(code)} · {graded}<br>'
-        f"Data to {observed}</div>",
+        f'Data to {observed} · <a href="{page_slug}.xml">Atom feed for this station</a></div>',
         _access_html(code, data, facts),
         _legend_html(),
     ]
@@ -766,7 +797,8 @@ def station_page(code, data, by_month, listed_now=(), facts=None):
         {
             "TITLE": html.escape(title),
             "DESC": html.escape(desc),
-            "CANONICAL": f"{BASE_URL}/s/{data['slugs'][code]}.html",
+            "CANONICAL": f"{BASE_URL}/s/{page_slug}.html",
+            "FEED": f"{page_slug}.xml",
             "GRADE-KEY": GRADE_SPANS,
             "BODY": "".join(body),
         },
@@ -777,6 +809,128 @@ def _page(template, markers):
     """A template with the shared UI and this site's stylesheet inlined, then its markers."""
     markers = dict(markers, **{"SITE-CSS": SITE_CSS.read_text(encoding="utf-8")})
     return statusui.assemble(template.read_text(encoding="utf-8"), markers)
+
+
+def _rfc3339(dt):
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _entry_updated(o):
+    """When a reader last had news of this outage: it went up, or it came down.
+
+    A closed outage's entry moves to the close, so a feed reader shows it a
+    second time saying "no longer listed"; that second showing is the only
+    completion signal a reader will ever get.
+    """
+    return o.first_seen if o.ongoing else o.end
+
+
+def _entry_summary(o, facts, lift_listed_too=False):
+    lead = None
+    if o.start.astimezone(DUBLIN).date() < o.first_seen.astimezone(DUBLIN).date():
+        lead = (o.first_seen - o.start).days
+    bits = summary_bits(
+        _short(o.first_seen), _short(o.end), o.ongoing, _short(o.start),
+        _short(o.listed_end) if o.ongoing else None, lead,
+    )
+    hours = (o.end - o.first_seen).total_seconds() / 3600.0
+    joined = "; ".join(bits)
+    parts = [
+        f"Listed {_hours(hours)}" + (" so far" if o.ongoing else ""),
+        joined[0].upper() + joined[1:],
+    ]
+    if o.text:
+        parts.append(o.text)
+    access = _access(o, facts, lift_listed_too)
+    if access:
+        parts.append(f"{ACCESS_LABEL.get(access[0], access[0])}: {access[1]}")
+    return ". ".join(p.rstrip(".") for p in parts) + "."
+
+
+def _at_station(o, outages):
+    """The outages `lift_listed_too` may look across: the same station's only.
+
+    `shard` hands it one station's list already; the feed and the CSV hold every
+    station's, and a lift out in Cork must not withhold a sentence about an
+    escalator in Connolly.
+    """
+    return [x for x in outages if x.code == o.code]
+
+
+def atom_feed(title, page_url, feed_url, outages, until, slugs, facts=None, pool=None):
+    """An Atom feed of outages, newest news first.
+
+    Entries are keyed by the case anchor on the station page, which is also
+    where the link goes, so the id is a real address and stays stable across
+    rebuilds. The feed is dated to the horizon rather than the build clock: a
+    rebuild that saw no new data has no news. `pool` is every outage the overlap
+    check may see; the capped national feed passes the uncapped list.
+    """
+    pool = outages if pool is None else pool
+    ns = "http://www.w3.org/2005/Atom"
+    ET.register_namespace("", ns)
+    feed = ET.Element(f"{{{ns}}}feed")
+    ET.SubElement(feed, f"{{{ns}}}title").text = title
+    ET.SubElement(feed, f"{{{ns}}}subtitle").text = (
+        "Unofficial. From Irish Rail's public service message feed, polled every 30 minutes; "
+        "an outage ends here when its notice is no longer listed."
+    )
+    ET.SubElement(feed, f"{{{ns}}}id").text = feed_url
+    ET.SubElement(feed, f"{{{ns}}}link", rel="self", href=feed_url)
+    ET.SubElement(feed, f"{{{ns}}}link", rel="alternate", type="text/html", href=page_url)
+    ET.SubElement(feed, f"{{{ns}}}updated").text = _rfc3339(until)
+    author = ET.SubElement(feed, f"{{{ns}}}author")
+    ET.SubElement(author, f"{{{ns}}}name").text = f"{FEED_TITLE} (unofficial)"
+    ET.SubElement(author, f"{{{ns}}}uri").text = BASE_URL + "/"
+
+    ordered = sorted(outages, key=lambda o: (_entry_updated(o), o.id), reverse=True)
+    for o in ordered:
+        url = f"{BASE_URL}/s/{slugs[o.code]}.html#m{o.id}"
+        entry = ET.SubElement(feed, f"{{{ns}}}entry")
+        heading = o.head if o.ongoing else f"{o.head} (no longer listed)"
+        ET.SubElement(entry, f"{{{ns}}}title").text = heading
+        ET.SubElement(entry, f"{{{ns}}}id").text = url
+        ET.SubElement(entry, f"{{{ns}}}link", rel="alternate", type="text/html", href=url)
+        ET.SubElement(entry, f"{{{ns}}}published").text = _rfc3339(o.first_seen)
+        ET.SubElement(entry, f"{{{ns}}}updated").text = _rfc3339(_entry_updated(o))
+        ET.SubElement(entry, f"{{{ns}}}category", term=o.kind)
+        if o.planned:
+            ET.SubElement(entry, f"{{{ns}}}category", term="planned-works")
+        ET.SubElement(entry, f"{{{ns}}}summary").text = _entry_summary(
+            o, facts, lift_listed_too(o, _at_station(o, pool))
+        )
+    return '<?xml version="1.0" encoding="utf-8"?>\n' + ET.tostring(feed, encoding="unicode") + "\n"
+
+
+CSV_COLUMNS = (
+    "code", "station", "kind", "planned", "first_seen_utc", "end_utc", "ongoing",
+    "listed_hours", "irish_rail_start_dublin", "irish_rail_end_dublin", "reissues",
+    "head", "text", "access", "access_detail",
+)
+
+
+def outages_csv(outages, facts=None):
+    """Every outage the site shows, one row each, for whoever wants the numbers.
+
+    Same rows as the site: merged reissues are one outage with a count. The
+    listing instants are UTC, because they are for arithmetic; Irish Rail's own
+    start and end stay as they were written, Dublin wall-clock with no offset,
+    because that is a quotation and not a measurement. `end_utc` is empty while
+    a notice is still listed, so nobody averages the horizon in as a close.
+    """
+    out = io.StringIO()
+    writer = csv.writer(out, lineterminator="\n")
+    writer.writerow(CSV_COLUMNS)
+    for o in sorted(outages, key=lambda o: (o.first_seen, o.id)):
+        access = _access(o, facts, lift_listed_too(o, _at_station(o, outages))) or ("", "")
+        writer.writerow([
+            o.code, o.station, o.kind, int(o.planned),
+            _rfc3339(o.first_seen), "" if o.ongoing else _rfc3339(o.end), int(o.ongoing),
+            round((o.end - o.first_seen).total_seconds() / 3600.0, 2),
+            _short(o.start), _short(o.listed_end) or "", len(o.updates),
+            o.head, o.text or "", access[0], access[1],
+        ])
+    return out.getvalue()
 
 
 def write(site_dir, outages, now, until, facts=None):
@@ -804,6 +958,16 @@ def write(site_dir, outages, now, until, facts=None):
     (site_dir / "data.js").write_text(
         "window.LIFT_DATA = " + _dumps(data) + ";\n", encoding="utf-8"
     )
+    (site_dir / CSV_NAME).write_text(outages_csv(outages, facts), encoding="utf-8")
+    # Newest news first and capped; the whole record is in the CSV.
+    recent = sorted(outages, key=lambda o: (_entry_updated(o), o.id), reverse=True)
+    (site_dir / "feed.xml").write_text(
+        atom_feed(
+            FEED_TITLE, f"{BASE_URL}/", f"{BASE_URL}/feed.xml",
+            recent[:FEED_ENTRIES], until, data["slugs"], facts, pool=outages,
+        ),
+        encoding="utf-8",
+    )
 
     # The station pages link what was listed at the horizon, not at build time.
     listed_now = [c for c in data["stations"] if any(o.ongoing for o in by_station.get(c, []))]
@@ -821,6 +985,17 @@ def write(site_dir, outages, now, until, facts=None):
         (site_dir / "s" / f"{data['slugs'][code]}.html").write_text(
             station_page(code, data, by_month, listed_now, facts), encoding="utf-8"
         )
+        # Beside the page it is the feed of, so the two share a slug and a
+        # reader who has one address can guess the other.
+        (site_dir / "s" / f"{data['slugs'][code]}.xml").write_text(
+            atom_feed(
+                f"Lift outages at {data['stations'][code]} station",
+                f"{BASE_URL}/s/{data['slugs'][code]}.html",
+                f"{BASE_URL}/s/{data['slugs'][code]}.xml",
+                by_station.get(code, []), until, data["slugs"], facts,
+            ),
+            encoding="utf-8",
+        )
 
     lastmod = now.strftime("%Y-%m-%d")
     paths = [""] + [f"s/{data['slugs'][c]}.html" for c in data["stations"]]
@@ -833,4 +1008,7 @@ def write(site_dir, outages, now, until, facts=None):
 
 def size_report(site_dir):
     """What a reader downloads before they touch anything; printed on every build."""
-    return statusui.size_report(site_dir, BUDGET_BYTES, "s", "station pages")
+    return statusui.size_report(
+        site_dir, BUDGET_BYTES, "s", "station pages",
+        extra=((CSV_NAME, "on demand"), ("feed.xml", "on demand")),
+    )

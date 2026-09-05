@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import html as html_mod
 import json
 import re
@@ -9,6 +10,7 @@ import unittest
 import urllib.parse
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 from lift_access import model as access_model
 from lift_access import snapshot
@@ -34,11 +36,94 @@ class TestWrite(SiteModelCase):
         self.data = render.write(self.site, outages, NOW, self.until)
 
     def test_the_files_a_reader_and_a_crawler_expect(self):
-        for name in ("index.html", "data.js", "sitemap.xml", "robots.txt"):
+        expected = ("index.html", "data.js", "sitemap.xml", "robots.txt", "feed.xml", "outages.csv")
+        for name in expected:
             self.assertTrue((self.site / name).exists(), name)
         for code in self.data["stations"]:
             self.assertTrue((self.site / "h" / f"{code}.js").exists(), code)
             self.assertTrue((self.site / "s" / f"{self.data['slugs'][code]}.html").exists(), code)
+            self.assertTrue((self.site / "s" / f"{self.data['slugs'][code]}.xml").exists(), code)
+
+    def _entries(self, path):
+        ns = {"a": "http://www.w3.org/2005/Atom"}
+        root = ET.parse(self.site / path).getroot()
+        return root, root.findall("a:entry", ns), ns
+
+    def test_a_station_feed_carries_its_outages_and_the_national_one_carries_them_all(self):
+        root, entries, ns = self._entries("feed.xml")
+        self.assertEqual(len(entries), 4)
+        # dated to the horizon: a rebuild that saw no new data has no news
+        self.assertEqual(root.find("a:updated", ns).text, render._rfc3339(self.until))
+        _, athy, _ = self._entries("s/athy.xml")
+        self.assertEqual(len(athy), 1)
+        _, bray, _ = self._entries("s/bray.xml")
+        self.assertEqual(len(bray), 1)
+
+    def test_an_entry_is_news_twice_when_it_goes_up_and_when_it_comes_down(self):
+        _, entries, ns = self._entries("feed.xml")
+        by_title = {e.find("a:title", ns).text: e for e in entries}
+        # still listed: titled as the notice reads, dated to its appearance
+        bray = by_title["Bray - Lift out of order"]
+        self.assertEqual(bray.find("a:updated", ns).text, bray.find("a:published", ns).text)
+        terms = [c.get("term") for c in bray.findall("a:category", ns)]
+        self.assertEqual(terms, ["lift", "planned-works"])
+        # down: says so in the title, and moves to the close so a reader sees it again
+        athy = by_title["Athy - Lift out of order (no longer listed)"]
+        self.assertGreater(athy.find("a:updated", ns).text, athy.find("a:published", ns).text)
+        self.assertIn("no longer listed 9 Aug 2026", athy.find("a:summary", ns).text)
+        # the id is the case anchor on the station page, which is where the link goes
+        self.assertEqual(athy.find("a:id", ns).text, athy.find("a:link", ns).get("href"))
+        self.assertTrue(athy.find("a:id", ns).text.startswith(f"{render.BASE_URL}/s/athy.html#m"))
+
+    def test_the_feed_is_capped_and_newest_first(self):
+        outages = [
+            lift(code=f"S{i:02d}", station=f"Station {i}") for i in range(render.FEED_ENTRIES + 3)
+        ]
+        self.poll(T0 + timedelta(days=2), outages)
+        site = self.dir / "capped"
+        render.write(site, self.load(), NOW, self.until)
+        ns = {"a": "http://www.w3.org/2005/Atom"}
+        entries = ET.parse(site / "feed.xml").getroot().findall("a:entry", ns)
+        self.assertEqual(len(entries), render.FEED_ENTRIES)
+        updated = [e.find("a:updated", ns).text for e in entries]
+        self.assertEqual(updated, sorted(updated, reverse=True))
+        # the archive is in the CSV, uncapped
+        rows = list(csv.DictReader((site / "outages.csv").open(encoding="utf-8")))
+        self.assertEqual(len(rows), render.FEED_ENTRIES + 3 + 4)
+
+    def test_the_csv_has_one_row_per_outage_and_leaves_an_open_end_blank(self):
+        rows = list(csv.DictReader((self.site / "outages.csv").open(encoding="utf-8")))
+        self.assertEqual(len(rows), 4)
+        self.assertEqual(list(rows[0]), list(render.CSV_COLUMNS))
+        by_code = {r["code"]: r for r in rows}
+        self.assertEqual(by_code["BRAY"]["ongoing"], "1")
+        self.assertEqual(by_code["BRAY"]["end_utc"], "")
+        self.assertEqual(by_code["BRAY"]["planned"], "1")
+        self.assertEqual(by_code["ATHY"]["ongoing"], "0")
+        # the close is dated to the first miss, which was the poll a day after T0
+        self.assertEqual(by_code["ATHY"]["end_utc"], "2026-08-09T21:30:55Z")
+        self.assertEqual(by_code["ATHY"]["listed_hours"], "24.0")
+        # a quotation, not a measurement: Irish Rail's start stays as written
+        self.assertEqual(by_code["ATHY"]["irish_rail_start_dublin"], "2026-08-01T09:00")
+
+    def test_the_pages_advertise_their_feeds(self):
+        index = (self.site / "index.html").read_text(encoding="utf-8")
+        self.assertIn(
+            'type="application/atom+xml" title="Irish Rail Lift Outages" href="feed.xml"', index
+        )
+        self.assertIn('<a href="feed.xml">Atom feed</a>', index)
+        self.assertIn('<a href="outages.csv">every outage as CSV</a>', index)
+        page = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
+        self.assertIn(
+            'type="application/atom+xml" title="Lift outages at Athy station" href="athy.xml"', page
+        )
+        self.assertIn('<a href="athy.xml">Atom feed for this station</a>', page)
+
+    def test_a_station_with_a_notice_up_is_tagged_and_one_without_is_not(self):
+        bray = (self.site / "s" / "bray.html").read_text(encoding="utf-8")
+        self.assertIn(f'class="tag-f nowtag" title="{render.NOW_TITLE}">Lift out</span>', bray)
+        athy = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
+        self.assertNotIn("nowtag", athy.split("</style>", 1)[-1])
 
     def test_data_js_is_what_build_produced(self):
         self.assertEqual(_data(self.site), json.loads(json.dumps(self.data)))
@@ -49,9 +134,12 @@ class TestWrite(SiteModelCase):
         # Only station-months with a listing carry a bar; quiet ones use blank.
         self.assertIn("2026-08", d["stats"]["ATHY"])
         self.assertEqual(len(d["blank"]["2026-08"]), 31)
-        # [cells, faults, planned, ongoing, avail] and nothing else at a
-        # station with no escalator notice: every byte is in the initial load.
+        # [cells, faults, planned, kinds listed now, avail] and nothing else at
+        # a station with no escalator notice: every byte is in the initial load.
         self.assertEqual(len(d["stats"]["ATHY"]["2026-08"]), 5)
+        # Bray's works are still up at the last poll; Athy's notice is down.
+        self.assertEqual(d["stats"]["BRAY"]["2026-08"][3], model.NOW_KIND["lift"])
+        self.assertEqual(d["stats"]["ATHY"]["2026-08"][3], 0)
         # the model's own table, not a second copy of it: the app derives its
         # letter from this, so a band that drifted here would grade differently
         # from the static pages
@@ -254,7 +342,7 @@ class TestStaleness(SiteModelCase):
         data, _, _ = render.build(outages, T0 + timedelta(hours=3), self.until)
         self.assertFalse(data["stale"])
         page = render.station_page("ATHY", data, render.shard(outages, data["months"], self.until))
-        self.assertIn(f'Data to {data["observed"]}<', page)
+        self.assertIn(f'Data to {data["observed"]} ·', page)
         self.assertNotIn('class="stale"', page)
 
 
@@ -605,6 +693,13 @@ class TestStepFreeChip(SiteModelCase):
         markup = (Path(render.TEMPLATES) / "site.html").read_text(encoding="utf-8")
         self.assertIn(f'var STEP_FREE_CHIP = "{render.STEP_FREE_CHIP}"', markup)
         self.assertIn(f'var STEP_FREE_TITLE = "{render.STEP_FREE_TITLE}"', markup)
+        self.assertIn(f'var NOW_TITLE = "{render.NOW_TITLE}"', markup)
+        for mask, label in render.NOW_LABEL.items():
+            self.assertIn(f'{mask}: "{label}"', markup)
+
+    def test_the_app_tags_the_row_and_the_detail_head(self):
+        markup = (Path(render.TEMPLATES) / "site.html").read_text(encoding="utf-8")
+        self.assertEqual(markup.count("nowTag("), 3)  # definition, row, detail
 
     def test_the_app_chips_the_row_and_the_detail_head(self):
         markup = (Path(render.TEMPLATES) / "site.html").read_text(encoding="utf-8")
@@ -647,6 +742,12 @@ class TestAccessLabels(SiteModelCase):
         self.assertIn("Into the station", page)
         self.assertIn("read against the second list", page)
         self.assertNotIn("worked out from the second list", page)
+        # the reader is asked to check the reading, so the page it was read from is linked
+        self.assertIn(
+            'Quoted from <a href="https://www.irishrail.ie/en-ie/station/athy">'
+            "Irish Rail&#x27;s page for Athy</a>.",
+            page,
+        )
 
 
 class TestTheOverlapGuard(SiteModelCase):
@@ -687,6 +788,19 @@ class TestTheOverlapGuard(SiteModelCase):
         self.assertIn("escalator", records)
         return records["escalator"][13][1]
 
+    def test_a_lift_out_at_another_station_does_not_reach_it(self):
+        # The feed and the CSV hold every station's outages; the overlap check
+        # must still look within the station.
+        both = [lift(text="The lift at platform 6 is out of service."), self._escalator()]
+        self.poll(T0, both)
+        self.poll(T0 + timedelta(hours=1), both)
+        self.poll(T0 + timedelta(hours=2), [])
+        self.poll(T0 + timedelta(hours=3), [])
+        site = self.dir / "site"
+        render.write(site, self.load(), NOW, self.until, self._facts())
+        for name in ("feed.xml", "outages.csv"):
+            self.assertNotIn("overlapped this one", (site / name).read_text(encoding="utf-8"))
+
     def test_an_overlapping_lift_notice_reaches_the_escalator_sentence(self):
         both = [
             lift(text="The lift at platform 6 is out of service.", **self.STATION),
@@ -698,6 +812,10 @@ class TestTheOverlapGuard(SiteModelCase):
         self.poll(T0 + timedelta(hours=3), [])
         sentence = self._escalator_sentence()
         self.assertIn("overlapped this one", sentence)
+        # and the feed and the CSV, which see every station's outages, say the same
+        for name in ("feed.xml", "outages.csv"):
+            text = (self.dir / "site" / name).read_text(encoding="utf-8")
+            self.assertIn("overlapped this one", text, name)
         self.assertNotIn('"Lift or stairs', sentence)
 
     def test_a_lift_that_came_down_as_the_escalator_went_up_is_not_an_overlap(self):

@@ -10,6 +10,7 @@ caught against data that has every wrinkle the synthetic tests do not.
 from __future__ import annotations
 
 import calendar
+import csv
 import json
 import os
 import re
@@ -18,6 +19,7 @@ import tempfile
 import unittest
 from datetime import UTC, datetime
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 from lift_access import fetch, golden, snapshot
 from lift_access import model as access_model
@@ -109,6 +111,32 @@ class TestRealCorpus(unittest.TestCase):
     def test_initial_load_is_inside_the_budget(self):
         total, _ = render.size_report(self.site)
         self.assertLess(total, render.BUDGET_BYTES)
+
+    def test_no_notice_about_a_lift_or_escalator_is_missed_by_the_classifier(self):
+        # A reworded head would drop its notices from the site with nothing
+        # failing. A hit here is a notice to read, not a test to loosen: either
+        # widen model.KIND_PATTERNS or add the head to the ignore list below.
+        ignored = set()
+        missed = [
+            (head, text) for head, text in model.unclassified_mentions(DB_PATH)
+            if head not in ignored
+        ]
+        self.assertEqual(missed, [])
+
+    def test_the_feeds_and_the_csv_carry_what_the_site_carries(self):
+        ns = {"a": "http://www.w3.org/2005/Atom"}
+        national = ET.parse(self.site / "feed.xml").getroot().findall("a:entry", ns)
+        self.assertEqual(len(national), min(len(self.outages), render.FEED_ENTRIES))
+        per_station = 0
+        for code in self.data["stations"]:
+            feed = ET.parse(self.site / "s" / f"{self.data['slugs'][code]}.xml").getroot()
+            per_station += len(feed.findall("a:entry", ns))
+        self.assertEqual(per_station, len(self.outages))
+        rows = list(csv.DictReader((self.site / "outages.csv").open(encoding="utf-8")))
+        self.assertEqual(len(rows), len(self.outages))
+        self.assertEqual(
+            sum(1 for r in rows if r["ongoing"] == "1"), sum(o.ongoing for o in self.outages)
+        )
 
 
 if __name__ == "__main__":

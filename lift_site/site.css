@@ -73,6 +73,12 @@
 .card.access li { font-size: 13.5px; margin: 3px 0; }
 .card.access .src { color: var(--muted); font-size: 12px; margin-top: 8px; }
 
+/* the same pill as a case's "Out of service" tag, beside a name instead. In the
+   overview's 170px name column it drops under the name rather than eating it. */
+.nowtag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; flex: none; white-space: nowrap; }
+.row .cname:has(.nowtag) { flex-wrap: wrap; row-gap: 4px; }
+.row .cname .nowtag { margin-left: 42px; }
+
 .sfchip {
   font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; flex: none;
   background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good-text);

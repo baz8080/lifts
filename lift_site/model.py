@@ -64,6 +64,22 @@ DAY_FUTURE = 9
 # outranks works that overran, which outrank works still inside their grace.
 DAY_SEVERITY = {DAY_PLANNED: 1, DAY_PLANNED_LONG: 2, DAY_OUT: 3}
 
+# Which kinds were listed at the horizon, as a bitmask in one stats field: the
+# overview row and the station header say "Lift out" from it, and a bool there
+# could only have said that something was.
+NOW_KIND = {"lift": 1, "escalator": 2}
+
+# What a notice about this site's subject looks like anywhere in a message,
+# head or text. Broader than KIND_PATTERNS on purpose: this one finds the
+# notices the classifier would miss if Irish Rail reworded a head, and it has
+# to be wider than the thing it is checking.
+MENTION = re.compile(r"\b(lifts?|elevators?|escalators?)\b", re.IGNORECASE)
+
+# A day was polled every 30 minutes, so a full day is 48 successful runs. Below
+# this the day's cells were built from a fraction of it and nothing on the page
+# says so; the build does.
+FULL_DAY_RUNS = 40
+
 # How long a planned-works notice may stand before its days count against
 # availability. A week is a plausible maintenance window; the notices that sit
 # for months are unavailability with a label on it, and Irish Rail's own end
@@ -488,7 +504,7 @@ def station_month(outages, ym, now, until):
     lo, hi = observed_window(ym, until)
     month_lo = month_bounds(ym)[0]
 
-    faults = planned = lifts = escalators = 0
+    faults = planned = lifts = escalators = listed_now = 0
     ongoing = False
     marks = {"lift": {}, "escalator": {}}
     against = set()  # lift days that count against availability
@@ -506,7 +522,9 @@ def station_month(outages, ym, now, until):
             escalators += 1
         # Only meaningful for the month the horizon falls in, which is the
         # only month an open notice can overlap the end of.
-        ongoing = ongoing or (o.ongoing and o.end == hi)
+        if o.ongoing and o.end == hi:
+            ongoing = True
+            listed_now |= NOW_KIND[o.kind]
 
         kind_marks = marks[o.kind]
         for day, day_planned, counts in day_marks(o, lo, hi):
@@ -541,6 +559,7 @@ def station_month(outages, ym, now, until):
         "avail": avail,
         "grade": grade(avail),
         "ongoing": ongoing,
+        "now": listed_now,
     }
 
 
@@ -575,3 +594,47 @@ def national_month(outages, ym, now, until):
         # horizon, in the horizon's month": 0 for every fully past month.
         "ongoing": len({o.code for o in live if o.end > hi or (o.ongoing and o.end == hi)}),
     }
+
+
+def unclassified_mentions(db_path):
+    """Notices that talk about a lift or escalator and that `classify` rejects.
+
+    The classifier reads the head, and the head is Irish Rail's wording. A
+    reworded head ("Lift unavailable") would drop every such notice from the
+    site with nothing failing, and the cells it should have coloured would read
+    as nothing listed. This is the check for that, over the whole corpus, and a
+    real-corpus test asserts it comes back empty. A hit is not necessarily a
+    bug: read the notice, then either widen KIND_PATTERNS or leave it out.
+    """
+    conn = sqlite3.connect(str(db_path))
+    try:
+        rows = conn.execute("SELECT head, text_raw FROM messages ORDER BY id").fetchall()
+    finally:
+        conn.close()
+    return [
+        (head, text)
+        for head, text in rows
+        if classify(head) is None and (MENTION.search(head or "") or MENTION.search(text or ""))
+    ]
+
+
+def thin_days(db_path, until, minimum=FULL_DAY_RUNS):
+    """Dublin dates the collector reached the feed fewer than `minimum` times.
+
+    A day with two successful polls and a day with forty-eight paint the same
+    cells. The days at either end of collection are short by nature and are
+    left out; anything else here is a gap inside a day that the page cannot
+    show. Returns [(date, runs)], oldest first.
+    """
+    conn = sqlite3.connect(str(db_path))
+    try:
+        rows = conn.execute(
+            "SELECT started_at_utc FROM runs WHERE outcome = 'ok' ORDER BY started_at_utc"
+        ).fetchall()
+    finally:
+        conn.close()
+    per_day = defaultdict(int)
+    for (started,) in rows:
+        per_day[_local(parse_utc(started)).date()] += 1
+    ends = {_local(COLLECTION_START).date(), _local(until).date()}
+    return [(d, n) for d, n in sorted(per_day.items()) if n < minimum and d not in ends]

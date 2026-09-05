@@ -831,3 +831,83 @@ says who lost a way up and what Irish Rail's page puts on the same leg, and a
 lift notice that names the way in is read against `ticketOfficeAccess`.
 `notes/station-access.md` § *The entrance leg, and who an escalator served*.
 The only-powered-way-up rule above is unchanged and still guarded.
+
+## What a reader can take away - 2026-09-05
+
+Three additions for the visitor and two checks for the build, chosen from a
+survey of what the site could not do. The corpus was 36 outages over 28
+stations; the initial load went from 64.8 KB to 65.8 KB.
+
+### The row says which kind is out now
+
+The tiles counted "2 lifts reported out when we last checked" and the rows
+sorted ongoing-first, but nothing on a row said so, and a reader had to hover
+the last cell to find the station that was out. The stats row's fourth field
+was a bool that only ever fed the sort; it is now a mask of the kinds listed at
+the horizon (`NOW_KIND`, lift 1 and escalator 2), the sort treats any nonzero
+the same as before, and both renderers print "Lift out", "Escalator out" or
+"Lift and escalator out" beside the name from it. The wording repeats the
+notice and the title says when it was true; "out" rather than "fixed" or
+"working" for the same reason the cases say "no longer listed". In the
+overview's 170px name column the tag drops under the name rather than
+truncating it.
+
+Rejected: a tag per planned-works notice in blue. The mask does not carry
+the works flag, and the tag's job is to say a notice is up, which the case
+below it then qualifies.
+
+### Atom feeds, one national and one per station
+
+"Tell me when this station's lift goes out" had no answer but reloading. The
+build now writes `feed.xml`, capped at the 50 most recent, and `s/<slug>.xml`
+beside each station page, uncapped because a station's list stays short. An
+entry's id is the case anchor on the station page, so it is a real address and
+survives a rebuild; its `updated` is the appearance while the notice is up and
+the close once it is down, and the title gains "(no longer listed)", so a feed
+reader shows an outage twice and the second showing is the only completion
+signal a reader will ever get. The feed's own `updated` is the horizon rather
+than the build clock: a rebuild that saw no new data has no news. Publishing
+lands within about six hours of a notice, which is what a feed can promise.
+
+Rejected: a second webhook from the Pi for new lift notices. The feed does the
+same job for anyone, through any RSS-to-push bridge, and keeps the collector's
+alert channel for failures only.
+
+### Every outage as CSV
+
+The README's stated purpose is history to look for patterns in, and the only
+data on the site was `data.js`, shaped for the app. `outages.csv` has one row
+per outage the site shows, the listing instants in UTC for arithmetic, Irish
+Rail's own start and end as written (Dublin wall-clock, no offset) because they
+are a quotation, and `end_utc` blank while a notice is still listed so nobody
+averages the horizon in as a close.
+
+### The access card links its source
+
+The card quoted Irish Rail's prose and asked the reader to say what it got
+wrong, and never linked the page it was read from. It does now, from the
+station's own slug in the snapshot. Static page only: the app's caveat quotes
+no prose, and the slugs would cost bytes in `data.js` for a link that lives one
+click away.
+
+### The build warns about what the page cannot show
+
+`classify` reads the head, and the head is Irish Rail's wording. A reworded
+head would drop its notices from the site with nothing failing, and the cells
+they should have coloured would read as nothing listed. `unclassified_mentions`
+finds any message whose head or text mentions a lift, elevator or escalator
+that `classify` rejects; the build prints them and the real-corpus test fails on
+them. The check is wider than the classifier on purpose, and a hit is a notice
+to read rather than a test to loosen. On the corpus to date it finds nothing,
+and one head already varies ("Portarlington- Lift out of order").
+
+`thin_days` names any Dublin day the collector reached the feed fewer than 40
+times out of 48. Three gaps of about an hour exist so far and each is
+invisible: a day with two polls paints like a day with 48. Painting it on the
+bars was rejected for now as UI complexity out of proportion to three hours.
+
+### Not built
+
+Duration and repeat statistics (median listing, longest current, stations with
+a second outage). With four weeks of data any "typical outage lasts" figure is
+noise. Worth a tile once the corpus earns it.

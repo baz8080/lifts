@@ -9,6 +9,7 @@
 <meta property="og:description" content="Lift (elevator) and escalator outages at Irish Rail stations, station by station - which are out, since when, and for how long.">
 <meta property="og:type" content="website">
 <link rel="canonical" href="<!--CANONICAL-->">
+<link rel="alternate" type="application/atom+xml" title="Irish Rail Lift Outages" href="feed.xml">
 <style>
 <!--UI-CSS-->
 <!--SITE-CSS-->
@@ -90,7 +91,9 @@
     <p class="nav"><!--STATIONS--></p>
     </details>
 
-    <p id="gen"><a href="https://github.com/baz8080/lifts">Source code</a> · not affiliated with Iarnród Éireann.</p>
+    <p id="gen"><a href="https://github.com/baz8080/lifts">Source code</a> ·
+    <a href="feed.xml">Atom feed</a> (each station page has its own) ·
+    <a href="outages.csv">every outage as CSV</a> · not affiliated with Iarnród Éireann.</p>
   </footer>
 </div>
 
@@ -191,6 +194,15 @@ function stepFreeChip(code) {
     '" title="' + esc(STEP_FREE_TITLE) + '">' + esc(STEP_FREE_CHIP) + "</span>";
 }
 
+// The tag beside a name while a notice is up. m[3] is the kinds listed at the
+// horizon as a mask, lift 1 and escalator 2. Mirrors render._now_tag.
+var NOW_LABEL = { 1: "Lift out", 2: "Escalator out", 3: "Lift and escalator out" };
+var NOW_TITLE = "Listed as out of order when we last checked";
+function nowTag(mask) {
+  if (!mask) return "";
+  return '<span class="tag-f nowtag" title="' + NOW_TITLE + '">' + NOW_LABEL[mask] + "</span>";
+}
+
 function gradeLabel(g, where) {
   return (g ? "Grade " + g : "No grade") + " for " + where;
 }
@@ -222,7 +234,7 @@ function renderOverview() {
   // Worst first: a status page's job is to put the bad news at the top. A
   // station with a notice up right now leads, then the least available.
   rows.sort(function (a, b) {
-    return (b.m[3] - a.m[3]) || (a.m[4] - b.m[4]) || a.name.localeCompare(b.name);
+    return ((b.m[3] ? 1 : 0) - (a.m[3] ? 1 : 0)) || (a.m[4] - b.m[4]) || a.name.localeCompare(b.name);
   });
 
   document.getElementById("list").innerHTML = rows.length ? rows.map(function (r) {
@@ -230,7 +242,7 @@ function renderOverview() {
     return '<div class="place"><div class="row" onclick="go(\'' + esc(r.code) + '\')">' +
       '<div class="cname">' + gradeChip(gradeFor(m[4]), gradeLabel(gradeFor(m[4]), r.name)) +
         '<a href="s/' + D.slugs[r.code] + '.html" onclick="event.preventDefault()">' + esc(r.name) + "</a>" +
-        stepFreeChip(r.code) + "</div>" +
+        stepFreeChip(r.code) + nowTag(m[3]) + "</div>" +
       bars(m[0], m[5], curMonth) +
       '<div class="stats"><div class="counts">' +
         "<b>" + m[1] + "</b><span>out of service</span>" +
@@ -340,7 +352,7 @@ function renderStation() {
   var head =
     '<a class="back" href="#" onclick="event.preventDefault();go(null)">← All stations</a>' +
     '<div class="chead">' + gradeChip(latestGrade, gradeLabel(latestGrade, latestLabel)) +
-      "<h2>" + esc(name) + "</h2>" + stepFreeChip(code) + "</div>" +
+      "<h2>" + esc(name) + "</h2>" + stepFreeChip(code) + nowTag((stats[latest] || [])[3]) + "</div>" +
     '<div class="sub">' +
       "Irish Rail station code " + esc(code) + " · graded on " + latestLabel +
       " · every month since collection began, newest first<br>" +
@@ -349,7 +361,8 @@ function renderStation() {
       // would promise a reader something they are already looking at. The
       // station is in the link text because a screen reader lists links
       // stripped of their context.
-      '<a href="s/' + D.slugs[code] + '.html">Permanent link to ' + esc(name) + " station</a></div>" +
+      '<a href="s/' + D.slugs[code] + '.html">Permanent link to ' + esc(name) + " station</a> · " +
+      '<a href="s/' + D.slugs[code] + '.xml">Atom feed for this station</a></div>' +
     // Only where the snapshot actually has this station: the caveat asserts that
     // a derivation happened, and above "not in the station snapshot" it would
     // contradict the very verdict it is explaining.

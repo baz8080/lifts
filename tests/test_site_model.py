@@ -521,6 +521,17 @@ class TestStationMonth(SiteModelCase):
         self.assertFalse(self.cells(outages, "2026-08", now=now)["ongoing"])
         self.assertTrue(self.cells(outages, "2026-09", now=now)["ongoing"])
 
+    def test_the_row_says_which_kinds_are_listed_now(self):
+        # A mask, not a bool: the tag beside the name has to say "Lift out" or
+        # "Escalator out", and the sort treats any nonzero the same.
+        self.poll(T0, [lift()])
+        self.poll(T0 + timedelta(hours=1), [lift()])
+        self.assertEqual(self.cells(self.load())["now"], model.NOW_KIND["lift"])
+        self.poll(T0 + timedelta(hours=2), [lift(), escalator(code="ATHY", station="Athy")])
+        self.assertEqual(self.cells(self.load())["now"], 3)
+        self.drop(T0 + timedelta(hours=3))
+        self.assertEqual(self.cells(self.load())["now"], 0)
+
     def test_the_month_headline_counts_stations_and_their_availability(self):
         self.poll(T0, [lift(), escalator(), lift(code="BRAY", station="Bray")])
         # Two polls without them, both still the 9th in Dublin: a third day
@@ -640,3 +651,45 @@ class TestGrade(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestTheCollectorChecks(SiteModelCase):
+    """Two things the build prints because the page cannot show them."""
+
+    def test_a_reworded_head_is_caught_by_the_text_it_carries(self):
+        self.poll(T0, [
+            lift(),
+            lift(
+                head="Athy - Lift unavailable", text="The lift at platform 2 is out of service."
+            ),
+            lift(head="Service delay +15", text="Due to a signal fault.", codes=["X"]),
+            lift(
+                head="Customer notice", text="Escalators at Connolly are being replaced.",
+                codes=["Y"],
+            ),
+        ])
+        self.store.conn.commit()
+        missed = model.unclassified_mentions(self.dir / "lift_status.db")
+        self.assertEqual(
+            [head for head, _ in missed], ["Athy - Lift unavailable", "Customer notice"]
+        )
+
+    def test_the_classifier_finds_every_head_the_mention_check_finds(self):
+        # The guard is wider than the classifier or it checks nothing.
+        for head in ("Skerries - Lifts out of order", "Connolly - Escalator out of Service"):
+            self.assertTrue(model.MENTION.search(head), head)
+            self.assertIsNotNone(model.classify(head), head)
+
+    def test_a_day_with_few_polls_is_named_and_the_short_ends_are_not(self):
+        # The first day of collection is short by nature. The 10th had two polls
+        # out of forty-eight; the 11th had a full day.
+        self.poll(T0, [lift()])
+        for i in range(2):
+            at = datetime(2026, 8, 10, 12, 0, tzinfo=UTC) + i * timedelta(minutes=30)
+            self.poll(at, [lift()])
+        for i in range(48):
+            self.poll(datetime(2026, 8, 11, 0, 0, tzinfo=UTC) + i * timedelta(minutes=30), [lift()])
+        self.poll(datetime(2026, 8, 12, 9, 0, tzinfo=UTC), [lift()])
+        self.load()
+        thin = model.thin_days(self.dir / "lift_status.db", self.until)
+        self.assertEqual(thin, [(datetime(2026, 8, 10).date(), 2)])

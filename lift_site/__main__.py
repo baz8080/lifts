@@ -105,6 +105,25 @@ def main(argv=None) -> int:
             f"  WARNING: initial load is over the {render.BUDGET_BYTES // 1024} KB budget",
             file=sys.stderr,
         )
+    # Neither stops the build: the page is still right about what it shows.
+    # Both name something it is silently wrong about, which is worse.
+    missed = model.unclassified_mentions(db_path)
+    if missed:
+        print(
+            f"  WARNING: {len(missed)} notice(s) mention a lift or escalator and are not on "
+            "the site. Read them; widen model.KIND_PATTERNS if they belong:",
+            file=sys.stderr,
+        )
+        for head, text in missed[:10]:
+            print(f"    {head!r}: {(text or '')[:100]!r}", file=sys.stderr)
+    thin = model.thin_days(db_path, until)
+    if thin:
+        print(
+            f"  WARNING: {len(thin)} day(s) with under {model.FULL_DAY_RUNS} successful polls, "
+            "painted like full days: "
+            + ", ".join(f"{d} ({n})" for d, n in thin),
+            file=sys.stderr,
+        )
     return 0
 
 
