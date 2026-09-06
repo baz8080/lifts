@@ -77,7 +77,8 @@
    overview's 170px name column it drops under the name rather than eating it. */
 .nowtag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; flex: none; white-space: nowrap; }
 .row .cname:has(.nowtag) { flex-wrap: wrap; row-gap: 4px; }
-.row .cname .nowtag { margin-left: 42px; }
+/* the grade chip's 26px plus the 10px flex gap: flush with the name above it */
+.row .cname .nowtag { margin-left: 36px; }
 
 .sfchip {
   font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; flex: none;

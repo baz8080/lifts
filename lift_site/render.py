@@ -282,29 +282,38 @@ def lift_listed_too(o, outages):
     )
 
 
-def shard(outages, months, until, facts=None, overlapped=None):
+def case_records(by_station, facts=None):
+    """{outage id: case_record}, once per build.
+
+    The shard, the feeds and the CSV all print the same record, and the verdict
+    inside it is a regex pass over the prose; computed once here rather than in
+    each. Per station, because the overlap check must look within the station:
+    a lift out in Cork must not withhold a sentence about an escalator in
+    Connolly.
+    """
+    return {
+        o.id: case_record(o, facts, lift_listed_too(o, rows))
+        for rows in by_station.values()
+        for o in rows
+    }
+
+
+def shard(outages, months, until, facts=None, records=None):
     """Every outage at one station, grouped by month.
 
     An outage is listed under every month it overlaps, which is exactly the set
     of months `station_month` counts it in - so a reader can count the rows
-    under a month and match the headline.
-
-    `overlapped` is {id: a lift notice overlapped it}; `write` computes it once
-    for every station and passes it in, so the shard, the feed and the CSV read
-    one flag. A caller with one station's list may leave it to be worked out
-    here: an escalator sentence must not quote a lift the row above it shows was
-    listed out at the same time.
+    under a month and match the headline. `records` is `case_records`' cache;
+    a caller with one station's list may leave it to be built here.
     """
     windows = [(ym,) + model.observed_window(ym, until) for ym in months]
-    if overlapped is None:
-        overlapped = {o.id: lift_listed_too(o, outages) for o in outages}
+    if records is None:
+        records = case_records({"": list(outages)}, facts)
     by_month = defaultdict(list)
     for o in sorted(outages, key=lambda o: (o.first_seen, o.id), reverse=True):
-        record = None
         for ym, lo, hi in windows:
             if model.listed_in(o, lo, hi):
-                record = case_record(o, facts, overlapped[o.id]) if record is None else record
-                by_month[ym].append(record)
+                by_month[ym].append(records[o.id])
     return by_month
 
 
@@ -849,24 +858,37 @@ def _entry_summary(record):
     return ". ".join(p.rstrip(".") for p in parts) + "."
 
 
-def overlap_flags(by_station):
-    """{outage id: a lift notice at the same station overlapped it}, once per build.
+def entry_ids(outages):
+    """{outage id: Atom entry id}, from what the raw log fixes rather than the rowid.
 
-    Computed per station, as `shard` does, because the feed and the CSV hold
-    every station's outages and a lift out in Cork must not withhold a sentence
-    about an escalator in Connolly.
+    A rowid is replay order: merge a second machine's log with one older poll
+    in it, rebuild, and every listing gets a new number, so a feed keyed on it
+    would show every subscriber the whole history again as news. Station, kind,
+    the poll the notice appeared at and the start Irish Rail wrote on it are all
+    in the raw log and survive that. Two notices of one kind at one station,
+    first seen at one poll and carrying one start, would share a tag; the rare
+    second one gets an ordinal, and that one alone can move.
     """
-    return {o.id: lift_listed_too(o, rows) for rows in by_station.values() for o in rows}
+    ids, taken = {}, defaultdict(int)
+    for o in sorted(outages, key=lambda o: o.id):
+        tag = (
+            f"tag:baz8080.github.io,2026:lifts/{o.code}/{o.kind}/"
+            f"{_rfc3339(o.first_seen)}/{_rfc3339(o.start)}"
+        )
+        n = taken[tag]
+        taken[tag] += 1
+        ids[o.id] = tag if n == 0 else f"{tag}/{n + 1}"
+    return ids
 
 
-def atom_feed(title, page_url, feed_url, outages, until, slugs, overlapped, facts=None, limit=None):
+def atom_feed(title, page_url, feed_url, outages, until, slugs, records, limit=None):
     """An Atom feed of outages, newest news first, the most recent `limit` of them.
 
-    Entries are keyed by the case anchor on the station page, which is also
-    where the link goes, so the id is a real address and stays stable across
-    rebuilds. The feed is dated to the horizon rather than the build clock: a
-    rebuild that saw no new data has no news.
+    An entry links to the case anchor on the station page; its id is content,
+    see `entry_ids`. The feed is dated to the horizon rather than the build
+    clock: a rebuild that saw no new data has no news.
     """
+    ids = entry_ids(outages)
     ns = "http://www.w3.org/2005/Atom"
     ET.register_namespace("", ns)
     feed = ET.Element(f"{{{ns}}}feed")
@@ -889,16 +911,14 @@ def atom_feed(title, page_url, feed_url, outages, until, slugs, overlapped, fact
         entry = ET.SubElement(feed, f"{{{ns}}}entry")
         heading = o.head if o.ongoing else f"{o.head} (no longer listed)"
         ET.SubElement(entry, f"{{{ns}}}title").text = heading
-        ET.SubElement(entry, f"{{{ns}}}id").text = url
+        ET.SubElement(entry, f"{{{ns}}}id").text = ids[o.id]
         ET.SubElement(entry, f"{{{ns}}}link", rel="alternate", type="text/html", href=url)
         ET.SubElement(entry, f"{{{ns}}}published").text = _rfc3339(o.first_seen)
         ET.SubElement(entry, f"{{{ns}}}updated").text = _rfc3339(_entry_updated(o))
         ET.SubElement(entry, f"{{{ns}}}category", term=o.kind)
         if o.planned:
             ET.SubElement(entry, f"{{{ns}}}category", term="planned-works")
-        ET.SubElement(entry, f"{{{ns}}}summary").text = _entry_summary(
-            case_record(o, facts, overlapped[o.id])
-        )
+        ET.SubElement(entry, f"{{{ns}}}summary").text = _entry_summary(records[o.id])
     return '<?xml version="1.0" encoding="utf-8"?>\n' + ET.tostring(feed, encoding="unicode") + "\n"
 
 
@@ -909,7 +929,7 @@ CSV_COLUMNS = (
 )
 
 
-def outages_csv(outages, overlapped, facts=None):
+def outages_csv(outages, records):
     """Every outage the site shows, one row each, for whoever wants the numbers.
 
     Same rows as the site: merged reissues are one outage with a count. The
@@ -922,7 +942,7 @@ def outages_csv(outages, overlapped, facts=None):
     writer = csv.writer(out, lineterminator="\n")
     writer.writerow(CSV_COLUMNS)
     for o in sorted(outages, key=lambda o: (o.first_seen, o.id)):
-        access = _access(o, facts, overlapped[o.id]) or ("", "")
+        access = records[o.id][13] or ("", "")
         writer.writerow([
             o.code, o.station, o.kind, int(o.planned),
             _rfc3339(o.first_seen), "" if o.ongoing else _rfc3339(o.end), int(o.ongoing),
@@ -949,6 +969,7 @@ def write(site_dir, outages, now, until, facts=None):
             SITE_HTML,
             {
                 "CANONICAL": f"{BASE_URL}/",
+                "FEED-TITLE": FEED_TITLE,
                 "START": data["start"],
                 "STATIONS": _station_links(data["stations"], data).replace('href="', 'href="s/'),
             },
@@ -958,13 +979,13 @@ def write(site_dir, outages, now, until, facts=None):
     (site_dir / "data.js").write_text(
         "window.LIFT_DATA = " + _dumps(data) + ";\n", encoding="utf-8"
     )
-    overlapped = overlap_flags(by_station)
-    (site_dir / CSV_NAME).write_text(outages_csv(outages, overlapped, facts), encoding="utf-8")
+    records = case_records(by_station, facts)
+    (site_dir / CSV_NAME).write_text(outages_csv(outages, records), encoding="utf-8")
     # Capped; the whole record is in the CSV.
     (site_dir / "feed.xml").write_text(
         atom_feed(
             FEED_TITLE, f"{BASE_URL}/", f"{BASE_URL}/feed.xml",
-            outages, until, data["slugs"], overlapped, facts, limit=FEED_ENTRIES,
+            outages, until, data["slugs"], records, limit=FEED_ENTRIES,
         ),
         encoding="utf-8",
     )
@@ -973,7 +994,7 @@ def write(site_dir, outages, now, until, facts=None):
     listed_now = [c for c in data["stations"] if any(o.ongoing for o in by_station.get(c, []))]
 
     for code in data["stations"]:
-        by_month = shard(by_station.get(code, []), months, until, facts, overlapped)
+        by_month = shard(by_station.get(code, []), months, until, facts, records)
         # Shards are keyed by station code, which is short and URL-safe; the
         # static pages take the name so their URLs read well.
         (site_dir / "h" / f"{code}.js").write_text(
@@ -992,7 +1013,7 @@ def write(site_dir, outages, now, until, facts=None):
                 f"Lift outages at {data['stations'][code]} station",
                 f"{BASE_URL}/s/{data['slugs'][code]}.html",
                 f"{BASE_URL}/s/{data['slugs'][code]}.xml",
-                by_station.get(code, []), until, data["slugs"], overlapped, facts,
+                by_station.get(code, []), until, data["slugs"], records,
             ),
             encoding="utf-8",
         )

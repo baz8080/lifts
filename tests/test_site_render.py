@@ -72,9 +72,29 @@ class TestWrite(SiteModelCase):
         athy = by_title["Athy - Lift out of order (no longer listed)"]
         self.assertGreater(athy.find("a:updated", ns).text, athy.find("a:published", ns).text)
         self.assertIn("no longer listed 9 Aug 2026", athy.find("a:summary", ns).text)
-        # the id is the case anchor on the station page, which is where the link goes
-        self.assertEqual(athy.find("a:id", ns).text, athy.find("a:link", ns).get("href"))
-        self.assertTrue(athy.find("a:id", ns).text.startswith(f"{render.BASE_URL}/s/athy.html#m"))
+        # the link is the case anchor; the id is content the raw log fixes, so a
+        # rebuild that renumbers the rows does not republish the history as news
+        link = athy.find("a:link", ns).get("href")
+        self.assertTrue(link.startswith(f"{render.BASE_URL}/s/athy.html#m"))
+        self.assertEqual(
+            athy.find("a:id", ns).text,
+            "tag:baz8080.github.io,2026:lifts/ATHY/lift/2026-08-08T21:30:55Z/2026-08-01T08:00:00Z",
+        )
+
+    def test_two_notices_alike_in_every_fixed_field_get_distinct_ids(self):
+        twins = [
+            lift(text="The lift at platform 1 is out of service."),
+            lift(
+                text="The lift at platform 2 is out of service.", head="Athy - Lifts out of order"
+            ),
+        ]
+        self.poll(T0 + timedelta(days=2), twins)
+        outages = [o for o in self.load() if o.code == "ATHY"]
+        # three outages: the original notice from T0, and the twins two days on
+        ids = sorted(render.entry_ids(outages).values())
+        self.assertEqual(len(ids), 3)
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertEqual(ids[2], ids[1] + "/2")
 
     def test_the_feed_is_capped_and_newest_first(self):
         outages = [
@@ -111,7 +131,7 @@ class TestWrite(SiteModelCase):
     def test_the_pages_advertise_their_feeds(self):
         index = (self.site / "index.html").read_text(encoding="utf-8")
         self.assertIn(
-            'type="application/atom+xml" title="Irish Rail Lift Outages" href="feed.xml"', index
+            f'type="application/atom+xml" title="{render.FEED_TITLE}" href="feed.xml"', index
         )
         self.assertIn('<a href="feed.xml">Atom feed</a>', index)
         self.assertIn('<a href="outages.csv">every outage as CSV</a>', index)
