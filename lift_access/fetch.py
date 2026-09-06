@@ -27,6 +27,11 @@ INDEX_URL = f"{SITE}/en-ie/travel-information/find-a-station/_payload.json"
 
 USER_AGENT = "lifts-status/1.0 (+https://github.com/baz8080/lifts)"
 
+
+def station_url(slug):
+    """The page a station's prose was read from, for quoting it back with a link."""
+    return f"{SITE}/en-ie/station/{slug}"
+
 # Keyed under this in `failed` when the station list itself could not be read, so
 # the caller can say "the run never started" rather than counting it as a station.
 INDEX_FAILED = "(station index)"
