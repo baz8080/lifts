@@ -848,9 +848,9 @@ the horizon (`NOW_KIND`, lift 1 and escalator 2), the sort treats any nonzero
 the same as before, and both renderers print "Lift out", "Escalator out" or
 "Lift and escalator out" beside the name from it. The wording repeats the
 notice and the title says when it was true; "out" rather than "fixed" or
-"working" for the same reason the cases say "no longer listed". In the
-overview's 170px name column the tag drops under the name rather than
-truncating it.
+"working" for the same reason the cases say "no longer listed". It sits at
+the right of the name column, dropping under the name where the two will not
+fit (see the 2026-09-07 note below).
 
 Rejected: a tag per planned-works notice in blue. The mask does not carry
 the works flag, and the tag's job is to say a notice is up, which the case
@@ -911,3 +911,29 @@ bars was rejected for now as UI complexity out of proportion to three hours.
 Duration and repeat statistics (median listing, longest current, stations with
 a second outage). With four weeks of data any "typical outage lasts" figure is
 noise. Worth a tile once the corpus earns it.
+
+## The "Lift out" tag moved to the right of the name - 2026-09-07
+
+Dropping the tag under the name kept the name whole, but it left a pill hanging
+under the first word at an indent (the grade chip's width plus the flex gap)
+that read as stray padding rather than as alignment, and it made a row with a
+notice taller than a row without one.
+
+The tag is now flush with the right edge of the name column: `margin-left: auto`
+in place of the 36px indent, so wherever it lands the pills line up down the
+list. Above 780px the name column is 230px rather than 170px, which fits an
+ordinary name and its pill on one line, so a tagged row is the same height as
+the rest; names that used to truncate at 170px ("Kilkenny (MacDonagh)") now fit
+as a bonus, and the few longer than that still ellipsise.
+
+780px is measured, not chosen for roundness. Below about 740px the row's fixed
+columns plus a 31-day bar at its 3px-a-cell floor exceed the viewport and the
+row overflows; the wider column stays behind the media query for that reason.
+Narrower than that the flex wrap still applies and the tag drops under the name
+as before, right-aligned rather than indented, which is also what happens at any
+width when the label is the long "Lift and escalator out".
+
+Rejected: widening the name column unconditionally (overflows every row between
+640px and 740px, where the layout is already at its tightest), and putting the
+tag immediately after the name with no widening (in a 170px column "Clontarf
+Road" would have been cut to eight characters to make room).
