@@ -125,18 +125,16 @@ KCOOL_ENTRY = "Not level"
 
 
 def station(code):
-    lift_platforms, claims, denies = model.read_platform_access(PROSE[code])
-    return model.Station(
-        code=code,
-        name=NAMES.get(code, code.title()),
-        slug=code.lower(),
-        latitude=None,
-        longitude=None,
-        platform_access=model.plain(PROSE[code]),
-        ticket_office_access=model.plain(ENTRY.get(code, "")),
-        lift_platforms=lift_platforms,
-        claims_lift=claims,
-        denies_lift=denies,
+    # Through the reader a snapshot goes through, so a fixture station and a real
+    # one can never be built two different ways.
+    return model.station_from_node(
+        {
+            "stationCode": code,
+            "stationName": NAMES.get(code, code.title()),
+            "platformAccess": {"html": PROSE[code]},
+            "ticketOfficeAccess": {"html": ENTRY.get(code, "")},
+        },
+        code.lower(),
     )
 
 

@@ -141,10 +141,6 @@ class TestRealCorpus(unittest.TestCase):
         )
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 @unittest.skipUnless(DB_PATH and DB_PATH.exists() and SNAPSHOT_PATH, "a station snapshot")
 class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
     """Every verdict the site would publish today, checked against the snapshot.
@@ -321,20 +317,6 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
                     else:
                         self.assertNotIn("overlapped this one", detail, code)
 
-    def test_the_golden_file_is_what_the_derivation_says_today(self):
-        # Why a tracked file and not an assertion: lift_access/golden.py.
-        stored = json.loads(golden.PATH.read_text(encoding="utf-8"))
-        current = golden.build(self.facts, golden.notices(DB_PATH))
-        changes = golden.differences(stored, current)
-        self.assertEqual(
-            changes,
-            [],
-            "the derivation no longer matches tests/fixtures/access-golden.json. If the "
-            "change is intended (a code change, or a refreshed snapshot), regenerate with "
-            "`python -m lift_access --data-dir <data-dir> golden`, read the diff, and commit "
-            "it with the change:\n  " + "\n  ".join(changes),
-        )
-
     def test_the_verdict_reaches_the_shard(self):
         months = model.month_list(model.COLLECTION_START, max(self.now, self.until))
         for o in self.outages[:5]:
@@ -464,3 +446,7 @@ class TestTheSurveyOnTheRealCorpus(unittest.TestCase):
             "`python -m lift_access --data-dir <data-dir> golden`, read the diff, and commit "
             "it with the change:\n  " + "\n  ".join(changes),
         )
+
+
+if __name__ == "__main__":
+    unittest.main()

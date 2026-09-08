@@ -166,6 +166,7 @@ merged with `sort -u`.
 | The design layer is shared with uisce and esb via `../statusui`, a uv git dependency pinned in `uv.lock` - edit upstream, then `../statusui/rollout.sh` bumps all three sites. Vendored copies were tried first and drifted within a day. `lift_site/site.css` is this site's own | `notes/site.md` § The vendored copy became a pinned dependency; statusui's README |
 | Station access is labelled by hand into an append-only observation log, `lifts-data/survey/<CODE>.jsonl`, one line per fact with who, when and from what; a hand-maintained `stations.json` stays the failure mode. The graph replays the log, last line for a key wins, and says "another step-free way" only on a route every edge of which a person confirmed, so a page-seeded graph never says more than the prose. The site does not read it yet | `notes/step-free-graph.md` |
 | The Metro Nation Dublin rail map is not a source: undefined "step-free", already behind the network, nothing it says survives one survey answer | `notes/step-free-graph.md` § What was learned |
+| The access golden file pins the inputs it derives from, not just the outputs, so it guards code and nothing else. Corpus movement no longer fails it in either direction, a refreshed snapshot no longer fails it by name, and it runs without a `lifts-data` checkout instead of skipping. Reading `messages.text_raw` as if it were append-only reddened `main` three times in five days: the raw logs are append-only, the derived row is overwritten when Irish Rail rewords a live notice | `notes/station-access.md` § The golden file pins its inputs |
 
 Decisions go in `notes/`, dated, with the rejected alternatives and their
 numbers. Add a row here when one closes something off - this file carries
@@ -205,17 +206,18 @@ to make it pass. A classifier miss is a notice to read: widen `KIND_PATTERNS`
 if it belongs on the site, add the head to the test's ignore set if it does not.
 
 `tests/fixtures/access-golden.json` is every level line, entrance sentence and
-verdict the access derivation produces across the 152 stations and every notice
-on record, and a real-corpus test asserts the regeneration matches. A change to a
-regex or a sentence that moves one fails it; regenerate with `golden`, read the
-diff, commit it with the change. A refreshed snapshot merged in `lifts-data`
-fails it too, on purpose, until the diff is read and the file regenerated here.
+verdict the access derivation produces, **beside the station prose and notice
+bodies it derived them from**. The test replays those pinned inputs through
+today's code, so it needs no data checkout and runs on a bare clone. A change to
+a regex or a sentence that moves a verdict fails it; regenerate with `golden`,
+read the diff, commit it with the change. Corpus movement does not fail it, in
+either direction: `golden` adds what the corpus has gained and never drops what
+is pinned, so a wording Irish Rail has withdrawn stays as a test vector.
 
 `tests/fixtures/graph-golden.json` does the same for the observation log in
 `lifts-data/survey/`: every surveyed station's step-free routes and the graph
-verdict for every notice there, keyed on a fingerprint of the survey files
-rather than the snapshot, so a line appended to a log fails this file and not
-the other. `golden` writes both.
+verdict for every notice there. It still replays live observations rather than
+pinned ones, so its test skips without a survey directory. `golden` writes both.
 
 The 500 KB initial-load budget is printed by every build and asserted by the
 render tests. It holds because individual outages live in per-station shards

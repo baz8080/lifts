@@ -142,7 +142,12 @@ def write_golden(args):
     if not facts or not db_path.exists():
         print("golden needs both a station snapshot and a rebuilt database", file=sys.stderr)
         return 1
-    notices = golden.notices(db_path)
+    pinned = json.loads(golden.PATH.read_text(encoding="utf-8")) if golden.PATH.exists() else {}
+    # Additive: the corpus loses a notice body whenever Irish Rail rewords one in
+    # place, and a wording it published is a test vector worth keeping after it
+    # goes. Same for a station the snapshot drops.
+    notices = golden.pinned_notices(pinned) + golden.notices(db_path)
+    facts = golden.merge_facts(golden.pinned_facts(pinned), facts)
     data = survey.load(args.data_dir)
     if data.problems:
         # A skipped line would regenerate as a silent retraction; refuse before

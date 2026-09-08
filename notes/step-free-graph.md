@@ -271,14 +271,21 @@ is a draft to work on; the principle is fixed.
 station's step-free platforms with their routes, lift platforms, platforms
 with no route, completeness and contradictions, and the graph verdict for
 every notice at a surveyed station. It is keyed on a fingerprint of the survey
-files, not on the station snapshot, so a line appended to a log fails this
-file and not `access-golden.json`, and a refreshed snapshot fails that one and
-not this. Same document shape, same `golden.differences`. `golden` writes
-both.
+files, not on the station snapshot, so the two files move independently. Same
+document shape, same `golden.differences`. `golden` writes both.
 
-The cross-repo ordering is the same as the snapshot's: the survey lives in
-`lifts-data`, CI reads it at its head, and the real-corpus class skips without
-it. A stale `graph-golden.json` after an append is intended.
+The digest is provenance and is not compared, and neither is what one document
+holds and the other does not (2026-09-08, `station-access.md`). So an appended
+line or a newly surveyed station does not fail this file; a revised line that
+moves a verdict at a station already pinned does. That is the gate worth having,
+because a survey line is a person writing in a `lifts-data` PR rather than a
+collector pushing every six hours.
+
+Unlike `access-golden.json` this file still replays live observations, so its
+test stays in the real-corpus class and skips without a survey directory. Pinning
+the observation lines here too is the obvious next step and was not taken yet:
+`lifts-data` carries no `survey/` on main, so the fixture cannot be regenerated
+in the shape that would need.
 
 ## Rejected
 
