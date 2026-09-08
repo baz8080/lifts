@@ -6,6 +6,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Via stairs or lift</p>"
+     },
+     "stationCode": "ADMTN",
+     "stationName": "Adamstown",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "adamstown"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -17,6 +30,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level</p>"
+     },
+     "stationCode": "ARHAN",
+     "stationName": "Ardrahan",
+     "ticketOfficeAccess": {
+      "html": "<p>No ticket office</p>"
+     }
+    },
+    "slug": "ardrahan"
+   },
    "lift_platforms": [],
    "name": "Ardrahan",
    "step_free_platforms": []
@@ -26,6 +52,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to Platform 1 for Southbound services.<br>\nThere is a foot bridge to Platform 2 for Northbound services.</p>"
+     },
+     "stationCode": "ARKLW",
+     "stationName": "Arklow",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "arklow"
+   },
    "lift_platforms": [],
    "name": "Arklow",
    "step_free_platforms": [
@@ -40,6 +79,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Both platforms can be accessed via ramp. Help from a companion will be required when boarding on platform 1 (city bound).</p>"
+     },
+     "stationCode": "ASHTN",
+     "stationName": "Ashtown",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "ashtown"
+   },
    "lift_platforms": [],
    "name": "Ashtown",
    "step_free_platforms": []
@@ -49,6 +101,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "ATHRY",
+     "stationName": "Athenry",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "athenry"
+   },
    "lift_platforms": [],
    "name": "Athenry",
    "step_free_platforms": []
@@ -58,6 +123,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to platform&nbsp;1<br>Lift to platform&nbsp;2</p>"
+     },
+     "stationCode": "ATHY",
+     "stationName": "Athy",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "athy"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -74,6 +152,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Ramp to platform&nbsp;No.1<br>Steps or lift and subway to platforms No. 2 and 3</p>"
+     },
+     "stationCode": "ATLNE",
+     "stationName": "Athlone",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "athlone"
+   },
    "lift_platforms": [
     "2",
     "3"
@@ -91,6 +182,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "ATMON",
+     "stationName": "Attymon",
+     "ticketOfficeAccess": {
+      "html": "<p>No ticket office</p>"
+     }
+    },
+    "slug": "attymon"
+   },
    "lift_platforms": [],
    "name": "Attymon",
    "step_free_platforms": []
@@ -100,6 +204,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "BALNA",
+     "stationName": "Ballina",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "ballina"
+   },
    "lift_platforms": [],
    "name": "Ballina",
    "step_free_platforms": []
@@ -109,6 +226,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Both platforms accessible</p>"
+     },
+     "stationCode": "BBRDG",
+     "stationName": "Broombridge",
+     "ticketOfficeAccess": {
+      "html": "<p>No ticket Office</p>"
+     }
+    },
+    "slug": "broombridge"
+   },
    "lift_platforms": [],
    "name": "Broombridge",
    "step_free_platforms": []
@@ -118,6 +248,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Via ramp from car park",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access to platform 2<br>\nLift and footbridge to platform 1</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "BBRGN",
+     "stationName": "Balbriggan",
+     "ticketOfficeAccess": {
+      "html": "<p>Via ramp from car park</p>"
+     }
+    },
+    "slug": "balbriggan"
+   },
    "lift_platforms": [
     "1"
    ],
@@ -134,6 +277,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Lifts and footbridge to all platforms</p>"
+     },
+     "stationCode": "BBRHY",
+     "stationName": "Ballybrophy",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "ballybrophy"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -145,6 +301,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p><br></p>"
+     },
+     "stationCode": "BFSTC",
+     "stationName": "Belfast Grand Central",
+     "ticketOfficeAccess": {
+      "html": "<p><br></p>"
+     }
+    },
+    "slug": "belfast-grand-central"
+   },
    "lift_platforms": [],
    "name": "Belfast Grand Central",
    "step_free_platforms": []
@@ -154,6 +323,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Via ramp",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "BHILL",
+     "stationName": "Birdhill",
+     "ticketOfficeAccess": {
+      "html": "<p>Via ramp</p>"
+     }
+    },
+    "slug": "birdhill"
+   },
    "lift_platforms": [],
    "name": "Birdhill",
    "step_free_platforms": []
@@ -163,6 +345,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "BMOTE",
+     "stationName": "Ballymote",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "ballymote"
+   },
    "lift_platforms": [],
    "name": "Ballymote",
    "step_free_platforms": []
@@ -172,6 +367,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to main platform<br>Footbridge to opposite platform</p>"
+     },
+     "stationCode": "BOYLE",
+     "stationName": "Boyle",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "boyle"
+   },
    "lift_platforms": [],
    "name": "Boyle",
    "step_free_platforms": []
@@ -181,6 +389,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to platform 1, 2 &amp; 3<br>\nUse the lift or stairs to travel between platforms</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "BRAY",
+     "stationName": "Bray (Daly)",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "bray-daly"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -205,6 +426,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access to Platform 1 via station entrance (for services to City centre &amp; Northbound)<br>\nAccess platform 2 via lift or stairs (for Southbound services).</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. &nbsp;<a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "BROCK",
+     "stationName": "Blackrock",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "blackrock"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -221,6 +455,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to main platform<br>Lifts, steps and footbridge to loop platform</p>"
+     },
+     "stationCode": "BSLOE",
+     "stationName": "Ballinasloe",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "ballinasloe"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -232,6 +479,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to Platform No. 1<br>Footbridge to Platform No. 2</p>"
+     },
+     "stationCode": "BTEER",
+     "stationName": "Banteer",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "banteer"
+   },
    "lift_platforms": [],
    "name": "Banteer",
    "step_free_platforms": [
@@ -246,6 +506,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Through main entrance building in to the booking hall on Platform 1 via ramp",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to platform No. 1, city centre &amp; northbound via station entrance<br>Platform No. 2 southbound via lift or stairs.&nbsp;<br><br>In order to access the lift, the customer is first required to call via the help point located at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "BTSTN",
+     "stationName": "Booterstown",
+     "ticketOfficeAccess": {
+      "html": "<p>Through main entrance building in to the booking hall on Platform 1 via ramp.</p>"
+     }
+    },
+    "slug": "booterstown"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -262,6 +535,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "BYHNS",
+     "stationName": "Ballyhaunis",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "ballyhaunis"
+   },
    "lift_platforms": [],
    "name": "Ballyhaunis",
    "step_free_platforms": []
@@ -271,6 +557,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Access by lifts or stairs<br>In order to access the lift, the customer is first required to call via the help point located at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "BYSDE",
+     "stationName": "Bayside",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "bayside"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -282,6 +581,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Ramp from car park</p>"
+     },
+     "stationCode": "CAHIR",
+     "stationName": "Cahir",
+     "ticketOfficeAccess": {
+      "html": "<p>No ticket office</p>"
+     }
+    },
+    "slug": "cahir"
+   },
    "lift_platforms": [],
    "name": "Cahir",
    "step_free_platforms": []
@@ -291,6 +603,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Via ramp from roadway</p>"
+     },
+     "stationCode": "CCONL",
+     "stationName": "Castleconnell",
+     "ticketOfficeAccess": {
+      "html": "<p>No ticket office</p>"
+     }
+    },
+    "slug": "castleconnell"
+   },
    "lift_platforms": [],
    "name": "Castleconnell",
    "step_free_platforms": []
@@ -300,6 +625,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Footbridge to platform No 1 (Southbound). If you can not use the footbridge, you must travel to Cobh, and stay on board to make the return journey to your destination.</p>\n<p>Via the main gate (top of ramp) to platform No 2 (Northbound)</p>"
+     },
+     "stationCode": "CGLOE",
+     "stationName": "Carrigaloe",
+     "ticketOfficeAccess": {
+      "html": "<p>No ticket office</p>"
+     }
+    },
+    "slug": "carrigaloe"
+   },
    "lift_platforms": [],
    "name": "Carrigaloe",
    "step_free_platforms": [
@@ -314,6 +652,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Accessible via lifts</p>"
+     },
+     "stationCode": "CGTWL",
+     "stationName": "Carrigtwohill",
+     "ticketOfficeAccess": {
+      "html": "<p>No</p>"
+     }
+    },
+    "slug": "carrigtwohill"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -325,6 +676,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "First Floor level access",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Lift to all Platforms</p>"
+     },
+     "stationCode": "CHORC",
+     "stationName": "Park West and Cherry Orchard",
+     "ticketOfficeAccess": {
+      "html": "<p>First Floor level access</p>"
+     }
+    },
+    "slug": "park-west-and-cherry-orchard"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -336,6 +700,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "CJRDN",
+     "stationName": "Cloughjordan",
+     "ticketOfficeAccess": {
+      "html": "<p>No ticket office</p>"
+     }
+    },
+    "slug": "cloughjordan"
+   },
    "lift_platforms": [],
    "name": "Cloughjordan",
    "step_free_platforms": []
@@ -345,6 +722,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Yes - Via ramp situated on West side of main building</p>"
+     },
+     "stationCode": "CKOSH",
+     "stationName": "Carrick-on-Shannon",
+     "ticketOfficeAccess": {
+      "html": "<p>No Ticket Office</p>"
+     }
+    },
+    "slug": "carrick-on-shannon"
+   },
    "lift_platforms": [],
    "name": "Carrick-on-Shannon",
    "step_free_platforms": []
@@ -354,6 +744,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level via a wicket gate from the car park to main platform<br>Footbridge only to opposite platform</p>"
+     },
+     "stationCode": "CKOSR",
+     "stationName": "Carrick-on-Suir",
+     "ticketOfficeAccess": {
+      "html": "<p>No ticket office</p>"
+     }
+    },
+    "slug": "carrick-on-suir"
+   },
    "lift_platforms": [],
    "name": "Carrick-on-Suir",
    "step_free_platforms": []
@@ -363,6 +766,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "CLARA",
+     "stationName": "Clara",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "clara"
+   },
    "lift_platforms": [],
    "name": "Clara",
    "step_free_platforms": []
@@ -372,6 +788,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "CLBAR",
+     "stationName": "Castlebar",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "castlebar"
+   },
    "lift_platforms": [],
    "name": "Castlebar",
    "step_free_platforms": []
@@ -381,6 +810,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": "Level or via lift",
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Platforms accessible via stairs and lifts.&nbsp;</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"https://www.irishrail.ie/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "CLDKN",
+     "stationName": "Clondalkin and Fonthill",
+     "ticketOfficeAccess": {
+      "html": "<p>Level or via lift</p>"
+     }
+    },
+    "slug": "clondalkin-fonthill"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -392,6 +834,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access to main platform. Footbridge only to opposite platform.</p>"
+     },
+     "stationCode": "CLMEL",
+     "stationName": "Clonmel",
+     "ticketOfficeAccess": {
+      "html": "<p>No Ticket Office</p>"
+     }
+    },
+    "slug": "clonmel"
+   },
    "lift_platforms": [],
    "name": "Clonmel",
    "step_free_platforms": []
@@ -401,6 +856,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "CLMRS",
+     "stationName": "Claremorris",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "claremorris"
+   },
    "lift_platforms": [],
    "name": "Claremorris",
    "step_free_platforms": []
@@ -410,6 +878,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>You can access both platforms by stairs or lifts.</p>"
+     },
+     "stationCode": "CLSLA",
+     "stationName": "Clonsilla",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "clonsilla"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -421,6 +902,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "CMINE",
+     "stationName": "Coolmine",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "coolmine"
+   },
    "lift_platforms": [],
    "name": "Coolmine",
    "step_free_platforms": []
@@ -430,6 +924,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": "Escalator, lift or stairs from Amiens Street and from LUAS stop",
    "entrance_step_free": "Level access from car park",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access to platforms 1, 2, 3 and 4 from ticket office.<br>Ramp or stairs to platform 5.<br>Lift or stairs to platforms 6 and 7.</p>\n<p>Via main ticket barrier<br><br><strong>Please mind the gap</strong></p>"
+     },
+     "stationCode": "CNLLY",
+     "stationName": "Dublin Connolly",
+     "ticketOfficeAccess": {
+      "html": "<p>Escalator, lift or stairs from Amiens Street and from LUAS stop.<br>Level access from car park.</p>\n<p>Via main concourse.</p>"
+     }
+    },
+    "slug": "dublin-connolly"
+   },
    "lift_platforms": [
     "6",
     "7"
@@ -459,6 +966,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Ramp to platform",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Platform 1 (Dublin bound) is level.</p>\n<p>Platform 2 can only be accessed via stairs and footbridge</p>"
+     },
+     "stationCode": "CNOCK",
+     "stationName": "Castleknock",
+     "ticketOfficeAccess": {
+      "html": "<p>Ramp to platform</p>"
+     }
+    },
+    "slug": "castleknock"
+   },
    "lift_platforms": [],
    "name": "Castleknock",
    "step_free_platforms": [
@@ -473,6 +993,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Via ramp from public road, assistance will be required",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Via ramp from public road. Assistance will be required, the station is staffed part time</p>"
+     },
+     "stationCode": "COBH",
+     "stationName": "Cobh",
+     "ticketOfficeAccess": {
+      "html": "<p>Via ramp from public road, assistance will be required</p>"
+     }
+    },
+    "slug": "cobh"
+   },
    "lift_platforms": [],
    "name": "Cobh",
    "step_free_platforms": []
@@ -482,6 +1015,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "COLNY",
+     "stationName": "Collooney",
+     "ticketOfficeAccess": {
+      "html": "<p>No ticket office</p>"
+     }
+    },
+    "slug": "collooney"
+   },
    "lift_platforms": [],
    "name": "Collooney",
    "step_free_platforms": []
@@ -491,6 +1037,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse from 07:00hrs - 18:30hrs",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Platforms 1, 2, 3 and 4 are level</li>\n  <li>Ramp or lift to platform 5A, 5B and 6</li>\n</ul>\n<p>Blind passenger using lift call system to access lifts to and from subway at Kent Station Cork.<br>Link: <a href=\"https://youtu.be/xFUAuIrj3uw\" data-new-window=\"true\" target=\"_blank\" rel=\"noopener noreferrer\">YouTube Video</a><br><br>Blind passenger using lift call system on route from Horgans Quay to platform 4, Kent Station, Cork.<br>Link:&nbsp;<a href=\"https://youtu.be/FBEdve-OfXE\" data-new-window=\"true\" target=\"_blank\" rel=\"noopener noreferrer\">YouTube Video</a><br>&nbsp;</p>"
+     },
+     "stationCode": "CORK",
+     "stationName": "Cork (Kent)",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse from 07:00hrs - 18:30hrs</p>"
+     }
+    },
+    "slug": "cork-kent"
+   },
    "lift_platforms": [
     "5A",
     "5B",
@@ -521,6 +1080,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level</p>"
+     },
+     "stationCode": "CRGHW",
+     "stationName": "Craughwell",
+     "ticketOfficeAccess": {
+      "html": "<p>No Ticket Office</p>"
+     }
+    },
+    "slug": "craughwell"
+   },
    "lift_platforms": [],
    "name": "Craughwell",
    "step_free_platforms": []
@@ -530,6 +1102,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Ramp to ticket office",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to platform 1<br>Lift to platform&nbsp;2</p>"
+     },
+     "stationCode": "CRLOW",
+     "stationName": "Carlow",
+     "ticketOfficeAccess": {
+      "html": "<p>Ramp to ticket office</p>"
+     }
+    },
+    "slug": "carlow"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -546,6 +1131,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "CSREA",
+     "stationName": "Castlerea",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "castlerea"
+   },
    "lift_platforms": [],
    "name": "Castlerea",
    "step_free_platforms": []
@@ -555,6 +1153,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Lifts and footbridge to both platforms.</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "CTARF",
+     "stationName": "Clontarf Road",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "clontarf-road"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -566,6 +1177,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to platform 1</p>\n<p>Lift to platform 2 and&nbsp;3</p>"
+     },
+     "stationCode": "CVILL",
+     "stationName": "Charleville",
+     "ticketOfficeAccess": {
+      "html": "<p>Ramp or steps from the car park</p>"
+     }
+    },
+    "slug": "charleville"
+   },
    "lift_platforms": [
     "2",
     "3"
@@ -583,6 +1207,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance 05:45hrs - 14:30hrs Mon-Fri",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access 05:45hrs - 00:30hrs Mon-Sun<br><br>In order to access the lift, the customer is first required to call via the help point located at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "DBATE",
+     "stationName": "Donabate",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance 05:45hrs - 14:30hrs Mon-Fri</p>"
+     }
+    },
+    "slug": "donabate"
+   },
    "lift_platforms": [],
    "name": "Donabate",
    "step_free_platforms": []
@@ -592,6 +1229,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>If you are disabled or would like help to access a train, this must be arranged before you travel. For contact details to arrange this, please click here.</p>"
+     },
+     "stationCode": "DBYNE",
+     "stationName": "Dunboyne",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance</p>"
+     }
+    },
+    "slug": "dunboyne"
+   },
    "lift_platforms": [],
    "name": "Dunboyne",
    "step_free_platforms": []
@@ -601,6 +1251,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Lifts to both platforms</p>"
+     },
+     "stationCode": "DCDRA",
+     "stationName": "Drumcondra",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance</p>"
+     }
+    },
+    "slug": "drumcondra"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -612,6 +1275,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": "Lift to ticket office",
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Lift to platforms</p>"
+     },
+     "stationCode": "DCKLS",
+     "stationName": "Docklands",
+     "ticketOfficeAccess": {
+      "html": "<p>Lift to ticket office</p>"
+     }
+    },
+    "slug": "docklands"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -623,6 +1299,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from main station entrance",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Island Platforms. Access through the main entrance. There is a gangway to the ramp and lift down onto platforms.</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "DDALK",
+     "stationName": "Dundalk (Clarke)",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from main&nbsp;station entrance</p>"
+     }
+    },
+    "slug": "dundalk-clarke"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -634,6 +1323,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "On level in main hall of station",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to Platform 1 from Main Hall<br>\nYou can use the footbridge or lifts to access Platforms 2 and 3</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "DGHDA",
+     "stationName": "Drogheda (MacBride)",
+     "ticketOfficeAccess": {
+      "html": "<p>On level in main hall of station</p>"
+     }
+    },
+    "slug": "drogheda-macbride"
+   },
    "lift_platforms": [
     "2",
     "3"
@@ -651,6 +1353,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Via ramp from Crofton Road",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Lift to Platforms 1 &amp; 2<br>\nLevel to Platform 3. Ramp access from Platform 2 to Platform 3.</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a><br>\n&nbsp;</p>"
+     },
+     "stationCode": "DLERY",
+     "stationName": "Dun Laoghaire (Mallin)",
+     "ticketOfficeAccess": {
+      "html": "<p>Via ramp from Crofton Road</p>"
+     }
+    },
+    "slug": "dun-laoghaire-mallin"
+   },
    "lift_platforms": [
     "1",
     "2"
@@ -668,6 +1383,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Access to platform No 2 via station entrance (for southbound routes)<br>\nRamp to platform No 1 (for northbound routes and city centre)<br>\nFootbridge, and Lifts to go between platforms</p>"
+     },
+     "stationCode": "DLKEY",
+     "stationName": "Dalkey",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance</p>"
+     }
+    },
+    "slug": "dalkey"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -684,6 +1412,19 @@
    "denies_lift": true,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Yes - Level from station entrance",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to main platform<br>\nFootbridge to platform 2 (no lift at this station)</p>"
+     },
+     "stationCode": "DRMOD",
+     "stationName": "Dromod",
+     "ticketOfficeAccess": {
+      "html": "<p>Yes - Level from station entrance</p>"
+     }
+    },
+    "slug": "dromod"
+   },
    "lift_platforms": [],
    "name": "Dromod",
    "step_free_platforms": []
@@ -693,6 +1434,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from entrance",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to main platform.<br>Stairs only to opposite platform.</p>"
+     },
+     "stationCode": "ECRTY",
+     "stationName": "Enniscorthy",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from entrance</p>"
+     }
+    },
+    "slug": "enniscorthy"
+   },
    "lift_platforms": [],
    "name": "Enniscorthy",
    "step_free_platforms": []
@@ -702,6 +1456,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Stairs only to platform</li>\n  <li>Level rear car park</li>\n</ul>"
+     },
+     "stationCode": "ENFLD",
+     "stationName": "Enfield",
+     "ticketOfficeAccess": {
+      "html": "<p>No ticket office</p>"
+     }
+    },
+    "slug": "enfield"
+   },
    "lift_platforms": [],
    "name": "Enfield",
    "step_free_platforms": []
@@ -711,6 +1478,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Level access to platform 1</li>\n  <li>Footbridge to platform 2 only</li>\n</ul>"
+     },
+     "stationCode": "ENNIS",
+     "stationName": "Ennis",
+     "ticketOfficeAccess": {
+      "html": "<p>Via steps or ramp from car park</p>"
+     }
+    },
+    "slug": "ennis"
+   },
    "lift_platforms": [],
    "name": "Ennis",
    "step_free_platforms": [
@@ -725,6 +1505,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance via waiting room",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to main platform.<br>\nFootbridge to platform 2.</p>"
+     },
+     "stationCode": "ETOWN",
+     "stationName": "Edgeworthstown",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance via waiting room</p>"
+     }
+    },
+    "slug": "edgeworthstown"
+   },
    "lift_platforms": [],
    "name": "Edgeworthstown",
    "step_free_platforms": []
@@ -734,6 +1527,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "FFORE",
+     "stationName": "Farranfore",
+     "ticketOfficeAccess": {
+      "html": "<p>Via small step from platform</p>"
+     }
+    },
+    "slug": "farranfore"
+   },
    "lift_platforms": [],
    "name": "Farranfore",
    "step_free_platforms": []
@@ -743,6 +1549,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level via ramp to Platform 1 for Cobh services.</p>\n<p>Footbridge only to Platform 2 for Cork services. If you can not use the footbridge, you must travel to Cobh, and stay on board to make the return journey to your destination.</p>"
+     },
+     "stationCode": "FOTA",
+     "stationName": "Fota",
+     "ticketOfficeAccess": {
+      "html": "<p>There is no ticket office</p>"
+     }
+    },
+    "slug": "fota"
+   },
    "lift_platforms": [],
    "name": "Fota",
    "step_free_platforms": [
@@ -757,6 +1576,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level Access</p>"
+     },
+     "stationCode": "FXFRD",
+     "stationName": "Foxford",
+     "ticketOfficeAccess": {
+      "html": "<p>No Ticket Office</p>"
+     }
+    },
+    "slug": "foxford"
+   },
    "lift_platforms": [],
    "name": "Foxford",
    "step_free_platforms": []
@@ -766,6 +1598,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Ramp to main entrance</p>"
+     },
+     "stationCode": "GALWY",
+     "stationName": "Galway (Ceannt)",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "galway-ceannt"
+   },
    "lift_platforms": [],
    "name": "Galway (Ceannt)",
    "step_free_platforms": []
@@ -775,6 +1620,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": "Through main entrance building into the booking hall on platform 2 via stairs or lift",
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>You can access the platforms via stairs and lifts.</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a><br>\n<br>\n<br>\n&nbsp;</p>"
+     },
+     "stationCode": "GCDK",
+     "stationName": "Grand Canal Dock",
+     "ticketOfficeAccess": {
+      "html": "<p>Through main entrance building into the booking hall on platform 2 via stairs or lift</p>"
+     }
+    },
+    "slug": "grand-canal-dock"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -786,6 +1644,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to platform 1 (Southbound and Cobh).</p>\n<p>Footbridge only to platform 2 (Northbound and Cork). If you can not use the footbridge, you must travel to Cobh, and stay on board to make the return journey to your destination.</p>"
+     },
+     "stationCode": "GHANE",
+     "stationName": "Glounthaune",
+     "ticketOfficeAccess": {
+      "html": "<p>No ticket office</p>"
+     }
+    },
+    "slug": "glounthaune"
+   },
    "lift_platforms": [],
    "name": "Glounthaune",
    "step_free_platforms": [
@@ -800,6 +1671,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Stairs or lifts to both platforms<br><br>In order to access the lift, the customer is first required to call via the help point located at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "GLGRY",
+     "stationName": "Glenageary",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "glenageary"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -811,6 +1695,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level, stairs only to platform 2</p>"
+     },
+     "stationCode": "GOREY",
+     "stationName": "Gorey",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "gorey"
+   },
    "lift_platforms": [],
    "name": "Gorey",
    "step_free_platforms": []
@@ -820,6 +1717,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Lifts and Footbridge to Platforms</li>\n  <li>Ramp on board train</li>\n</ul>"
+     },
+     "stationCode": "GORT",
+     "stationName": "Gort",
+     "ticketOfficeAccess": {
+      "html": "<p>No Ticket Office</p>"
+     }
+    },
+    "slug": "gort"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -831,6 +1741,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Lift and stairs to Northbound platform</li>\n  <li>Ramp to Southbound platform</li>\n</ul>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. Please see our lift call operation page for steps to call the lift.</p>"
+     },
+     "stationCode": "GRGRD",
+     "stationName": "Clongriffin",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "clongriffin"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -842,6 +1765,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Level to platform 1 (northbound)</li>\n  <li>Footbridge only to platform 2 (southbound)<br>\n</li>\n  <li>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></li>\n</ul>"
+     },
+     "stationCode": "GSTNS",
+     "stationName": "Greystones",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "greystones"
+   },
    "lift_platforms": [],
    "name": "Greystones",
    "step_free_platforms": [
@@ -856,6 +1792,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Level to platform 1</li>\n  <li>Access via steps from public road to platform 2 and also via footbridge</li>\n</ul>"
+     },
+     "stationCode": "GSTON",
+     "stationName": "Gormanston",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "gormanston"
+   },
    "lift_platforms": [],
    "name": "Gormanston",
    "step_free_platforms": [
@@ -870,6 +1819,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Lifts to both platforms</p>"
+     },
+     "stationCode": "HAFLD",
+     "stationName": "Hansfield",
+     "ticketOfficeAccess": {
+      "html": "<p>Access vis ramp or stairs</p>"
+     }
+    },
+    "slug": "hansfield"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -881,6 +1843,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Via electric gate and ramp from road",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Via gate and ramp from the road</p>"
+     },
+     "stationCode": "HOWTH",
+     "stationName": "Howth",
+     "ticketOfficeAccess": {
+      "html": "<p>Via electric gate and ramp from road</p>"
+     }
+    },
+    "slug": "howth"
+   },
    "lift_platforms": [],
    "name": "Howth",
    "step_free_platforms": []
@@ -890,6 +1865,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "HSTON",
+     "stationName": "Dublin Heuston",
+     "ticketOfficeAccess": {
+      "html": "<p>Beside Platform Number 2<br>\nThis office is closed on Sundays. If you need assistance on a Sunday please contact <a data-phone-number=\"(087) 1312801\" href=\"tel:(087) 1312801\">(087) 1312801</a> or speak with a member of staff</p>"
+     }
+    },
+    "slug": "dublin-heuston"
+   },
    "lift_platforms": [],
    "name": "Dublin Heuston",
    "step_free_platforms": []
@@ -899,6 +1887,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Ramps to both platforms</p>"
+     },
+     "stationCode": "HTOWN",
+     "stationName": "Harmonstown",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "harmonstown"
+   },
    "lift_platforms": [],
    "name": "Harmonstown",
    "step_free_platforms": []
@@ -908,6 +1909,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Stairs or lifts to both platforms</p>\n<p>To access the lift, you must first call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "HWTHJ",
+     "stationName": "Howth Junction and Donaghmede",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "howth-junction-and-donaghmede"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -919,6 +1933,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level On platform 5",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>All platforms can be accessed via lifts and ramps</p>"
+     },
+     "stationCode": "HZLCH",
+     "stationName": "Hazelhatch and Celbridge",
+     "ticketOfficeAccess": {
+      "html": "<p>Level On platform 5</p>"
+     }
+    },
+    "slug": "hazelhatch-and-celbridge"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -930,6 +1957,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Access via ramps or steps.</p>"
+     },
+     "stationCode": "KBRCK",
+     "stationName": "Kilbarrack",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "kilbarrack"
+   },
    "lift_platforms": [],
    "name": "Kilbarrack",
    "step_free_platforms": []
@@ -939,6 +1979,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access</p>"
+     },
+     "stationCode": "KCOCK",
+     "stationName": "Kilcock",
+     "ticketOfficeAccess": {
+      "html": "<p>No Ticket Office</p>"
+     }
+    },
+    "slug": "kilcock"
+   },
    "lift_platforms": [],
    "name": "Kilcock",
    "step_free_platforms": []
@@ -948,6 +2001,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Access only via wicket gate (not wheelchair accessible).</p>"
+     },
+     "stationCode": "KCOOL",
+     "stationName": "Kilcoole",
+     "ticketOfficeAccess": {
+      "html": "<p>Not level</p>"
+     }
+    },
+    "slug": "kilcoole"
+   },
    "lift_platforms": [],
    "name": "Kilcoole",
    "step_free_platforms": []
@@ -957,6 +2023,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Level to platform 1</li>\n  <li>Via wicket gate or footbridge to platform 2</li>\n</ul>"
+     },
+     "stationCode": "KDARE",
+     "stationName": "Kildare",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "kildare"
+   },
    "lift_platforms": [],
    "name": "Kildare",
    "step_free_platforms": [
@@ -971,6 +2050,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "KILNY",
+     "stationName": "Killiney",
+     "ticketOfficeAccess": {
+      "html": "<p>Low step</p>"
+     }
+    },
+    "slug": "killiney"
+   },
    "lift_platforms": [],
    "name": "Killiney",
    "step_free_platforms": []
@@ -980,6 +2072,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level, stairs only to opposite platform</p>"
+     },
+     "stationCode": "KKNNY",
+     "stationName": "Kilkenny (MacDonagh)",
+     "ticketOfficeAccess": {
+      "html": "<p>Ramp or steps from car park</p>"
+     }
+    },
+    "slug": "kilkenny-macdonagh"
+   },
    "lift_platforms": [],
    "name": "Kilkenny (MacDonagh)",
    "step_free_platforms": []
@@ -989,6 +2094,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Lift to platform 1 and 2</p>"
+     },
+     "stationCode": "KLRNY",
+     "stationName": "Killarney",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "killarney"
+   },
    "lift_platforms": [
     "1",
     "2"
@@ -1001,6 +2119,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Ramps to both platforms</p>"
+     },
+     "stationCode": "KLSTR",
+     "stationName": "Killester",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "killester"
+   },
    "lift_platforms": [],
    "name": "Killester",
    "step_free_platforms": []
@@ -1010,6 +2141,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Access platforms 1 and 2 via stairs and lifts</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft.&nbsp;<a href=\"https://www.irishrail.ie/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "Kishoge",
+     "stationName": "Kishoge",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "kishoge"
+   },
    "lift_platforms": [
     "1",
     "2"
@@ -1022,6 +2166,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p><br></p>"
+     },
+     "stationCode": "LBURN",
+     "stationName": "Lisburn",
+     "ticketOfficeAccess": {
+      "html": "<p><br></p>"
+     }
+    },
+    "slug": "lisburn"
+   },
    "lift_platforms": [],
    "name": "Lisburn",
    "step_free_platforms": []
@@ -1031,6 +2188,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to platform 1 (Northbound and City Centre)</p>\n<p>Ramp and gate to platform 2 (Southbound)</p>"
+     },
+     "stationCode": "LDWNE",
+     "stationName": "Lansdowne Road",
+     "ticketOfficeAccess": {
+      "html": "<p><br></p>"
+     }
+    },
+    "slug": "lansdowne-road"
+   },
    "lift_platforms": [],
    "name": "Lansdowne Road",
    "step_free_platforms": [
@@ -1049,6 +2219,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Ramp via the car park to platform 1<br>\nLevel off the public footpath to platform 2<br>\nFootbridge and lifts to go between platforms.</p>\n<p>See our video of a blind passenger walking the station and using the lift call system: <a href=\"https://youtu.be/Orf5XSBkaM0\">https://youtu.be/Orf5XSBkaM0</a></p>"
+     },
+     "stationCode": "LFORD",
+     "stationName": "Longford",
+     "ticketOfficeAccess": {
+      "html": "<p>Our Longford booking office is currently closed. Iarnród Éireann apologies for any inconvenience caused.</p>"
+     }
+    },
+    "slug": "longford"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -1069,6 +2252,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level</p>"
+     },
+     "stationCode": "LMRCK",
+     "stationName": "Limerick (Colbert)",
+     "ticketOfficeAccess": {
+      "html": "<p>Via level access from car park, via ramp and steps from Station front.</p>"
+     }
+    },
+    "slug": "limerick-colbert"
+   },
    "lift_platforms": [],
    "name": "Limerick (Colbert)",
    "step_free_platforms": []
@@ -1078,6 +2274,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Via steep ramp from car park",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level</p>"
+     },
+     "stationCode": "LMRKJ",
+     "stationName": "Limerick Junction",
+     "ticketOfficeAccess": {
+      "html": "<p>Via steep ramp from car park</p>"
+     }
+    },
+    "slug": "limerick-junction"
+   },
    "lift_platforms": [],
    "name": "Limerick Junction",
    "step_free_platforms": []
@@ -1087,6 +2296,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Ramp via the car park to platform 1<br>\nLevel off the public footpath to platform 2<br>\nFootbridge and lifts to go between platforms.</p>\n<p>See our video of a blind passenger walking the station and using the lift call system: <a href=\"https://youtu.be/Orf5XSBkaM0\">https://youtu.be/Orf5XSBkaM0</a><br>\n</p>"
+     },
+     "stationCode": "LSLND",
+     "stationName": "Little Island",
+     "ticketOfficeAccess": {
+      "html": "<p>No&nbsp;</p>"
+     }
+    },
+    "slug": "little-island"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -1107,6 +2329,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Footbridge and lift to platform 1</li>\n  <li>Ramp from roadway to platform 2</li>\n</ul>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "LTOWN",
+     "stationName": "Laytown",
+     "ticketOfficeAccess": {
+      "html": "<p><br></p>"
+     }
+    },
+    "slug": "laytown"
+   },
    "lift_platforms": [
     "1"
    ],
@@ -1123,6 +2358,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p><br></p>"
+     },
+     "stationCode": "LURGN",
+     "stationName": "Lurgan",
+     "ticketOfficeAccess": {
+      "html": "<p><br></p>"
+     }
+    },
+    "slug": "lurgan"
+   },
    "lift_platforms": [],
    "name": "Lurgan",
    "step_free_platforms": []
@@ -1132,6 +2380,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to platform 2<br>\nRamp to go between platforms</p>"
+     },
+     "stationCode": "LXCON",
+     "stationName": "Leixlip (Confey)",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "leixlip-confey"
+   },
    "lift_platforms": [],
    "name": "Leixlip (Confey)",
    "step_free_platforms": [
@@ -1146,6 +2407,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Platform 1 to City Centre via ramp</li>\n  <li>Platform 2 to Maynooth via lift</li>\n</ul>"
+     },
+     "stationCode": "LXLSA",
+     "stationName": "Leixlip (Louisa Bridge)",
+     "ticketOfficeAccess": {
+      "html": "<p><br></p>"
+     }
+    },
+    "slug": "leixlip-louisa-bridge"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -1162,6 +2436,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level</p>"
+     },
+     "stationCode": "M3WAY",
+     "stationName": "M3 Parkway",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "m3-parkway"
+   },
    "lift_platforms": [],
    "name": "M3 Parkway",
    "step_free_platforms": []
@@ -1171,6 +2458,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Lift to platform 1 and 2</p>"
+     },
+     "stationCode": "MDLTN",
+     "stationName": "Midleton",
+     "ticketOfficeAccess": {
+      "html": "<p>No Booking Office</p>"
+     }
+    },
+    "slug": "midleton"
+   },
    "lift_platforms": [
     "1",
     "2"
@@ -1183,6 +2483,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Level to platform 1 (City Centre)</li>\n  <li>Lift and footbridge to platform 2</li>\n</ul>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. Please see our lift call operation page for steps to call the lift. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "MHIDE",
+     "stationName": "Malahide",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "malahide"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -1199,6 +2512,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Yes, ramp at front entrance",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Access between platforms is via an underpass (with in at the station) and a footbridge, both of which involve stairs.</p>"
+     },
+     "stationCode": "MLGAR",
+     "stationName": "Mullingar",
+     "ticketOfficeAccess": {
+      "html": "<p>Yes, ramp at front entrance</p>"
+     }
+    },
+    "slug": "mullingar"
+   },
    "lift_platforms": [],
    "name": "Mullingar",
    "step_free_platforms": []
@@ -1208,6 +2534,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Access from main car park level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access from main car park</p>"
+     },
+     "stationCode": "MLLOW",
+     "stationName": "Mallow",
+     "ticketOfficeAccess": {
+      "html": "<p>Access from main car park level</p>"
+     }
+    },
+    "slug": "mallow"
+   },
    "lift_platforms": [],
    "name": "Mallow",
    "step_free_platforms": []
@@ -1217,6 +2556,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access from main station carpark</p>"
+     },
+     "stationCode": "MLSRT",
+     "stationName": "Millstreet",
+     "ticketOfficeAccess": {
+      "html": "<p>Level access from platform</p>"
+     }
+    },
+    "slug": "millstreet"
+   },
    "lift_platforms": [],
    "name": "Millstreet",
    "step_free_platforms": []
@@ -1226,6 +2578,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to platform 1. Stairs only to platform 2</p>"
+     },
+     "stationCode": "MNEBG",
+     "stationName": "Muine Bheag (Bagenalstown)",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "muine-bheag-bagenalstown"
+   },
    "lift_platforms": [],
    "name": "Muine Bheag (Bagenalstown)",
    "step_free_platforms": [
@@ -1240,6 +2605,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level</p>"
+     },
+     "stationCode": "MNLAJ",
+     "stationName": "Manulla Junction",
+     "ticketOfficeAccess": {
+      "html": "<p>Transfer point only</p>"
+     }
+    },
+    "slug": "manulla-junction"
+   },
    "lift_platforms": [],
    "name": "Manulla Junction",
    "step_free_platforms": []
@@ -1249,6 +2627,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to platform 1 (Northbound)<br>\nLift and footbridge to platform 2 (Southbound)</p>"
+     },
+     "stationCode": "MONVN",
+     "stationName": "Monasterevin",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "monasterevin"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -1265,6 +2656,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level from main hall to Platform 1<br>\nLift and footbridge to Platform 2</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"https://www.irishrail.ie/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "MYNTH",
+     "stationName": "Maynooth",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "maynooth"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -1281,6 +2685,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Level to platform 1</li>\n  <li>Via footbridge and wicket gate to platform 2</li>\n</ul>"
+     },
+     "stationCode": "NBRGE",
+     "stationName": "Newbridge",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "newbridge"
+   },
    "lift_platforms": [],
    "name": "Newbridge",
    "step_free_platforms": [
@@ -1295,6 +2712,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p><br></p>"
+     },
+     "stationCode": "NEWRY",
+     "stationName": "Newry",
+     "ticketOfficeAccess": {
+      "html": "<p><br></p>"
+     }
+    },
+    "slug": "newry"
+   },
    "lift_platforms": [],
    "name": "Newry",
    "step_free_platforms": []
@@ -1304,6 +2734,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level</p>"
+     },
+     "stationCode": "NNAGH",
+     "stationName": "Nenagh",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "nenagh"
+   },
    "lift_platforms": [],
    "name": "Nenagh",
    "step_free_platforms": []
@@ -1313,6 +2756,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Steps and ramp</p>"
+     },
+     "stationCode": "ORNMR",
+     "stationName": "Oranmore",
+     "ticketOfficeAccess": {
+      "html": "<p>No Ticket Office</p>"
+     }
+    },
+    "slug": "oranmore"
+   },
    "lift_platforms": [],
    "name": "Oranmore",
    "step_free_platforms": []
@@ -1322,6 +2778,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p><br></p>"
+     },
+     "stationCode": "PDOWN",
+     "stationName": "Portadown",
+     "ticketOfficeAccess": {
+      "html": "<p><br></p>"
+     }
+    },
+    "slug": "portadown"
+   },
    "lift_platforms": [],
    "name": "Portadown",
    "step_free_platforms": []
@@ -1331,6 +2800,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Both platforms can be accessed by ramp or stairs</p>"
+     },
+     "stationCode": "PELTN",
+     "stationName": "Pelletstown",
+     "ticketOfficeAccess": {
+      "html": "<p>No ticket Office</p>"
+     }
+    },
+    "slug": "pelletstown"
+   },
    "lift_platforms": [],
    "name": "Pelletstown",
    "step_free_platforms": []
@@ -1340,6 +2822,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": "Lifts/stairs/Escalators from the Pearse Street entrance",
    "entrance_step_free": "Level, through main entrance to the booking hall",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Via ramps, stairs, escalators, and lifts.</p>\n<p>Ramp to platform 1 (City Centre and northbound)<br>\nLift or stairs to platform 2 (southbound)</p>\n<p>Lifts/stairs/Escalators from the Pearse Street entrance</p>"
+     },
+     "stationCode": "PERSE",
+     "stationName": "Dublin Pearse",
+     "ticketOfficeAccess": {
+      "html": "<p>Level, through main entrance to the booking hall</p>"
+     }
+    },
+    "slug": "dublin-pearse"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -1356,6 +2851,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Lift to both platforms</p>"
+     },
+     "stationCode": "PHNPK",
+     "stationName": "Navan Road Parkway",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "navan-road-parkway"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -1367,6 +2875,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Full ramp access to both platforms&nbsp;</p>"
+     },
+     "stationCode": "PMNCK",
+     "stationName": "Portmarnock",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "portmarnock"
+   },
    "lift_platforms": [],
    "name": "Portmarnock",
    "step_free_platforms": []
@@ -1376,6 +2897,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Level to platform 2</li>\n  <li>Lift and footbridge to platform 1</li>\n</ul>"
+     },
+     "stationCode": "PTLSE",
+     "stationName": "Portlaoise",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "portlaoise"
+   },
    "lift_platforms": [
     "1"
    ],
@@ -1392,6 +2926,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Level to platform 1</li>\n  <li>Lift and footbridge to platform 2</li>\n</ul>"
+     },
+     "stationCode": "PTRTN",
+     "stationName": "Portarlington",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "portarlington"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -1408,6 +2955,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Lift or ramp to platform 1 (City Centre and Southbound)<br>\nRamp to platform 2 (Northbound)</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "RAHNY",
+     "stationName": "Raheny",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "raheny"
+   },
    "lift_platforms": [
     "1"
    ],
@@ -1424,6 +2984,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Via ramp and main gate to platform 2</p>\n<p>Footbridge between platforms. If you can not use the footbridge, remain on-board to Cobh. On your return trip you can exit on the desired platform.</p>"
+     },
+     "stationCode": "RBROK",
+     "stationName": "Rushbrooke",
+     "ticketOfficeAccess": {
+      "html": "<p>No ticket office</p>"
+     }
+    },
+    "slug": "rushbrooke"
+   },
    "lift_platforms": [],
    "name": "Rushbrooke",
    "step_free_platforms": [
@@ -1438,6 +3011,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level</p>"
+     },
+     "stationCode": "RCREA",
+     "stationName": "Roscrea",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "roscrea"
+   },
    "lift_platforms": [],
    "name": "Roscrea",
    "step_free_platforms": []
@@ -1447,6 +3033,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Ramp to main platform. It is not accessible for wheelchairs</p>"
+     },
+     "stationCode": "RDRUM",
+     "stationName": "Rathdrum",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "rathdrum"
+   },
    "lift_platforms": [],
    "name": "Rathdrum",
    "step_free_platforms": []
@@ -1456,6 +3055,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Via ramp from car park</p>"
+     },
+     "stationCode": "RLEPT",
+     "stationName": "Rosslare Europort",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "rosslare-europort"
+   },
    "lift_platforms": [],
    "name": "Rosslare Europort",
    "step_free_platforms": []
@@ -1465,6 +3077,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Level to the main platform</li>\n  <li>Via laneway and wicket gate or footbridge to platform 2</li>\n</ul>"
+     },
+     "stationCode": "RLSTD",
+     "stationName": "Rosslare Strand",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "rosslare-strand"
+   },
    "lift_platforms": [],
    "name": "Rosslare Strand",
    "step_free_platforms": []
@@ -1474,6 +3099,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access to platform 1<br>\nLift and footbridge to platform 1</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "RLUSK",
+     "stationName": "Rush and Lusk",
+     "ticketOfficeAccess": {
+      "html": "<p><strong>Monday to Friday</strong>:&nbsp;06:30hrs - 09:00hrs&nbsp;</p>"
+     }
+    },
+    "slug": "rush-and-lusk"
+   },
    "lift_platforms": [
     "1"
    ],
@@ -1490,6 +3128,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level from Station Car Park",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Level to main platform</li>\n  <li>Footbridge to platform 2</li>\n</ul>"
+     },
+     "stationCode": "RMORE",
+     "stationName": "Rathmore",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from Station Car Park</p>"
+     }
+    },
+    "slug": "rathmore"
+   },
    "lift_platforms": [],
    "name": "Rathmore",
    "step_free_platforms": []
@@ -1499,6 +3150,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to the main platform</p>"
+     },
+     "stationCode": "RSCMN",
+     "stationName": "Roscommon",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "roscommon"
+   },
    "lift_platforms": [],
    "name": "Roscommon",
    "step_free_platforms": []
@@ -1508,6 +3172,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level access",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Access to both platforms via ramps from car parks.</p>"
+     },
+     "stationCode": "SALNS",
+     "stationName": "Sallins and Naas",
+     "ticketOfficeAccess": {
+      "html": "<p>Level access</p>"
+     }
+    },
+    "slug": "sallins-and-naas"
+   },
    "lift_platforms": [],
    "name": "Sallins and Naas",
    "step_free_platforms": []
@@ -1517,6 +3194,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Ramp to both platforms<br>\nLift to platform 2 (Northbound) via laneway</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "SCOVE",
+     "stationName": "Sandycove and Glasthule",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "sandycove-and-glasthule"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -1528,6 +3218,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level access",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Lift to platform 1 and 2.&nbsp;</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. &nbsp;<a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "SEAPT",
+     "stationName": "Seapoint",
+     "ticketOfficeAccess": {
+      "html": "<p>Level access</p>"
+     }
+    },
+    "slug": "seapoint"
+   },
    "lift_platforms": [
     "1",
     "2"
@@ -1540,6 +3243,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Level to platform 1</li>\n  <li>Lift to platform 2</li>\n</ul>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. Please see our lift call operation page for steps to call the lift.</p>"
+     },
+     "stationCode": "SHILL",
+     "stationName": "Salthill and Monkstown",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "salthill-and-monkstown"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -1556,6 +3272,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Through the main entrance building in to the booking hall on platform 1 via ramp",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access to both platforms</p>"
+     },
+     "stationCode": "SIDNY",
+     "stationName": "Sydney Parade",
+     "ticketOfficeAccess": {
+      "html": "<p>Through the main entrance building in to the booking hall on platform 1 via ramp</p>"
+     }
+    },
+    "slug": "sydney-parade"
+   },
    "lift_platforms": [],
    "name": "Sydney Parade",
    "step_free_platforms": []
@@ -1565,6 +3294,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Via ramp",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Lift or stairs to both platforms</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "SKILL",
+     "stationName": "Shankill",
+     "ticketOfficeAccess": {
+      "html": "<p>Via ramp</p>"
+     }
+    },
+    "slug": "shankill"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -1576,6 +3318,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to platform 1 <br>\nLift and footbridge to platform 2</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft. <a href=\"/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "SKRES",
+     "stationName": "Skerries",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "skerries"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -1592,6 +3347,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Via ramp from car park",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level</p>"
+     },
+     "stationCode": "SLIGO",
+     "stationName": "Sligo (MacDiarmada)",
+     "ticketOfficeAccess": {
+      "html": "<p>Via ramp from car park</p>"
+     }
+    },
+    "slug": "sligo-macdiarmada"
+   },
    "lift_platforms": [],
    "name": "Sligo (MacDiarmada)",
    "step_free_platforms": []
@@ -1601,6 +3369,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Via ramp on the south platform side of station",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Access both platforms by ramp and subway</p>"
+     },
+     "stationCode": "SMONT",
+     "stationName": "Sandymount",
+     "ticketOfficeAccess": {
+      "html": "<p>Via ramp on the south platform side of station</p>"
+     }
+    },
+    "slug": "sandymount"
+   },
    "lift_platforms": [],
    "name": "Sandymount",
    "step_free_platforms": []
@@ -1610,6 +3391,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Via ramp from car park",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level to platform 1 (City Centre and southbound)<br>\nTicket gate on station road to platform 2 (Northbound)</p>"
+     },
+     "stationCode": "SUTTN",
+     "stationName": "Sutton",
+     "ticketOfficeAccess": {
+      "html": "<p>Via ramp from car park</p>"
+     }
+    },
+    "slug": "sutton"
+   },
    "lift_platforms": [],
    "name": "Sutton",
    "step_free_platforms": [
@@ -1624,6 +3418,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Ramp from car park</p>"
+     },
+     "stationCode": "SXMBR",
+     "stationName": "Sixmilebridge",
+     "ticketOfficeAccess": {
+      "html": "<p>There is no ticket office</p>"
+     }
+    },
+    "slug": "sixmilebridge"
+   },
    "lift_platforms": [],
    "name": "Sixmilebridge",
    "step_free_platforms": []
@@ -1633,6 +3440,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level access via Georges Quay entrance",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Both platforms can be accessed by lifts, stairs or escalator<br>\nAccess to platforms from Townsend Street is by stairs only</p>"
+     },
+     "stationCode": "TARA",
+     "stationName": "Tara Street",
+     "ticketOfficeAccess": {
+      "html": "<p>Level access via Georges Quay entrance</p>"
+     }
+    },
+    "slug": "tara-street"
+   },
    "lift_platforms": [
     "*"
    ],
@@ -1644,6 +3464,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Lift to platform 1 and 2</p>"
+     },
+     "stationCode": "THRLS",
+     "stationName": "Thurles",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "thurles"
+   },
    "lift_platforms": [
     "1",
     "2"
@@ -1656,6 +3489,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level</p>"
+     },
+     "stationCode": "THTWN",
+     "stationName": "Thomastown",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "thomastown"
+   },
    "lift_platforms": [],
    "name": "Thomastown",
    "step_free_platforms": []
@@ -1665,6 +3511,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Steep ramp from car park",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Low step via wicket gate from car park</p>"
+     },
+     "stationCode": "TIPRY",
+     "stationName": "Tipperary",
+     "ticketOfficeAccess": {
+      "html": "<p>Steep ramp from car park</p>"
+     }
+    },
+    "slug": "tipperary"
+   },
    "lift_platforms": [],
    "name": "Tipperary",
    "step_free_platforms": []
@@ -1674,6 +3533,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Level to platform 1</li>\n  <li>By lift and footbridge to platform 2</li>\n</ul>"
+     },
+     "stationCode": "TMORE",
+     "stationName": "Tullamore",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "tullamore"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -1690,6 +3562,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Via ticket gate from car park to platform 1&nbsp;</li>\n  <li>Lift and footbridge to platform 2</li>\n</ul>"
+     },
+     "stationCode": "TPMOR",
+     "stationName": "Templemore",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "templemore"
+   },
    "lift_platforms": [
     "2"
    ],
@@ -1701,6 +3586,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level access via ramp</p>"
+     },
+     "stationCode": "TRLEE",
+     "stationName": "Tralee (Casement)",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "tralee-casement"
+   },
    "lift_platforms": [],
    "name": "Tralee (Casement)",
    "step_free_platforms": []
@@ -1710,6 +3608,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Ramp or stairs to northbound and southbound platforms.</p>"
+     },
+     "stationCode": "WBROK",
+     "stationName": "Woodbrook",
+     "ticketOfficeAccess": {
+      "html": "<p><br></p>"
+     }
+    },
+    "slug": "woodbrook"
+   },
    "lift_platforms": [],
    "name": "Woodbrook",
    "step_free_platforms": []
@@ -1719,6 +3630,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level</p>"
+     },
+     "stationCode": "WFORD",
+     "stationName": "Waterford (Plunkett)",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "waterford-plunkett"
+   },
    "lift_platforms": [],
    "name": "Waterford (Plunkett)",
    "step_free_platforms": []
@@ -1728,6 +3652,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": null,
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level</p>"
+     },
+     "stationCode": "WLAWN",
+     "stationName": "Woodlawn",
+     "ticketOfficeAccess": {
+      "html": "<p>No Ticket Office</p>"
+     }
+    },
+    "slug": "woodlawn"
+   },
    "lift_platforms": [],
    "name": "Woodlawn",
    "step_free_platforms": []
@@ -1737,6 +3674,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<ul>\n  <li>Level to platform one</li>\n  <li>Footbridge to platform two</li>\n</ul>"
+     },
+     "stationCode": "WLOW",
+     "stationName": "Wicklow",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "wicklow"
+   },
    "lift_platforms": [],
    "name": "Wicklow",
    "step_free_platforms": []
@@ -1746,6 +3696,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level</p>"
+     },
+     "stationCode": "WPORT",
+     "stationName": "Westport",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "westport"
+   },
    "lift_platforms": [],
    "name": "Westport",
    "step_free_platforms": []
@@ -1755,6 +3718,19 @@
    "denies_lift": false,
    "entrance_lift_sentence": null,
    "entrance_step_free": "Level",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Level</p>"
+     },
+     "stationCode": "WXFRD",
+     "stationName": "Wexford (O Hanrahan)",
+     "ticketOfficeAccess": {
+      "html": "<p>Level</p>"
+     }
+    },
+    "slug": "wexford-o-hanrahan"
+   },
    "lift_platforms": [],
    "name": "Wexford (O Hanrahan)",
    "step_free_platforms": []
@@ -1771,6 +3747,17 @@
    ],
    "state": "lost",
    "text": "Lifts at platforms 1 and 2 are currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "ATHY",
+   "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed. Platform 1 needed no lift, so it kept step-free access: \"Level to platform 1\".",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "The lift both platforms are currently out of service. Iarnród Éireann apologise for the inconvenience caused."
   },
   {
    "code": "BBRHY",
@@ -1844,6 +3831,17 @@
    ],
    "state": "lost",
    "text": "Lifts at platform 2 is currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "CTARF",
+   "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "The lift on platform 2 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
   },
   {
    "code": "DCKLS",
@@ -1945,6 +3943,17 @@
    "text": "The lift to Platform 2 and 3 is currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
   },
   {
+   "code": "KILNY",
+   "detail": "Irish Rail's page for Killiney does not mention a lift, so which platforms this one serves is not recorded.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "unknown",
+   "text": "The lift on platform 2 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
    "code": "KKNNY",
    "detail": "Irish Rail's page for Kilkenny (MacDonagh) does not mention a lift, so which platforms this one serves is not recorded.",
    "kind": "lift",
@@ -1988,6 +3997,17 @@
    "text": "The lifts at Malahide Station are currently out of service. Iarnród Éireann Irish Rail apologises for the inconvenience caused."
   },
   {
+   "code": "MONVN",
+   "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed. Platform 1 needed no lift, so it kept step-free access: \"Level to platform 1 (Northbound)\".",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "Lift on platform is 1 currently out of service. Iarnród Éireann apologise for any inconvenience caused."
+  },
+  {
    "code": "PERSE",
    "detail": "An escalator is moving stairs, so it was not a step-free route to begin with and its being out did not remove one. Anyone who finds a flight of stairs hard, or has a buggy, a suitcase or a stick, did lose a way up. Irish Rail's page puts a lift on the way to platform 2 as well: \"Lift or stairs to platform 2 (southbound)\".",
    "kind": "escalator",
@@ -2008,6 +4028,28 @@
    ],
    "state": "lost",
    "text": "The lift at platform 2 is temporarily unavailable due to planned works. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "PMNCK",
+   "detail": "Irish Rail's page for Portmarnock does not mention a lift, so which platforms this one serves is not recorded.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "unknown",
+   "text": "The lift on platform 2 is currently out of service. Iarnród Éireann Irish Rail apologies for the inconvenience caused.."
+  },
+  {
+   "code": "PMNCK",
+   "detail": "Irish Rail's page for Portmarnock does not mention a lift, so which platforms this one serves is not recorded.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "unknown",
+   "text": "The lift on platform 2 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
   },
   {
    "code": "PTLSE",
@@ -2033,6 +4075,17 @@
   },
   {
    "code": "RLUSK",
+   "detail": "Platform 1 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1"
+   ],
+   "state": "lost",
+   "text": "The lift on platform 1 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "RLUSK",
    "detail": "The notice names platform 2, which Irish Rail's page for Rush and Lusk does not list a lift at.",
    "kind": "lift",
    "leg": "platform",
@@ -2040,6 +4093,28 @@
     "2"
    ],
    "state": "unknown",
+   "text": "The lift on platform 2 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "SEAPT",
+   "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "The lift on platform 2 is currently out of order. Iarnród Éireann Irish Rail apologise for any inconvenience caused"
+  },
+  {
+   "code": "SEAPT",
+   "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
    "text": "The lift on platform 2 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
   },
   {

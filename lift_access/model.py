@@ -140,6 +140,12 @@ class Station(NamedTuple):
     lift_platforms: frozenset  # platforms the prose puts a lift at; may be {ALL_PLATFORMS}
     claims_lift: bool
     denies_lift: bool  # Dromod is the only station that says so outright
+    # The fragments the three fields above were read out of. Kept because the
+    # derived form is the disposable one: tests/fixtures/access-golden.json pins
+    # these and replays them, so `plain` and `read_platform_access` are inside
+    # what it guards rather than upstream of it.
+    platform_access_html: str = ""
+    ticket_office_access_html: str = ""
 
 
 class Verdict(NamedTuple):
@@ -237,6 +243,8 @@ def station_from_node(node, slug):
         lift_platforms=lift_platforms,
         claims_lift=claims,
         denies_lift=denies,
+        platform_access_html=fragment,
+        ticket_office_access_html=entry,
     )
 
 

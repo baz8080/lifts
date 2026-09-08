@@ -141,10 +141,6 @@ class TestRealCorpus(unittest.TestCase):
         )
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 @unittest.skipUnless(DB_PATH and DB_PATH.exists() and SNAPSHOT_PATH, "a station snapshot")
 class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
     """Every verdict the site would publish today, checked against the snapshot.
@@ -321,20 +317,6 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
                     else:
                         self.assertNotIn("overlapped this one", detail, code)
 
-    def test_the_golden_file_is_what_the_derivation_says_today(self):
-        # Why a tracked file and not an assertion: lift_access/golden.py.
-        stored = json.loads(golden.PATH.read_text(encoding="utf-8"))
-        current = golden.build(self.facts, golden.notices(DB_PATH))
-        changes = golden.differences(stored, current)
-        self.assertEqual(
-            changes,
-            [],
-            "the derivation no longer matches tests/fixtures/access-golden.json. If the "
-            "change is intended (a code change, or a refreshed snapshot), regenerate with "
-            "`python -m lift_access --data-dir <data-dir> golden`, read the diff, and commit "
-            "it with the change:\n  " + "\n  ".join(changes),
-        )
-
     def test_the_verdict_reaches_the_shard(self):
         months = model.month_list(model.COLLECTION_START, max(self.now, self.until))
         for o in self.outages[:5]:
@@ -451,6 +433,27 @@ class TestTheSurveyOnTheRealCorpus(unittest.TestCase):
             for quote in re.findall(r'"([^"]+)"', detail):
                 self.assertIn(" ".join(quote.split()), quotes, code)
 
+    def _graph_document(self):
+        return golden.build_graph(self.facts, self.survey, self.notices, survey.digest(DATA_DIR))
+
+    def _logged_codes(self):
+        # Off the directory rather than `survey.load`, which is what these two
+        # are checking: comparing a build against the loader that fed it would
+        # hold however badly the loader broke.
+        return {path.stem for path in SURVEY_PATH.glob("*.jsonl")}
+
+    def test_every_station_with_a_log_reaches_the_graph_file(self):
+        # `differences` compares what both documents describe, so a station the
+        # build drops is not a difference there. The pilot test catches it only
+        # while the surveyed set is the pilot set, which ends at the sixth.
+        self.assertEqual(set(self._graph_document()["stations"]), self._logged_codes())
+
+    def test_every_notice_at_a_logged_station_reaches_the_graph_file(self):
+        keys = {(v["code"], v["kind"], v["text"]) for v in self._graph_document()["verdicts"]}
+        logged = self._logged_codes()
+        self.assertEqual(keys, {(code, kind, text) for code, kind, _, text in self.notices
+                                if code in logged})
+
     def test_the_graph_golden_file_is_what_the_survey_says_today(self):
         stored = json.loads(golden.GRAPH_PATH.read_text(encoding="utf-8"))
         current = golden.build_graph(self.facts, self.survey, self.notices,
@@ -464,3 +467,7 @@ class TestTheSurveyOnTheRealCorpus(unittest.TestCase):
             "`python -m lift_access --data-dir <data-dir> golden`, read the diff, and commit "
             "it with the change:\n  " + "\n  ".join(changes),
         )
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,9 +1,14 @@
-"""The golden file's difference reporter, on documents small enough to read.
+"""The golden files, and the difference reporter, on documents small enough to read.
 
-The real-corpus test compares an in-memory `build` against the parsed file, so
-what counts as a difference is decided here and nowhere else: a notice the file
-has never seen must pass (the corpus gains one every few days), and everything
-the file does hold must fail the moment it moves.
+`TheGoldenFilesReplayWhatTheyPinned` is the guard itself: it replays the pinned
+inputs through today's code and fails on anything that moved. It lives here and
+not in `test_site_real.py` because it needs no `lifts-data` checkout, which is
+the point - the version that read the live corpus was skipped on a bare clone and
+red on everyone else's schedule.
+
+The rest is what counts as a difference, decided here and nowhere else: what a
+document holds and the other does not is corpus size and must pass, and
+everything both describe must fail the moment it moves.
 """
 
 from __future__ import annotations
@@ -55,10 +60,11 @@ class TheDifferenceReporter(unittest.TestCase):
         self.assertEqual([v["code"] for v in golden.new_notices(self.stored, self.current)],
                          ["ATHY"])
 
-    def test_a_notice_that_vanished_is_one_line(self):
+    def test_a_notice_the_corpus_no_longer_carries_is_not_a_difference(self):
+        # Irish Rail rewords a live banner in place and `messages.text_raw` is
+        # overwritten, so a pinned body going missing says nothing about the code.
         self.current["verdicts"] = [v for v in self.current["verdicts"] if v["code"] != "PERSE"]
-        self.assertEqual(golden.differences(self.stored, self.current),
-                         ["notice PERSE lift: dropped"])
+        self.assertEqual(golden.differences(self.stored, self.current), [])
 
     def test_a_moved_state_and_a_moved_detail_are_one_line_each(self):
         self.verdict("PERSE")["state"] = "unknown"
@@ -74,10 +80,11 @@ class TheDifferenceReporter(unittest.TestCase):
         self.assertEqual(len(lines), 1)
         self.assertTrue(lines[0].startswith("station CNLLY: step_free_platforms:"))
 
-    def test_a_renamed_snapshot_is_a_difference_on_its_own(self):
+    def test_a_renamed_snapshot_is_not_a_difference(self):
+        # It is provenance. The pinned prose is what the verdicts are derived
+        # from, so a monthly refresh moves this name and nothing else.
         self.current["snapshot"] = "irishrail-20261001.jsonl"
-        self.assertEqual(golden.differences(self.stored, self.current),
-                         ["snapshot: None -> irishrail-20261001.jsonl"])
+        self.assertEqual(golden.differences(self.stored, self.current), [])
 
     def test_a_field_a_verdict_grew_or_lost_is_reported_like_a_station_field(self):
         self.verdict("PERSE")["quoted"] = "Lift or stairs to platform 2"
@@ -87,10 +94,9 @@ class TheDifferenceReporter(unittest.TestCase):
             "notice PERSE lift: quoted: None -> 'Lift or stairs to platform 2'",
         ])
 
-    def test_a_dropped_station_is_one_line(self):
+    def test_a_station_only_one_document_has_is_not_a_difference(self):
         del self.current["stations"]["PERSE"]
-        self.assertEqual(golden.differences(self.stored, self.current),
-                         ["station PERSE: dropped"])
+        self.assertEqual(golden.differences(self.stored, self.current), [])
 
 
 class TheDocumentSurvivesTheFile(unittest.TestCase):
@@ -116,6 +122,36 @@ class TheDocumentSurvivesTheFile(unittest.TestCase):
         self.assertEqual(built["stations"]["CNLLY"]["lift_platforms"], ["6", "7"])
         pearse = next(v for v in built["verdicts"] if v["code"] == "PERSE")
         self.assertEqual((pearse["state"], pearse["platforms"]), ("lost", ["2"]))
+
+
+class TheGoldenFilesReplayWhatTheyPinned(unittest.TestCase):
+    """The guard. Every input it needs is in the file, so it never skips."""
+
+    def replay(self, path):
+        stored = json.loads(path.read_text(encoding="utf-8"))
+        return stored, golden.build(golden.pinned_facts(stored), golden.pinned_notices(stored))
+
+    def test_the_access_golden_file_is_what_the_derivation_says_today(self):
+        stored, current = self.replay(golden.PATH)
+        self.assertEqual(
+            golden.differences(stored, current),
+            [],
+            f"the derivation no longer matches {golden.PATH.name}. If the change is "
+            "intended, regenerate with `python -m lift_access --data-dir <data-dir> "
+            "golden`, read the diff, and commit it with the change:\n  "
+            + "\n  ".join(golden.differences(stored, current)),
+        )
+
+    def test_every_pinned_station_replays_into_a_station(self):
+        # A pinned input that read back as nothing would drop its station, and
+        # `differences` compares what both documents have, so it would pass.
+        stored = json.loads(golden.PATH.read_text(encoding="utf-8"))
+        self.assertEqual(len(golden.pinned_facts(stored).stations), len(stored["stations"]))
+
+    def test_every_pinned_notice_replays_into_a_verdict(self):
+        stored = json.loads(golden.PATH.read_text(encoding="utf-8"))
+        _, current = self.replay(golden.PATH)
+        self.assertEqual(len(current["verdicts"]), len(stored["verdicts"]))
 
 
 if __name__ == "__main__":

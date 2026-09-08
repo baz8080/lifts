@@ -555,22 +555,55 @@ comparison is now `tests/fixtures/access-golden.json` and a test, so a regex
 or a sentence that moves anything is a diff in the PR that moved it. Assume
 wording gaps remain: the corpus is 152 pages, 28 notices, three escalators.
 
-**The golden file's trade-off.** It lives here and not in `lifts-data`,
-because the regressions it guards are code changes and the regeneration must
-land in the same PR. So a refreshed snapshot merged in `lifts-data` turns this
-repository's CI red until someone regenerates the file and reads the diff. That
-is the monthly report made mandatory rather than advisory. Skipping on a
-snapshot mismatch was considered and rejected: the guard would be silently off
-from the first refresh nobody regenerated after.
+**The golden file pins its inputs (2026-09-08).** It lives here and not in
+`lifts-data`, because the regressions it guards are code changes and the
+regeneration must land in the same PR. For its first two weeks it pinned only
+the outputs and re-derived them from whatever `lifts-data` happened to hold, and
+that made it fail on two other repositories' schedules rather than on any change
+to this one.
 
-A new notice on the feed is the one thing the test lets through. The first
-version failed on any notice the file had not seen, and the corpus gained 21
-distinct texts in 26 days with CI reading `lifts-data` at its head, so every
-PR here would have gone red within days for nothing it did. A notice is pinned
-at the next regeneration; until then it is covered by the real-corpus checks
+The first version failed on any notice the file had not seen. The corpus gained
+21 distinct texts in 26 days with CI reading `lifts-data` at its head, so every
+PR here would have gone red within days for nothing it did, and new notices were
+let through. That left the reverse case, which was thought safe on the grounds
+that the logs are append-only so a notice could only vanish from a bad checkout.
+The logs are append-only. `messages` is not: identity is head plus locationCodes
+plus start and excludes the body, so Irish Rail rewording a live banner keeps the
+key and `store.py` overwrites `text_raw` in place. A verdict is keyed on the
+body, so a reword drops one pinned key and adds another. That reddened `main`
+three times in five days, on a statusui bump, a Midleton reword, and Rush and
+Lusk flipping from platform 2 to platform 1 overnight. Each was answered with a
+regeneration, which buys a few days.
+
+So the file now carries the payload node each station was read from and the body
+of each notice, and the test replays them through today's code. 23 KB of
+fragments across the 152 stations, and the file went from 53 KB to 115 KB.
+Three things follow.
+
+*The snapshot name is provenance, not a comparison.* Failing on a refreshed
+snapshot was the monthly report made mandatory rather than advisory, and
+skipping on a mismatch was rejected because the guard would then be silently off
+from the first refresh nobody regenerated after. Both readings were of a false
+choice. What the file guards is code, and a refreshed snapshot is not a code
+change, so failing on one buried the signal it exists to carry and taught
+everyone to regenerate without reading the diff. The monthly review stays where
+it already was: `stations.yml` opens a PR against `lifts-data` with the report
+attached and a body saying to read it.
+
+*The guard stopped skipping.* Pinned inputs need no database and no snapshot, so
+the test moved to `tests/test_access_golden.py` and runs on a bare clone. The
+version that worried about being silently off was itself silently off for anyone
+without a `lifts-data` checkout, which is every first clone.
+
+*Regeneration is additive.* `golden` builds over the union of what is pinned and
+what the corpus holds, so a wording Irish Rail has withdrawn stays as a test
+vector. Both Rush and Lusk bodies are in the file for that reason. What the file
+does not have is not a difference, in either direction: that is corpus size, and
+`new_notices` reports it to whoever is regenerating.
+
+Between regenerations a new notice is still covered by the real-corpus checks
 that need no file (every quote on the page, no forbidden word, lost only where
-the page puts a lift). A notice that vanishes from the database still fails,
-because the logs are append-only and that can only mean a bad checkout.
+the page puts a lift), and a reworded station page by that monthly report.
 
 **What would raise reliability.** Ground truth, which no amount of parsing
 supplies: a dozen verdicts checked at the station, or against any source Irish
