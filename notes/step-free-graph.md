@@ -287,6 +287,14 @@ the observation lines here too is the obvious next step and was not taken yet:
 `lifts-data` carries no `survey/` on main, so the fixture cannot be regenerated
 in the shape that would need.
 
+Because it does replay live observations, a station the build drops is not a
+difference either, and there the drop can be a code fault rather than a corpus
+event. So two tests count the built document against the `survey/` directory
+listing, off the filesystem rather than off `survey.load`: a build compared with
+the loader that fed it holds however badly the loader breaks. `test_the_pilot_
+stations_are_surveyed` covers the same ground today only because the surveyed set
+is the pilot set, which ends at the sixth station.
+
 ## Rejected
 
 - **A hand-maintained `stations.json`.** Still the failure mode; the log is
