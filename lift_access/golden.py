@@ -143,3 +143,58 @@ def new_notices(stored, current):
 
 def dumps(document):
     return json.dumps(document, indent=1, sort_keys=True, ensure_ascii=False) + "\n"
+
+
+GRAPH_PATH = PATH.with_name("graph-golden.json")
+
+
+def build_graph(facts, survey_data, notices, fingerprint):
+    """What the survey-derived graphs say, for the surveyed stations and their notices.
+
+    Its own file, keyed on the survey files' fingerprint and not on the station
+    snapshot: a survey append must not fail the station golden, a refreshed
+    snapshot must not fail this one by name alone (a page quote that expired
+    with it still fails it, on the fact that went), and the station golden must
+    not move when a survey line lands. Same document shape as `build`, so
+    `differences`, `new_notices` and `dumps` apply unchanged.
+    """
+    from . import graph as graph_module
+
+    stations, verdicts = {}, []
+    graphs = {}
+    for code in sorted(survey_data.observations):
+        station = facts.station(code) if facts else None
+        observations = survey_data.observations[code]
+        graph, problems = graph_module.replay(observations, station)
+        graphs[code] = graph
+        reached = graph_module.step_free_platforms(graph)
+        stations[code] = {
+            "name": station.name if station else None,
+            "observations": len(observations),
+            "complete": graph.complete,
+            "problems": problems,
+            "contradictions": graph_module.contradictions(graph, station),
+            "step_free_platforms": {
+                label: graph_module.describe_route(graph, route) for label, route in reached.items()
+            },
+            "lift_platforms": list(graph_module.lift_platforms(graph)),
+            "never": [label for label in graph.platforms() if label not in reached],
+        }
+    for code, kind, text in sorted({(code, kind, text) for code, kind, _, text in notices}):
+        if code not in graphs:
+            continue
+        result = graph_module.verdict(graphs[code], kind, text)
+        verdicts.append({
+            "code": code,
+            "kind": kind,
+            "text": text,
+            "state": result.state,
+            "leg": result.leg,
+            "platforms": list(result.platforms),
+            "detail": result.detail,
+        })
+    return {
+        "snapshot": f"survey@{fingerprint}",
+        "stations": stations,
+        "verdicts": verdicts,
+    }

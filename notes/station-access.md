@@ -575,7 +575,9 @@ because the logs are append-only and that can only mean a bad checkout.
 **What would raise reliability.** Ground truth, which no amount of parsing
 supplies: a dozen verdicts checked at the station, or against any source Irish
 Rail publishes beyond the page. Until then the site should keep saying, wherever
-it says anything derived, that it is a careful reading and not a survey.
+it says anything derived, that it is a careful reading and not a survey. How a
+survey is recorded, and what the graph built from it may and may not say, is
+[`step-free-graph.md`](step-free-graph.md) (2026-09-04).
 
 ## The sources, and the ones that are closed
 
