@@ -122,6 +122,21 @@ A reissued notice that appears at the very poll the old one vanished is one
 outage with the reissue noted; a notice that comes back a poll or more later
 is a separate outage, because the gap is what the site is measuring.
 
+Beside the pages, the build writes three things a reader can take away. A row
+with a notice up at the horizon carries a "Lift out" or "Escalator out" tag, and
+the station header does too. `feed.xml` is an Atom feed of the most recent
+outages and `s/<station>.xml` one per station, each entry a case on the station
+page, dated to when the notice went up and moved to when it came down so a feed
+reader shows it twice. `outages.csv` is every outage the site shows, one row
+each, with the listing instants in UTC and Irish Rail's own dates as written.
+None of it is in the initial load; the build lists them as on demand.
+
+The build also prints two warnings the page cannot show: any notice whose text
+mentions a lift or escalator but whose head the classifier does not match, and
+any day the collector reached the feed fewer than 40 times. The first is the
+site's one silent failure mode, a reworded head, and `tests/test_site_real.py`
+fails on it too.
+
 `notes/site.md` has the decisions and the numbers behind them.
 `.github/workflows/pages.yml` rebuilds the database from
 [`lifts-data`](https://github.com/baz8080/lifts-data) and publishes the site. It
@@ -131,6 +146,15 @@ That last one is a workflow in `lifts-data` calling this workflow's
 `workflow_dispatch`, and it needs a fine-grained token with **Actions: write** on
 this repository stored there as the secret `SITE_BUILD_TOKEN`. Without it the
 dispatch fails visibly on each push and the site falls back to the cron.
+
+The station facts the access verdicts are read from are refreshed monthly by
+`.github/workflows/stations.yml`, which opens a pull request against
+`lifts-data` with the new snapshot and attaches the verdict report. It writes to
+that other repository, so it needs a fine-grained token with **Contents: write**
+and **Pull requests: write** on `lifts-data`, stored here as the secret
+`LIFTS_DATA_TOKEN`; without it the run fails at the checkout step. Merging the
+PR fails the golden test here until the diff has been read and `lift_access
+golden` rerun, which is the intended order.
 
 Pages needs enabling once, under **Settings → Pages → source "GitHub Actions"**.
 GitHub disables the cron after 60 days without a commit to *this* repository -

@@ -1,5 +1,8 @@
 /* This site's own rules, inlined after statusui's base.css. */
 :root { --row-cols: 170px 1fr 220px 10px; --stats-cols: 120px auto; }
+/* room for a name and its "Lift out" pill side by side. Not below 780px:
+   the fixed columns and a 31-day bar at its 3px-a-cell floor stop fitting. */
+@media (min-width: 780px) { :root { --row-cols: 230px 1fr 220px 10px; } }
 
 .cname a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -72,6 +75,13 @@
 .card.access ul { margin: 0; padding-left: 18px; }
 .card.access li { font-size: 13.5px; margin: 3px 0; }
 .card.access .src { color: var(--muted); font-size: 12px; margin-top: 8px; }
+
+/* the same pill as a case's "Out of service" tag, beside a name instead. */
+.nowtag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; flex: none; white-space: nowrap; }
+/* flush with the right edge of the name column, so the pills line up down the list
+   whether they sit beside the name or, where the two will not fit, under it */
+.row .cname:has(.nowtag) { flex-wrap: wrap; row-gap: 4px; }
+.row .cname .nowtag { margin-left: auto; }
 
 .sfchip {
   font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; flex: none;

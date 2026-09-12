@@ -10,6 +10,8 @@ caught against data that has every wrinkle the synthetic tests do not.
 from __future__ import annotations
 
 import calendar
+import csv
+import io
 import json
 import os
 import re
@@ -18,8 +20,9 @@ import tempfile
 import unittest
 from datetime import UTC, datetime
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
-from lift_access import fetch, golden, snapshot
+from lift_access import fetch, golden, graph, snapshot, survey
 from lift_access import model as access_model
 from lift_site import model, render
 from lift_status.store import DB_FILENAME
@@ -110,9 +113,32 @@ class TestRealCorpus(unittest.TestCase):
         total, _ = render.size_report(self.site)
         self.assertLess(total, render.BUDGET_BYTES)
 
+    def test_no_notice_about_a_lift_or_escalator_is_missed_by_the_classifier(self):
+        # A reworded head would drop its notices from the site with nothing
+        # failing. A hit here is a notice to read, not a test to loosen: either
+        # widen model.KIND_PATTERNS or add the head to the ignore list below.
+        ignored = set()
+        missed = [
+            (head, text) for head, text in model.unclassified_mentions(DB_PATH)
+            if head not in ignored
+        ]
+        self.assertEqual(missed, [])
 
-if __name__ == "__main__":
-    unittest.main()
+    def test_the_feeds_and_the_csv_carry_what_the_site_carries(self):
+        ns = {"a": "http://www.w3.org/2005/Atom"}
+        national = ET.parse(self.site / "feed.xml").getroot().findall("a:entry", ns)
+        self.assertEqual(len(national), min(len(self.outages), render.FEED_ENTRIES))
+        per_station = 0
+        for code in self.data["stations"]:
+            feed = ET.parse(self.site / "s" / f"{self.data['slugs'][code]}.xml").getroot()
+            per_station += len(feed.findall("a:entry", ns))
+        self.assertEqual(per_station, len(self.outages))
+        text = (self.site / "outages.csv").read_text(encoding="utf-8")
+        rows = list(csv.DictReader(io.StringIO(text)))
+        self.assertEqual(len(rows), len(self.outages))
+        self.assertEqual(
+            sum(1 for r in rows if r["ongoing"] == "1"), sum(o.ongoing for o in self.outages)
+        )
 
 
 @unittest.skipUnless(DB_PATH and DB_PATH.exists() and SNAPSHOT_PATH, "a station snapshot")
@@ -291,20 +317,6 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
                     else:
                         self.assertNotIn("overlapped this one", detail, code)
 
-    def test_the_golden_file_is_what_the_derivation_says_today(self):
-        # Why a tracked file and not an assertion: lift_access/golden.py.
-        stored = json.loads(golden.PATH.read_text(encoding="utf-8"))
-        current = golden.build(self.facts, golden.notices(DB_PATH))
-        changes = golden.differences(stored, current)
-        self.assertEqual(
-            changes,
-            [],
-            "the derivation no longer matches tests/fixtures/access-golden.json. If the "
-            "change is intended (a code change, or a refreshed snapshot), regenerate with "
-            "`python -m lift_access --data-dir <data-dir> golden`, read the diff, and commit "
-            "it with the change:\n  " + "\n  ".join(changes),
-        )
-
     def test_the_verdict_reaches_the_shard(self):
         months = model.month_list(model.COLLECTION_START, max(self.now, self.until))
         for o in self.outages[:5]:
@@ -312,3 +324,150 @@ class TestAccessVerdictsOnTheRealCorpus(unittest.TestCase):
             records = [r for rows in by_month.values() for r in rows]
             self.assertTrue(records, o.head)
             self.assertIsNotNone(records[0][13], o.head)
+
+
+SURVEY_PATH = Path(DATA_DIR) / survey.SURVEY_DIR if DATA_DIR else None
+PILOT = ("HZLCH", "PERSE", "CNLLY", "ATHY", "CNOCK")
+
+
+@unittest.skipUnless(
+    DB_PATH and DB_PATH.exists() and SNAPSHOT_PATH and SURVEY_PATH and SURVEY_PATH.is_dir(),
+    "a station snapshot and a survey directory",
+)
+class TestTheSurveyOnTheRealCorpus(unittest.TestCase):
+    """The observation log in lifts-data, replayed, against the snapshot and the notices.
+
+    Same one-directional rule as the class above, from the other side: the
+    graph may say "lost" where the prose says "alternative", and "unknown"
+    anywhere, but it may say "another step-free way" only where the prose
+    already does or a person has confirmed the route. See
+    notes/step-free-graph.md.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.facts = snapshot.load(DATA_DIR)
+        cls.survey = survey.load(DATA_DIR)
+        cls.notices = golden.notices(DB_PATH)
+        cls.graphs = {
+            code: graph.replay(observations, cls.facts.station(code))
+            for code, observations in cls.survey.observations.items()
+        }
+
+    def test_every_file_validates_and_replays(self):
+        self.assertEqual(self.survey.problems, [])
+        for code, (_, problems) in self.graphs.items():
+            self.assertEqual(problems, [], code)
+
+    def test_every_surveyed_station_is_in_the_snapshot(self):
+        for code in self.survey.observations:
+            self.assertIn(code, self.facts.stations)
+
+    def test_the_pilot_stations_are_surveyed(self):
+        for code in PILOT:
+            self.assertIn(code, self.survey.observations)
+
+    def test_every_page_quote_is_still_on_the_page(self):
+        # The `test_every_reviewed_alternative_still_matches_the_live_page` rule,
+        # for every seeded line: a reworded page turns this red until somebody
+        # reads the diff, which is what a page-sourced fact is for.
+        for code, observations in self.survey.observations.items():
+            station = self.facts.station(code)
+            for o in observations:
+                if o.source.get("kind") != "irishrail-page":
+                    continue
+                field = o.source["field"]
+                prose = station.platform_access if field == "platformAccess" \
+                    else station.ticket_office_access
+                quote = " ".join(o.source["quote"].split())
+                if quote:
+                    self.assertIn(quote, " ".join(prose.split()), f"{code} line {o.line}")
+                else:
+                    self.assertEqual(access_model._sentences(prose), [], f"{code} line {o.line}")
+
+    def test_a_seeded_station_reads_the_page_the_way_the_prose_does(self):
+        for code, (g, _) in self.graphs.items():
+            station = self.facts.station(code)
+            self.assertEqual(
+                set(graph.lift_platforms(g)),
+                set(station.lift_platforms) - {access_model.ALL_PLATFORMS},
+                code,
+            )
+            if g.complete:
+                page = {label for label, _ in access_model.step_free_platforms(station)}
+                self.assertTrue(page <= set(graph.step_free_platforms(g)), code)
+
+    def test_the_graph_never_says_more_than_the_prose_unless_a_person_did(self):
+        human = {"survey", "irishrail-support", "foi", "photo"}
+        for code, kind, _, text in self.notices:
+            if code not in self.graphs:
+                continue
+            g, _ = self.graphs[code]
+            ours = graph.verdict(g, kind, text)
+            theirs = self.facts.verdict(code, kind, text)
+            if ours.state == "alternative":
+                confirmed = any(
+                    e.source.get("kind") in human for e in g.edges.values()
+                    if e.confidence in graph.CONFIRMED
+                )
+                self.assertTrue(theirs.state == "alternative" or confirmed, (code, ours.detail))
+            if ours.state == "lost" and theirs.state == "lost":
+                self.assertTrue(set(theirs.platforms) <= set(ours.platforms) or
+                                set(ours.platforms) <= set(theirs.platforms), (code, ours.detail))
+
+    def test_no_graph_verdict_says_a_lift_remained(self):
+        for code, kind, _, text in self.notices:
+            if code not in self.graphs:
+                continue
+            detail = graph.verdict(self.graphs[code][0], kind, text).detail.lower()
+            for phrase in ("still had", "remains", "was working", "available", "unaffected"):
+                self.assertNotIn(phrase, detail, code)
+
+    def test_every_quote_in_a_graph_verdict_is_an_observation_quote(self):
+        for code, kind, _, text in self.notices:
+            if code not in self.graphs:
+                continue
+            quotes = {" ".join(str(o.source.get("quote", "")).split())
+                      for o in self.survey.observations[code]}
+            detail = graph.verdict(self.graphs[code][0], kind, text).detail
+            for quote in re.findall(r'"([^"]+)"', detail):
+                self.assertIn(" ".join(quote.split()), quotes, code)
+
+    def _graph_document(self):
+        return golden.build_graph(self.facts, self.survey, self.notices, survey.digest(DATA_DIR))
+
+    def _logged_codes(self):
+        # Off the directory rather than `survey.load`, which is what these two
+        # are checking: comparing a build against the loader that fed it would
+        # hold however badly the loader broke.
+        return {path.stem for path in SURVEY_PATH.glob("*.jsonl")}
+
+    def test_every_station_with_a_log_reaches_the_graph_file(self):
+        # `differences` compares what both documents describe, so a station the
+        # build drops is not a difference there. The pilot test catches it only
+        # while the surveyed set is the pilot set, which ends at the sixth.
+        self.assertEqual(set(self._graph_document()["stations"]), self._logged_codes())
+
+    def test_every_notice_at_a_logged_station_reaches_the_graph_file(self):
+        keys = {(v["code"], v["kind"], v["text"]) for v in self._graph_document()["verdicts"]}
+        logged = self._logged_codes()
+        self.assertEqual(keys, {(code, kind, text) for code, kind, _, text in self.notices
+                                if code in logged})
+
+    def test_the_graph_golden_file_is_what_the_survey_says_today(self):
+        stored = json.loads(golden.GRAPH_PATH.read_text(encoding="utf-8"))
+        current = golden.build_graph(self.facts, self.survey, self.notices,
+                                     survey.digest(DATA_DIR))
+        changes = golden.differences(stored, current)
+        self.assertEqual(
+            changes,
+            [],
+            "the survey no longer matches tests/fixtures/graph-golden.json. If the change is "
+            "intended (a code change, or a line appended to the log), regenerate with "
+            "`python -m lift_access --data-dir <data-dir> golden`, read the diff, and commit "
+            "it with the change:\n  " + "\n  ".join(changes),
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

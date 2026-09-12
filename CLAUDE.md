@@ -15,9 +15,15 @@ uv run python -m lift_status --data-dir <dir> poll      # one collection pass
 uv run python -m lift_status --data-dir <dir> rebuild   # replay JSONL into lift_status.db
 uv run python -m lift_status --data-dir <dir> stats
 uv run python -m lift_site --data-dir <dir>             # build out/site/
-uv run python -m lift_access --data-dir <dir> refresh   # station facts (monthly, not on the Pi)
+uv run python -m lift_access --data-dir <dir> refresh   # station facts (monthly; .github/workflows/stations.yml does it)
 uv run python -m lift_access --data-dir <dir> report    # every verdict beside its source prose
-uv run python -m lift_access --data-dir <dir> golden    # regenerate tests/fixtures/access-golden.json
+uv run python -m lift_access --data-dir <dir> golden    # regenerate tests/fixtures/access-golden.json (and graph-golden.json)
+uv run python -m lift_access --data-dir <dir> questionnaire [CODE...]  # the step-free access form, prefilled
+uv run python -m lift_access --data-dir <dir> seed CODE --write        # draft survey/<CODE>.jsonl from the page
+uv run python -m lift_access --data-dir <dir> validate                 # check the observation log and its graphs
+uv run python -m lift_access --data-dir <dir> graph-report             # graph verdicts beside prose verdicts
+uv run python -m lift_access --data-dir <dir> prose CODE               # a surveyed station as Irish Rail could publish it
+uv run python -m lift_access --data-dir <dir> gtfs --out DIR           # every surveyed station as GTFS pathways
 uv run --group dev ruff check
 uv run python -m unittest discover -s tests -t .
 ```
@@ -104,8 +110,15 @@ merged with `sort -u`.
   the stations listed in the month and the page says so; a wider denominator
   would be invented.
 - **Every lift notice names one location code**; `eventStops[0].sStop` is the
-  full station name. 131 delay notices had empty `locationCodes` and sit in
-  `unidentifiable_items` - irrelevant to the site.
+  full station name. Delay notices frequently do not, which is the bullet below
+  and irrelevant to this site.
+- **`locationCodes` empties part-way through a notice's life**, and an item
+  without it goes to `unidentifiable_items` rather than being tracked. Counting
+  notices as `head` + `text` + `start`: 288 of the 497 non-lift ones lose the
+  field before they leave the feed and 21 never carry it, so those 288 are
+  tracked and then closed early. **No lift or escalator notice has ever done
+  it**, which is why nothing here noticed, and it is what fills a table this
+  repository otherwise never reads. `notes/delays-site.md`.
 - **`platformAccess` prose is a description, not a route graph, and its "and"
   is a sequence.** Irish Rail's station pages say how each platform is reached.
   "All platforms can be accessed via lifts and ramps" means you need both, not
@@ -156,7 +169,12 @@ merged with `sort -u`.
 | OpenStreetMap was carried as a second opinion and removed: it changed no verdict, its one signal was redundant, and it has no `level` tags outside the Dublin termini | `notes/station-access.md` § OpenStreetMap |
 | GTFS, GTFS-R, the NTA developer API, NaPTAN, PTIMS and OSM all carry no station accessibility data, and the GTFS fields Google and Apple read for accessible routing are absent too. Scraping the prose is the last resort, not the lazy option | `notes/station-access.md` § Why scraping prose is the only option |
 | NeTEx and SIRI-FM are the formats that would carry this. Ireland publishes neither, and 2017/1926 only obliges publishing data that already exists. NeTEx appearing is the one thing worth watching for | `notes/station-access.md` § The regulation |
+| A station with a notice up at the horizon is tagged "Lift out" or "Escalator out" on its row and header, from a kind mask in the stats row; the feeds and the CSV sit beside the pages and off the initial load; a notice mentioning a lift that `classify` rejects fails the real-corpus test | `notes/site.md` § What a reader can take away |
 | The design layer is shared with uisce and esb via `../statusui`, a uv git dependency pinned in `uv.lock` - edit upstream, then `../statusui/rollout.sh` bumps all three sites. Vendored copies were tried first and drifted within a day. `lift_site/site.css` is this site's own | `notes/site.md` § The vendored copy became a pinned dependency; statusui's README |
+| Station access is labelled by hand into an append-only observation log, `lifts-data/survey/<CODE>.jsonl`, one line per fact with who, when and from what; a hand-maintained `stations.json` stays the failure mode. The graph replays the log, last line for a key wins, and says "another step-free way" only on a route every edge of which a person confirmed, so a page-seeded graph never says more than the prose. The site does not read it yet | `notes/step-free-graph.md` |
+| The Metro Nation Dublin rail map is not a source: undefined "step-free", already behind the network, nothing it says survives one survey answer | `notes/step-free-graph.md` § What was learned |
+| A delays site is a fourth repo, `baz8080/rail-delays`, reading `lifts-data`: not a second collector and not a poll target, because there is one endpoint, one response, and every delay notice is already logged. It carries its own decisions, and the collector here is not duplicated, extended or touched | `notes/delays-site.md` |
+| The access golden file pins the inputs it derives from, not just the outputs, so it guards code and nothing else. Corpus movement no longer fails it in either direction, a refreshed snapshot no longer fails it by name, and it runs without a `lifts-data` checkout instead of skipping. Reading `messages.text_raw` as if it were append-only reddened `main` three times in five days: the raw logs are append-only, the derived row is overwritten when Irish Rail rewords a live notice | `notes/station-access.md` § The golden file pins its inputs |
 
 Decisions go in `notes/`, dated, with the rejected alternatives and their
 numbers. Add a row here when one closes something off - this file carries
@@ -189,16 +207,25 @@ files; the prose outside the repo is on whoever is writing it.
 
 `tests/test_site_real.py` runs the pipeline against the real corpus: every
 lift/escalator notice appears on the site exactly once, the shards add up to
-the headline, the horizon is the last successful run. If it fails, something
+the headline, the horizon is the last successful run, and no notice whose text
+mentions a lift or escalator is one `classify` rejects. If it fails, something
 moved in the model or in the feed - find out which before adjusting the model
-to make it pass.
+to make it pass. A classifier miss is a notice to read: widen `KIND_PATTERNS`
+if it belongs on the site, add the head to the test's ignore set if it does not.
 
 `tests/fixtures/access-golden.json` is every level line, entrance sentence and
-verdict the access derivation produces across the 152 stations and every notice
-on record, and a real-corpus test asserts the regeneration matches. A change to a
-regex or a sentence that moves one fails it; regenerate with `golden`, read the
-diff, commit it with the change. A refreshed snapshot merged in `lifts-data`
-fails it too, on purpose, until the diff is read and the file regenerated here.
+verdict the access derivation produces, **beside the station prose and notice
+bodies it derived them from**. The test replays those pinned inputs through
+today's code, so it needs no data checkout and runs on a bare clone. A change to
+a regex or a sentence that moves a verdict fails it; regenerate with `golden`,
+read the diff, commit it with the change. Corpus movement does not fail it, in
+either direction: `golden` adds what the corpus has gained and never drops what
+is pinned, so a wording Irish Rail has withdrawn stays as a test vector.
+
+`tests/fixtures/graph-golden.json` does the same for the observation log in
+`lifts-data/survey/`: every surveyed station's step-free routes and the graph
+verdict for every notice there. It still replays live observations rather than
+pinned ones, so its test skips without a survey directory. `golden` writes both.
 
 The 500 KB initial-load budget is printed by every build and asserted by the
 render tests. It holds because individual outages live in per-station shards
