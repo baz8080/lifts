@@ -1,8 +1,8 @@
-# Outline - 12 posts plus intro and closing, chronological
+# Outline - 16 posts plus intro and a two-part closing, chronological
 
 Each entry: PRs and dates, thesis, concepts boxed, worked example, and the three-way contrast
-the chapter must state. The repo's history is small enough to read directly (182 commits, 36
-merged pull requests, four `notes/` files, no open issues), so there is no `sources/` extraction
+the chapter must state. The repo's history is small enough to read directly (204 commits, 42
+merged pull requests, six `notes/` files, two open issues), so there is no `sources/` extraction
 as the uisce series needed; `figures.md` is the registry.
 
 The series' standing mandate, on top of the shared rules: **every fork from the sibling sites
@@ -13,7 +13,9 @@ The shape of the series is the argument. Chapters 01 to 05 are the site anyone w
 collect, measure, publish, grade. Chapters 06 to 09 are what happened when the site tried to
 say what any of it *meant*, which is the part that was not foreseen and is the reason this
 series exists separately from the other two. Chapters 10 to 12 are the four days in early
-September when everything chapter 09 left open closed, in an order nobody predicted.
+September when everything chapter 09 left open closed, in an order nobody predicted. Chapters 13
+to 16 are the week after, in which the project stopped working around the missing data and
+started recording it, and two of the series' own settled decisions were reversed.
 
 ---
 
@@ -23,8 +25,8 @@ The question: which Irish Rail stations have lifts out, and for how long. The th
 family, built to a pattern that already worked twice. Then the turn, stated up front so the
 back-loading reads as design: what a lift outage *means* needs a station inventory, Ireland
 publishes none, and the only machine-readable statement of what a station has is a hand-typed
-CMS field. Today's answer with today's date. AI process named once (139 commits, 88 with a
-`Co-Authored-By` trailer: 61 Opus 5, 27 Fable 5).
+CMS field. Today's answer with today's date. AI process named once (204 commits, 135 with a
+`Co-Authored-By` trailer, across six Claude model identifiers).
 
 ## Ch 01 - A feed that is not about lifts · PR #1 · 8 to 18 Aug
 
@@ -208,10 +210,71 @@ Then the section that matters most: a dated, honest account of reliability by cl
 **Concepts.** Reading a claim against the right leg; what the code's own history says about the
 code. **Example.** Connolly's full verdict sentence. **Contrast.** None, and it says so.
 
-## Ch 13 - Closing
+## Ch 13 - What a reader can take away · PRs #49, #50 · 6 to 7 Sep
 
-What the site can say and what it cannot, in two lists. The three-way table in full, as the
-series' deliverable. The settled-decisions table in plain language. The moral, which is not
-either sibling's: *collect first, and publish no meaning you cannot source*, with a coda on why
-writing the rejected alternatives down is what made September's four days cheap. Glossary of all
-20 concept boxes.
+**Thesis.** A survey of the site asking one thing of each screen: what can a visitor do with
+this? Five answers were "nothing". A "Lift out" tag beside the name, built from a boolean the
+row was already carrying and throwing away; Atom feeds per network and per station; a CSV; a
+link back to the page a claim was quoted from. And two guards that are not for visitors at all:
+`unclassified_mentions` (a reworded head would drop its notices with nothing failing) and
+`thin_days` (a day with two polls paints like a day with 48). The tag's placement took a second
+PR and four rendered alternatives; 780px is measured, not chosen. **Concepts.** A feed entry for
+something still happening; a tripwire for a silent drop. **Example.** The Midleton reword, found
+in passing, which is ch 14. **Contrast.** Neither sibling publishes a feed.
+
+## Ch 14 - A guard that was guarding the corpus · PR #51 · 8 Sep
+
+**Thesis.** A red build on `main` from a merge that could not have caused it. The access golden
+file pinned outputs but re-derived them from whatever the data repo held when CI ran, so it
+failed on two other repositories' schedules. The hole was a sentence written confidently into
+the notes: "the logs are append-only and that can only mean a bad checkout". The logs are; the
+`messages` table is not, because identity excludes the body, so a reword overwrites `text_raw`
+in place. Rush and Lusk flipped overnight; third such failure in five days. Inputs pinned (53 KB
+to 115 KB), the test moves to a bare clone, regeneration is additive, and the comparison reports
+moves only. The review found the narrowing took the drop check off the other fixture.
+**Concept.** A guard over an input you do not control. **Example.** The determinism claim tested
+directly by checking the data repo out 20 commits back. **Contrast.** Corrects ch 12 in the
+series' own record rather than by editing it.
+
+## Ch 15 - Building the thing that does not exist · PR #46 · 4 to 8 Sep
+
+**Thesis.** The big reversal. `accessible-routes.md` had ruled out hand-curation since 29 August
+because a hand-curated file has no provenance, no refresh and no audit. Those are three
+properties, and properties can be built: an append-only observation log per station, one fact a
+line with who, when, from what and how sure; replayed the way `rebuild` replays the collector's
+logs; a page-sourced fact expiring when its quote leaves the page. Then a graph, reachability
+per platform, and an outage as the named equipment's edges removed. Two safe-side rules keep it
+from outrunning its evidence, and the pilot demonstrably says *less* than the prose derivation,
+which is the design working. The three documents Barry brought, and what the business case gave
+that no search would have: 51 stations in priority order, route-like paragraphs, a named audit
+to request under FOI, and the definitions. Ends on the turn: a `gtfs` export of the very file
+ch 06 found absent, and a format drafted to hand to Irish Rail. **Concepts.** The objection is a
+specification; an edge that records ignorance. **Example.** The five-station pilot table.
+**Contrast.** Neither sibling ever had to manufacture its second source.
+
+## Ch 16 - A fourth site, and two bugs found sideways · PR #54, issues #52, #53 · 11 Sep
+
+**Thesis.** A fourth site reads the same logs and publishes the delay notices. What belongs
+here: not the collector (two pollers on a rotated credential, a second Pi install, two logs that
+disagree), not a package (this repo's CI would gate two sites, and a repo publishes one Pages
+site). The trap that is about this collector: Irish Rail empties `locationCodes` part-way through
+a notice's life, 288 of 497 non-lift notices and **zero** lift ones, which is why nothing here
+noticed and why the identity model is not changing. Then two bugs found by looking at something
+else: "planned maintenance" is not "planned works" (one disagreement in 416 notices, found by
+running the delays site's cause reader beside `is_planned`), and Kishoge keyed by name because
+its page's code field is unparseable. **Concept.** A second reader of the same data is a test
+you did not write. **Contrast.** The boundary question is new; the siblings have no fourth
+reader.
+
+## Ch 17a - Closing: what the site can and cannot say
+
+The figures with their date, the two lists, the ten-row three-way table and the identical
+column, the settled decisions in plain language. Split from 17b because the closing outgrew the
+series' own 3,000-word ceiling.
+
+## Ch 17b - Closing: what I would tell someone starting the fourth one
+
+The moral, which is not either sibling's: *collect first, and publish no meaning you cannot
+source*, with the September coda on rejected alternatives and the newer one from ch 15: write
+your rejections out properly, because one of them is a design document you have not recognised
+yet. Glossary of all 27 concept boxes.

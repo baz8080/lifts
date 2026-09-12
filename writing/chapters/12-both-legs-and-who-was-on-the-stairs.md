@@ -169,6 +169,12 @@ report of chapter 07 made **mandatory rather than advisory**. Skipping the check
 mismatch was considered and rejected, because the guard would then be silently off from the
 first refresh nobody regenerated after.
 
+That paragraph is left as it was written and two of its claims did not survive the week. The
+cost was not only the monthly review: because the fixture pinned outputs but re-derived them
+from whatever the corpus held, **any** reword by Irish Rail broke an unrelated build, three
+times in five days. And the version built to avoid being silently off was silently off for
+anybody without a data checkout. Chapter 14.
+
 One refinement: the first version failed on any notice the file had not seen, which is wrong. A
 new notice on the feed is not a regression, and the corpus gained 21 distinct texts in 26 days.
 

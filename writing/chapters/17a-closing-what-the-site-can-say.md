@@ -1,29 +1,36 @@
-# 13. Closing: three feeds, three sites, one discipline
-*~13 min read · the whole series · 4 September 2026*
+# 17a. Closing: what the site can and cannot say
+*~9 min read · the whole series · 12 September 2026*
 
-*Where we are:* the end. What the site can say, what it cannot, where it differs from its two
-siblings and why, and a glossary of every idea the series boxed.
+*Where we are:* the end, in two halves. This one is the account: the figures, the two lists, and
+the table of where the three sites diverged. The next is what I would tell somebody starting a
+fourth.
 
 ## The question, answered
 
 **Which Irish Rail stations have lifts out of service, and for how long?**
 
-As of 4 September 2026, over 27 days of collection, 1,264 runs and 281 recorded notices:
+As of 12 September 2026, over 35 days of collection, 1,648 runs and 497 recorded notices:
 
-- **34 outages across 27 stations.** 8 planned works, 3 escalators.
-- Lift availability across the 21 stations named in August: **76%**, and **62%** across the 8
+- **53 outages across 37 stations.** 6 planned works in August and 1 in September, 3 escalators.
+- Lift availability across the 21 stations named in August: **76%**, and **79%** across the 22
   named in September so far. That is the share of watched days on which no lift was reported
   out at those stations.
-- August grades across 21 station-months: **A 3, B 1, C 4, D 6, E 5, F 2.**
-- At the last poll: two lift notices and one escalator, across three stations.
-- **20 of the 30 notices removed step-free access** to at least one platform, as worked out
-  from Irish Rail's own station pages. 3 were escalators. **7 are unknown**, because the two
+- August grades across 21 station-months: **A 3, B 1, C 4, D 6, E 5, F 2.** September so far,
+  across 22: **A 2, C 7, D 10, E 1, F 2.**
+- At the last poll: three lift notices, across three stations.
+- **28 of the 45 notices removed step-free access** to at least one platform, as worked out
+  from Irish Rail's own station pages. 3 were escalators. **14 are unknown**, because the two
   hand-written sources disagree.
 
-Twenty-seven days is not a season and none of these numbers should be quoted as a fact about
-Irish Rail. They are a fact about twenty-seven days, which is the honest scope, and the site
-says the collection start date on every page. Several of them were different a week ago for
-reasons that had nothing to do with lifts breaking: chapters 10 and 11.
+Thirty-five days is not a season and none of these numbers should be quoted as a fact about
+Irish Rail. They are a fact about thirty-five days, which is the honest scope, and the site says
+the collection start date on every page. Several of them were different a week ago for reasons
+that had nothing to do with lifts breaking: chapters 10 and 11.
+
+The unknown share is the row to watch, and it is going the wrong way: 6 of 24 on 31 August, 7 of
+30 on 4 September, **14 of 45** now. The corpus is reaching stations whose pages are thinner
+than the ones it started with, which is what chapter 12's reliability section meant by the
+page's own error rate being the ceiling, and chapter 15 is the attempt to raise it.
 
 ## What the site can say
 
@@ -33,7 +40,7 @@ reasons that had nothing to do with lifts breaking: chapters 10 and 11.
 - **How much of a month a station spent with a lift reported out**, as a share of days watched,
   and a letter for that share on a scale it declares as its own.
 - **How long each stretch a notice was on the feed ran**, rather than the envelope of its first
-  and last appearance.
+  and last appearance, and **which stations are out right now**.
 - **Whether a notice was a fault or planned works**, from the notice's own words, and how long
   works ran past a week of grace.
 - **What Irish Rail claims the start date was**, printed as their claim and used for nothing.
@@ -46,6 +53,8 @@ reasons that had nothing to do with lifts breaking: chapters 10 and 11.
 - **How many stations have a lift**: 57 of 152, from a versioned snapshot.
 - **How far to trust all of that**, in a dated section separating the strong claims from Irish
   Rail's word taken on trust and from untested machinery.
+- **All of it, off the page**: an Atom feed for the network and one per station, and a CSV of
+  every outage the site shows.
 
 ## What it cannot
 
@@ -62,6 +71,8 @@ reasons that had nothing to do with lifts breaking: chapters 10 and 11.
   because the feed names a station only when something is wrong with it, and the page says so.
 - **Judge an entrance-leg lift outage against experience.** The machinery exists, no notice has
   exercised it, and a sixth of the network says it has no ticket office.
+- **Tell "planned maintenance" from a fault.** The marker is one literal phrase and Irish Rail
+  used another on 11 September. Open as issue #53.
 - **Colour a day before 8 August 2026.** Nothing was watching.
 
 ## The three-way table
@@ -80,7 +91,7 @@ differently, and every one traces to a property of the data rather than a prefer
 | **Band calibration** | fitted against its distribution | set by arithmetic from a published target | calibrated to whole days, because the bar is days | at day granularity one bad day is already 96.8% |
 | **What knocks the grade** | binary: health notices knock, discolouration does not | planned works excluded, storm days kept and stated | planned works excused a week then counted; escalators show on their own bar and do not knock | nobody excluded anything on our behalf, so every exclusion had to be argued twice: in, then back out |
 | **What an outage means** | a boil notice is a boil notice | supply off is supply off | needs a station inventory that does not exist | no NeTEx, no SIRI-FM, no `pathways.txt`, no `wheelchair_boarding` |
-| **The second source** | Census Small Areas, official and versioned | Census Small Areas, borrowed from the water site | a hand-typed CMS field, snapshotted monthly | it is the only machine-readable statement of what an Irish station has |
+| **The second source** | Census Small Areas, official and versioned | Census Small Areas, borrowed from the water site | a hand-typed CMS field, snapshotted monthly, and since 8 September a hand-recorded observation log beside it | the CMS field is the only machine-readable statement that exists, and its error rate is the ceiling on everything derived from it |
 
 ### The identical column
 
@@ -134,80 +145,17 @@ The repository keeps a table of things not to re-litigate. Translated out of its
   against its own field.
 - **OpenStreetMap was carried and removed** on measurements: it changed no verdict.
 - **NeTEx is the one thing worth watching for.** Every other source is checked and closed.
+- **A hand-recorded fact is admissible if it carries provenance, expiry and an audit trail.**
+  This reverses the 29 August decision to curate nothing by hand, which objected to a *file*
+  rather than to the method.
 - **How reliable the derivation is has its own dated section**, by class of claim, including
   the classes that are untested.
 
-## What I would tell someone starting the fourth one
-
-The other two series each end with a sentence: the water site's about approximating carefully,
-the power site's *collect first, interpret later, keep the bytes*. This one is different, and it
-is the thing I did not know four weeks ago:
-
-> **Collect first, and publish no meaning you cannot source.**
-
-Collecting is the easy half and it is where all the discipline usually goes: write the bytes
-down, never edit them, make the interpretation disposable. That machinery was inherited from a
-sibling, worked on day one, and never once let me down.
-
-What it does not do is tell you what any of it means. A perfectly recorded observation that
-"the lift at platform 2 is out of service" is worth very little until you know whether platform
-2 has another way up, and that is a fact about the world rather than about your pipeline. No
-amount of care with the bytes creates it.
-
-And in Ireland, for rail station accessibility, nobody has created it. Not through
-carelessness: the European standards exist, and the regulation that would compel it exempts
-data you do not already hold, so the obligation is satisfied. The gap is lawful. Five major
-mapping products have hit the same wall and fall back to crowd-sourced pins. The only
-machine-readable statement of what an Irish rail station has is a free-text field somebody
-types into a CMS, and reading one conjunction in it the wrong way would have told a wheelchair
-user that access was fine at a station where it was gone.
-
-So the second half of that sentence is where the work went. Say "unknown" a quarter of the
-time. Publish the derivation as an inference and link a way to correct it. Default every error
-to the direction that wastes a journey rather than strands one. Refuse to write a parser where
-a reviewed list of two entries is the true claim. And when the number on the front of the page
-starts answering a question you did not ask it, write the issue with the measurements in it
-rather than adjusting the number quietly.
-
-There is a coda from the four days in September that closed every question chapter 09 left
-open. The one that unblocked the rest was a fifteen-pixel layout fix filed as the least
-interesting item on the list, and it was only visible as the blocker because the argument
-against the alternative had been written out in full rather than summarised as "decided
-against". A note that records why something was rejected also tells you, later, exactly what
-would have to change for it to be right.
-
-## Glossary
-
-Every concept boxed in the series, in order of appearance. Twenty of them.
-
-| Concept | Chapter | In one line |
-|---|---|---|
-| Source of truth against derived index | 01 | The log is what was observed; the database is what it currently means, and only one of them is disposable |
-| A run that failed is not a run that saw nothing | 01 | "I could not ask" recorded as "nothing was there" closes every open outage at once |
-| Measure the window you actually watched | 02 | Colouring days nobody observed publishes an observation nobody made, and it looks like a real one |
-| Two clocks for one date is a bug in either direction | 02 | If the bucket and the label come from different time zones, no reader can tell which the total believes |
-| An empty dependency list as a deployment contract | 03 | Keeping `dependencies` empty is what lets the collector install on a Pi by copying a directory |
-| A scale with no anchor | 04 | With no published target, an absolute scale of your own, stated as such, beats a relative or borrowed one |
-| A band calibrated in the unit the bar is drawn in | 04 | If the bar shows days, the cuts must land on whole days, or the grade claims a precision the data lacks |
-| One colour, two meanings | 05 | A mark that covers two cases a reader would distinguish is not wrong, it is silent |
-| A cut that lands in a real gap | 05 | A memorable threshold is fine if the data has empty space on both sides of it, which is checkable |
-| A National Access Point, and a lawful absence | 06 | The duty is to publish what you hold, not to create it, so the missing data has no process that fills it |
-| The safe direction of an error | 07 | Telling somebody access is gone costs a wasted check; telling them it remains strands them |
-| An inference that expires with its source | 07 | When a claim's evidence is reworded away, retract the claim rather than inverting it |
-| A guard that passes because what it checks is absent | 08 | Ask what a guard asserts when its input is missing; if the answer is "success", it is over the wrong quantity |
-| One number, two populations | 09 | One letter cannot answer two audiences whose honest answers differ, and the fine print is not what people read |
-| The age on the page is the age of the data | 10 | Rebuilding later cannot make the data younger, so only pushing more often and building on the push move the number |
-| A test that exercises the easy half | 10 | If the fixture takes a path where the bug cannot occur, the test's name is the only evidence the behaviour holds |
-| A conditional column is a misalignment | 11 | An element that appears only where it has content makes every other row wrong relative to the one that has it |
-| A rule with no instance, written down and guarded | 11 | State it in prose and add a test that fails when the case first appears, rather than coding against no example |
-| Reading a claim against the right leg | 12 | A station is two journeys with separate equipment; work out which the notice means before reading prose against it |
-| What the code's own history says about the code | 12 | When four review passes find nine, six, five and four things, that rate is itself a measurement |
-
 ## Notes
 
-- Corpus figures measured 4 September 2026 by rebuilding `../lifts-data` and running the site
+- Corpus figures measured 12 September 2026 by rebuilding `../lifts-data` and running the site
   build and `python -m lift_access report`. All registered in `figures.md`.
 - The settled-decisions list is a plain-language rendering of the table in `CLAUDE.md` §
-  Settled - don't re-litigate without reading the note, whose rows point at `notes/site.md` and
-  `notes/station-access.md`.
-- The sibling closings: uisce series ch 17, esb series ch 8.
+  Settled - don't re-litigate without reading the note, whose rows point at `notes/site.md`,
+  `notes/station-access.md`, `notes/publish-cadence.md` and `notes/step-free-graph.md`.
+- Continued in **17b**, which carries the moral and the glossary.

@@ -8,15 +8,13 @@ Unlike the two sibling series, this one had the data to hand, so the current fig
 measured rather than lifted. Historical figures are quoted as measured on their stated date and
 say so where the number has since moved.
 
-## Measured 4 September 2026 (Session 1)
+## Measured 12 September 2026 (Session 2)
 
-Session 0's measurement was taken on 31 August. Everything in this section was re-run on
-4 September after merging `main`, because pull requests #37 to #45 moved most of it: the
-listings split of chapter 10 changed several grades, and chapter 11 took escalators off the
-letter. Where a chapter quotes a 31 August figure it says so and the row is in the "quoted at
-the date they were measured" section below.
+Session 0 measured on 31 August and Session 1 on 4 September. Everything in this section was
+re-run on 12 September after merging `main`. Where a chapter quotes an earlier figure it says so,
+and the row is in one of the dated blocks below.
 
-Run from `/Users/barry/Code/lifts` with `../lifts-data` pulled to its 4 September state, then:
+Run from `/Users/barry/Code/lifts` with `../lifts-data` pulled to its 12 September state, then:
 
 ```bash
 python -m lift_status --data-dir ../lifts-data rebuild
@@ -29,40 +27,36 @@ python -m lift_access --data-dir ../lifts-data report
 
 | Figure | Value | How |
 |---|---|---|
-| Runs recorded | 1,264 | `stats` |
-| Run outcomes | 1,261 ok, 3 unreachable | `stats` |
-| Coverage | 2026-08-08T21:30:55Z to 2026-09-04T05:01:41Z | `stats` |
-| Collection horizon at build | 2026-09-04 05:01Z, 4.1 h behind the build | site build |
-| Messages tracked | 281 (4 open, 277 closed, 4 reopened at least once) | `stats` |
-| Listings (one row per stretch on the feed) | 285 across 281 messages; 4 messages have more than one | `listings` table |
-| Unidentifiable items | 323 | `stats` |
-| Raw log size | 3.2 MiB | `stats` |
-| Outages after merging | 34, across 27 stations | site build |
-| Notices on record for the access report | 30 | `report` |
-| Listed at the horizon | 2 lift and 1 escalator notice across 3 stations | site build |
+| Runs recorded | 1,648 | `stats` |
+| Run outcomes | 1,645 ok, 3 unreachable | `stats` |
+| Coverage | 2026-08-08T21:30:55Z to 2026-09-12T05:01:41Z | `stats` |
+| Collection horizon at build | 2026-09-12 05:01Z, 2.8 h behind the build | site build |
+| Messages tracked | 497 (29 open, 468 closed, 7 reopened at least once) | `stats` |
+| Unidentifiable items | 587 | `stats` |
+| Raw log size | 6.2 MiB | `stats` |
+| Outages after merging | 53, across 37 stations | site build |
+| Notices on record for the access report | 45 | `report` |
+| Listed at the horizon | 3 lift notices across 3 stations, 0 escalator | site build |
 | `LIFT_STATUS_GRACE_MISSES` default | 2 | `lift_status/store.py:24` |
 
 ### The site
 
 | Figure | Value | How |
 |---|---|---|
-| `index.html` | 58.9 KB | site build |
-| `data.js` | 5.7 KB | site build |
-| Initial load | 64.6 KB against a 500 KB budget | site build |
-| Station pages | 726.6 KB over 27 files | site build |
-| Shards | 17.5 KB over 27 files, largest `PERSE.js` at 1.8 KB | site build |
-| `STALE_AFTER` | 10 hours | `lift_site/render.py:48` |
+| `index.html` | 61.2 KB | site build |
+| `data.js` | 7.1 KB | site build |
+| Initial load | 68.3 KB against a 500 KB budget | site build |
+| `outages.csv` | 22.4 KB, on demand | site build |
+| `feed.xml` | 43.3 KB, on demand | site build |
+| Station pages | 1,038.4 KB over 37 files | site build |
+| Shards | 25.4 KB over 37 files, largest `PERSE.js` at 1.8 KB | site build |
+| `STALE_AFTER` | 10 hours | `lift_site/render.py` |
 | Lift availability, August 2026 | 76% | `data.js` `national["2026-08"]` |
-| August national row | 21 stations, 28 outages, 21 faults, 7 planned, 76%, 2 still out at month end | same |
-| Lift availability, September so far | 62% | `data.js` `national["2026-09"]` |
-| September national row | 8 stations, 8 outages, 7 faults, 1 planned, 62%, 3 ongoing | same |
+| August national row | 21 stations, 28 outages, 22 faults, 6 planned, 76%, 2 still out at month end | same |
+| Lift availability, September so far | 79% | `data.js` `national["2026-09"]` |
+| September national row | 22 stations, 27 outages, 26 faults, 1 planned, 79%, 3 ongoing | same |
 | Grade mix, August, 21 station-months | A 3, B 1, C 4, D 6, E 5, F 2 | `data.js` `stats` against `bands` |
-| August availabilities, sorted | 0, 0, 54, 54, 70, 70, 70, 83, 83, 87, 87, 87, 87, 91, 91, 91, 91, 95, 100, 100, 100 | same |
-| Grade mix, September so far, 8 station-months | A 2, D 3, E 1, F 2 | same |
-| Dublin Pearse, August | A, 100%, over an escalator strip | same |
-| Dublin Connolly, August | A, 100%, over an escalator strip | same |
-| Tara Street, September so far | A, 100%, over an escalator strip | same |
-| Portlaoise, August (after the listings split) | D, 83% | same |
+| Grade mix, September so far, 22 station-months | A 2, C 7, D 10, E 1, F 2 | same |
 | Band table | A 100, B 95, C 90, D 75, E 50, F 0 | `data.js` `bands` |
 
 ### Listings and start dates
@@ -94,23 +88,43 @@ python -m lift_access --data-dir ../lifts-data report
 | `platformAccess` naming an escalator | 2 of 152: Tara Street, Dublin Pearse | `model.ESCALATOR` |
 | `ticketOfficeAccess` naming an escalator | 1: Dublin Connolly | same |
 | Stations with any `ticketOfficeAccess` text | 143 of 152 | snapshot |
-| Verdicts across the 30 notices | 20 lost, 7 unknown, 3 escalator | `report` |
-| The seven unknown | Carlow, Greystones (x2), Kilkenny, Limerick Junction, Portlaoise, Rush and Lusk | `report` |
-| Lost verdicts carrying a kept-platform note | 5: Dublin Pearse, Dún Laoghaire, Malahide, Portarlington, Tullamore | `report`, grep for "needed no lift" |
+| Verdicts across the 45 notices | 28 lost, 14 unknown, 3 escalator | `report` |
+| Unknown share over time | 6 of 24 (31 Aug), 7 of 30 (4 Sep), 14 of 45 (12 Sep) | `report`, each date |
 | Step-free pill rendered on the live site | never; `stepfree` is empty | `data.js` |
+| Surveyed stations (`survey-pilot` branch of `lifts-data`) | 5: ATHY, CNLLY, CNOCK, HZLCH, PERSE | `git ls-tree origin/survey-pilot survey/` |
+| `survey/` on `lifts-data` `main` | absent | same |
 
 ### The repository
 
 | Figure | Value | How |
 |---|---|---|
-| Commits on `main` | 182 | `git log --oneline \| wc -l` |
-| Commits with a `Co-Authored-By` trailer | 121, across five Claude model identifiers (73 Opus 5, 27 Fable 5, 9 Fable 5.1, 9 Opus 5 1M, 3 unversioned) | `git log --format='%b' \| grep -o 'Co-Authored-By: [^<]*' \| sort \| uniq -c` |
-| Merged pull requests | 36, numbered to #45 | GitHub, `baz8080/lifts` |
-| Open issues | none | GitHub |
-| Test count | 390, all passing with `LIFT_STATUS_DATA_DIR` set | `python -m unittest discover -s tests -t .` |
-| `notes/` files | site · station-access · accessible-routes · publish-cadence | `ls notes/` |
+| Commits on `main` | 204 | `git log --oneline \| wc -l` |
+| Commits with a `Co-Authored-By` trailer | 135, across six Claude model identifiers (77 Opus 5, 27 Fable 5, 18 Fable 5.1, 9 Opus 5 1M, 1 Sonnet 5, 3 unversioned) | `git log --format='%b' \| grep -o 'Co-Authored-By: [^<]*' \| sort \| uniq -c` |
+| Merged pull requests | 42, numbered to #54 | GitHub, `baz8080/lifts` |
+| Open issues | #52, #53 | GitHub |
+| Test count | 516, passing with `LIFT_STATUS_DATA_DIR` set (11 skipped) and with it unset (34 skipped) | `python -m unittest discover -s tests -t .` |
+| `notes/` files | site · station-access · accessible-routes · publish-cadence · step-free-graph · delays-site | `ls notes/` |
 | First commit | 2026-08-08 | `git log --reverse` |
 | Em dashes in `writing/` | 0 | `scripts/no-em-dash.sh` |
+
+## Measured 4 September 2026 (Session 1), quoted by chapters 10 to 12
+
+| Figure | Value |
+|---|---|
+| Runs / outcomes | 1,264; 1,261 ok, 3 unreachable |
+| Coverage | to 2026-09-04T05:01:41Z |
+| Messages tracked | 281 (4 open, 277 closed, 4 reopened at least once) |
+| Listings | 285 across 281 messages; 4 messages with more than one stretch |
+| Unidentifiable items | 323 |
+| Outages after merging | 34 across 27 stations; 8 planned, 3 escalator |
+| Lift availability | August 76%, September so far 62% |
+| Grade mix, August | A 3, B 1, C 4, D 6, E 5, F 2 |
+| Grade mix, September so far, 8 station-months | A 2, D 3, E 1, F 2 |
+| August availabilities, sorted | 0, 0, 54, 54, 70, 70, 70, 83, 83, 87, 87, 87, 87, 91, 91, 91, 91, 95, 100, 100, 100 |
+| Verdicts across 30 notices | 20 lost, 7 unknown, 3 escalator |
+| Lost verdicts carrying a kept-platform note | 5: Pearse, Dún Laoghaire, Malahide, Portarlington, Tullamore |
+| Initial load | 64.6 KB |
+| Commits / trailers / tests | 182 / 121 / 390 |
 
 ## Measured 31 August 2026 (Session 0), quoted by chapters 00 to 09
 
@@ -297,6 +311,58 @@ counting.
 | Corpus growth in distinct notice texts | 21 in 26 days | same |
 | Reliability by class, corpus to 3 Sep (27 notices) | 18 lost, 6 unknown, 3 escalator; entrance leg has 0 lift notices and 1 escalator notice | `notes/station-access.md` § How reliable this is, honestly, 3 Sep 2026 |
 | Stations with no ticket office | 26 of 152, so a sixth of the network is unknown on the entrance leg by construction | same |
+
+### Ch 13
+
+| Figure | Value | Source |
+|---|---|---|
+| The survey that produced the work | the site read against a corpus of 36 outages over 28 stations | PR #49, 6 Sep 2026 |
+| Initial load change | 64.8 KB to 65.8 KB; feeds and CSV off it entirely | same |
+| Feed sizes | `feed.xml` carries the 50 most recent outages; `s/<slug>.xml` carries a station's every outage | same |
+| `thin_days` threshold | fewer than 40 polls in a Dublin day, a day with none included | same |
+| `unclassified_mentions` findings today | none | same |
+| Name column widening | 170px to 230px above 780px | PR #50, 7 Sep 2026 |
+| Why 780px | below about 740px the fixed columns plus a 31-day bar at its 3px-a-cell floor stop fitting | same |
+| Placements compared | four, rendered against the real CSS | same |
+| Overflow checked at | 500, 560, 641, 660, 700, 740, 779, 781, 800, 900, 1200, 1600px | same |
+
+### Ch 14
+
+| Figure | Value | Source |
+|---|---|---|
+| The failing message | `notice RLUSK lift: dropped`, on `main` | PR #51, 8 Sep 2026 |
+| The corrected assumption | "the logs are append-only and that can only mean a bad checkout" | `notes/station-access.md`, corrected in place 8 Sep 2026 |
+| The reword | Rush and Lusk's body flipped from "platform 2" to "platform 1" overnight, 8 Sep 2026 | PR #51 |
+| Failures in five days | 3: a statusui bump (#48), a Midleton reword (#49), this one | same |
+| Fixture size | 53 KB to 115 KB, of which about 23 KB is page fragments across 152 stations | same |
+| Determinism check | `lifts-data` checked out 20 commits back, predating the reword; suite green | same |
+| Guard still fires | breaking `strip_boilerplate` fails on Donabate, Greystones and Killiney | same |
+
+### Ch 15
+
+| Figure | Value | Source |
+|---|---|---|
+| The reversed decision | `notes/accessible-routes.md` § What is deliberately out, 29 Aug 2026 | quoted in full in the chapter |
+| Business case | Iarnród Éireann to the NTA, PBC-3.5, 30 October 2024, 188 pages | `notes/step-free-graph.md`, 4 Sep 2026 |
+| Table 6-2 | 51 stations not yet meeting the standard, in packages of 15, 15 and 21 | same |
+| Prior audits named | 2014 feasibility report over 54 stations, 2019 review, 2021 preliminary design reports for the first fifteen | same |
+| Metro Nation map | 12 stations glyphed "no step-free access"; disagrees with Irish Rail's page at Athy, Carlow and Ashtown | same |
+| Confidence levels | `low` read off a page, `medium` told or a reviewed sentence, `high` seen | same |
+| Pilot stations | Hazelhatch, Pearse, Connolly, Athy, Castleknock, all seeded page-sourced at low confidence | same |
+| Where the graph says less than the prose | Hazelhatch (no platform named) and the Pearse escalator (page's only escalator is on the way in) come back unknown | same |
+| Raheny under the confidence gate | ramp medium, way in low, so the graph says lost where the prose says alternative | same |
+| The correction issue | live since 30 Aug 2026, has never fired | same |
+| Tests at that merge | 490 | PR #46 |
+
+### Ch 16
+
+| Figure | Value | Source |
+|---|---|---|
+| Location codes emptied part-way | lift and escalator 55 notices, 0 lose codes; everything else 497 notices, 21 never carry them, 288 lose them partway | PR #54, 11 Sep 2026 |
+| The planned-maintenance notice | Salthill and Monkstown, first seen 2026-09-11T13:32:31Z, still listed | issue #53 |
+| Disagreement count | 1 in 416 distinct notices, between the delays site's cause reader and `is_planned` | same |
+| The cause reader's planned wordings | "planned works" (7 notices), "engineering works" (3), "planned maintenance" (1) | same |
+| Kishoge | station facts keyed `"Kishoge"` rather than `"KISHO"`; no lift notice there yet | issue #52 |
 
 ## Open `[verify:]` items
 

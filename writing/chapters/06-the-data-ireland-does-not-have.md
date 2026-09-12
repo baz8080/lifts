@@ -1,5 +1,5 @@
 # 06. The data Ireland does not have
-*~9 min read · issue #24 and PR #30 · 29 to 30 August 2026*
+*~10 min read · issue #24 and PR #30 · 29 to 30 August 2026*
 
 *Where we are:* the site counts lift outages and grades stations on them (chapters 04 and 05).
 This chapter is about the question it could not answer, which is what any of that *means*, and
@@ -187,6 +187,11 @@ Which produces something nobody set out to build. **The dated snapshots in
 station access that exists.** That was not the intent, it is a poor substitute for the operator
 holding one, and it is a reason to keep the monthly refresh running well beyond keeping this
 site's derivation fresh.
+
+Ten days later the project stopped working around the absence and started filling it. Chapter 15
+is a hand-recorded observation log, a reachability graph replayed from it, and an export in the
+GTFS format this chapter found missing. Everything below still holds: that is what made the
+absence worth documenting first.
 
 ## Where it left the site
 

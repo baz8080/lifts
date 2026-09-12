@@ -25,9 +25,10 @@ what was used instead, and how reading one hand-typed sentence the wrong way pub
 opposite of the truth.
 
 The chapters are deliberately back-loaded. The collector and the site get one each, the shared
-design layer gets one short one, four carry the problem that arrived at the end, and three more
-cover the four days in early September when every question the fourth of those left open was
-answered.
+design layer gets one short one, four carry the problem that arrived at the end, three cover the
+four days in early September when every question the fourth of those left open was answered, and
+four more cover the week after that, in which the project stopped working around the missing
+data and started recording it.
 
 ## Who it is for
 
@@ -98,6 +99,7 @@ the fact about this feed that forced it)**. The four that anchor chapters:
 | How big an event is | people inside a 500 m circle | ESB's own count of customers off | there is no size: a notice is listed or it is not | the feed carries no count of anything |
 | What anchors the grade | its own thresholds on person-hours | ESB's published 4-hour / 95% charter aim | its own bands, counted in days | the PRM TSI sets a duty to hold a written policy, not a percentage, and Irish Rail publishes no availability figure |
 | What is allowed to knock the grade | `KNOCK_CATS`, binary: health notices knock, discolouration shows and does not | planned works excluded, because the regulator excludes them; storm days kept, and said out loud | planned works excused for one week then counted in full; escalators counted for five days, then stopped | nobody excluded anything on our behalf, so every exclusion had to be argued from the data, twice |
+| The second source | Census Small Areas, official and versioned | the same, borrowed from the water site | a hand-typed CMS field, and from 8 September a hand-recorded observation log beside it | no structured source exists at all, so the only way to raise the ceiling was to record facts and carry their provenance |
 
 That last row is the spine of the back half of the series.
 
@@ -120,6 +122,9 @@ That last row is the spine of the back half of the series.
 | **a way up** | vertical access, circulation | what an escalator provides and a lift also provides. Losing one is not losing step-free access |
 | **a leg** | a segment, a stage | street to concourse, or concourse to platform. Irish Rail keeps them in separate fields |
 | **a stretch** | a span, a run | one continuous period a notice was on the feed. A notice can have several |
+| **the survey** | the curated data, the hand file | the append-only observation log in `lifts-data/survey/`, one file per station |
+| **an observation** | an entry, a record | one line of the survey: one fact, with who recorded it, when, from what, and how sure |
+| **the graph** | the model, the map | the nodes and edges the survey replays into, and the reachability read off them |
 | **the prose** | the description, the blurb | Irish Rail's hand-written `platformAccess` and `ticketOfficeAccess` fields |
 | **the water site / the power site** | uisce / esb (except as repo names) | the two siblings |
 
@@ -160,8 +165,14 @@ the figures were re-measured rather than lifted.
 Session 1 (4 September 2026) merged `main` and extended the series over pull requests #37 to
 #45. All four issues chapter 09 described as open had closed within four days of it being
 written, so that chapter was reframed as the argument at the time with forward pointers, three
-chapters were added, and the closing was renumbered 10 to 13. Every current figure was
-re-measured against `../lifts-data` at its 4 September state.
+chapters were added, and the closing was renumbered 10 to 13.
+
+Session 2 (12 September 2026) merged `main` and extended the series over pull requests #46 to
+#54. Two of the series' own settled decisions were reversed that week and both are narrated
+rather than edited away: chapter 12's account of the golden file is corrected by chapter 14, and
+chapter 06's "hand-curation is deliberately out" by chapter 15. Four chapters were added and the
+closing, which had outgrown the series' own 3,000-word ceiling, was split into 17a and 17b.
+Every current figure was re-measured against `../lifts-data` at its 12 September state.
 
 `figures.md` marks which rows come from a measurement and which are quoted at the date they
 were first measured. `PROGRESS.md` is the ledger for any later session.

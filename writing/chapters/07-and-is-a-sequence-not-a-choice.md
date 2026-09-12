@@ -181,6 +181,10 @@ records, and a filed issue is auditable in the way this project asks every other
 It is also the only route by which a fact that exists nowhere machine-readable can ever reach
 the site.
 
+It has never fired. Passive crowdsourcing yields nothing, which is the finding that eventually
+produced chapter 15's generated questionnaire: the channel was right and leaving it open for
+somebody to notice was not.
+
 ## Worked example: what Hazelhatch actually publishes
 
 The station that started the chapter, as the site renders it today:
