@@ -59,7 +59,9 @@ EQUIPMENT_MODES = frozenset({"lift", "escalator"})
 
 ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-# Not upper-case only: "Kishoge" is the literal stationCode Irish Rail publishes.
+# Not upper-case only: model.STATION_CODE_FIXUPS corrects the one station code
+# Irish Rail's own page gets wrong (Kishoge, issue #52), but nothing here should
+# assume every future snapshot arrives that clean.
 CODE = re.compile(r"^[A-Za-z0-9]{2,12}$")
 
 

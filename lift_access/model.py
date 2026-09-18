@@ -225,6 +225,15 @@ def read_platform_access(fragment):
     return frozenset({ALL_PLATFORMS} if general else ()), claims, denies
 
 
+# Irish Rail's own page for Kishoge publishes `stationCode: "Kishoge"` - the
+# station name, not a code - while the message feed's `locationCodes` uses
+# "KISHO" for the same station (checked against a real notice, issue #52).
+# Every other station's `stationCode` matches `locationCodes` 1:1
+# (`notes/station-access.md` § The join is free), so this is one page's bug to
+# correct by hand, not a shape to generalise a fallback from.
+STATION_CODE_FIXUPS = {"kishoge": "KISHO"}
+
+
 def station_from_node(node, slug):
     """A Station from one resolved payload, or None if it carries no code."""
     if not isinstance(node, dict) or not node.get("stationCode"):
@@ -232,8 +241,9 @@ def station_from_node(node, slug):
     fragment = (node.get("platformAccess") or {}).get("html") or ""
     entry = (node.get("ticketOfficeAccess") or {}).get("html") or ""
     lift_platforms, claims, denies = read_platform_access(fragment)
+    code = STATION_CODE_FIXUPS.get(slug, str(node["stationCode"]).strip())
     return Station(
-        code=str(node["stationCode"]).strip(),
+        code=code,
         name=str(node.get("stationName") or "").strip(),
         slug=slug,
         latitude=node.get("latitude"),
