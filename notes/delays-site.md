@@ -131,12 +131,5 @@ way `locationCodes` does, are in its `notes/site.md`.
 
 ## Left open here
 
-- `lift_site.model.PLANNED_MARKER` is the literal string "planned works", and
-  Irish Rail wrote "planned maintenance" on the Salthill and Monkstown notice, so
-  that outage is counted and coloured as a fault and gets none of the week's
-  grace. Found while checking the cause reader against `is_planned`, which agrees
-  on every other lift notice on the corpus and disagrees on that one. Issue #53
-  has the detail and the two readings available; it moves a published grade, so
-  it is not a change to make in passing.
 - Whether `is_planned` becomes a call into that reader at all. A `planned`
-  reading is a strict superset of `PLANNED_MARKER` today.
+  reading is a strict superset of `PLANNED_MARKERS` today.

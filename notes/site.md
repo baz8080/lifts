@@ -73,6 +73,16 @@ from any count on that basis - there is no grade to keep them out of.
 kept out of it for its first week only. See "Planned works are excused for a
 week" below. Nothing is excluded from any *count* on that basis still.
 
+**Amended 2026-09-18**: Salthill and Monkstown's lift notice said "planned
+maintenance", not "planned works", and `PLANNED_MARKER` was a literal-string
+test that missed it, so the outage graded as a fault from day one with none of
+the week's grace (issue #53). "planned maintenance" and "engineering works" are
+the same claim in different words. The delays site's cause reader already
+groups all three as one `planned` category, and the corpus carries all three,
+so `PLANNED_MARKER` is now `PLANNED_MARKERS`, a tuple of all three phrases,
+rather than the one Irish Rail happened to type on the first planned-works
+notice this site saw.
+
 ### No grade
 
 The sibling site grades counties on the operator's own published standard.
