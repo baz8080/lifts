@@ -46,8 +46,11 @@ KIND_PATTERNS = (
 )
 
 # "temporarily unavailable due to planned works" versus "currently out of
-# service" - the one distinction the notice text draws that a reader cares about.
-PLANNED_MARKER = "planned works"
+# service" - the one distinction the notice text draws that a reader cares
+# about. "planned maintenance" and "engineering works" are the same claim in
+# different words - the delays site's cause reader groups all three as
+# planned, and the corpus carries all three (issue #53).
+PLANNED_MARKERS = ("planned works", "planned maintenance", "engineering works")
 
 # Day-cell codes. One character per day of the month, packed into a string.
 # A bar carries one kind - a station gets a lift bar and, in a month it had an
@@ -153,7 +156,10 @@ def classify(head):
 
 
 def is_planned(text):
-    return bool(text) and PLANNED_MARKER in text.lower()
+    if not text:
+        return False
+    lowered = text.lower()
+    return any(marker in lowered for marker in PLANNED_MARKERS)
 
 
 def station_of(row):

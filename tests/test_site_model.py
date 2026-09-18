@@ -120,6 +120,14 @@ class TestClassification(unittest.TestCase):
         self.assertFalse(model.is_planned("The lift is currently out of service."))
         self.assertFalse(model.is_planned(None))
 
+    def test_planned_maintenance_and_engineering_works_are_planned_too(self):
+        self.assertTrue(
+            model.is_planned("The lift is currently out of service due to planned maintenance.")
+        )
+        self.assertTrue(
+            model.is_planned("The lift is currently out of service due to engineering works.")
+        )
+
 
 class TestStation(SiteModelCase):
     def test_name_comes_from_the_stop_and_identity_from_the_code(self):
