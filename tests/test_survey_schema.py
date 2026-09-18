@@ -93,9 +93,8 @@ class Validation(unittest.TestCase):
     def test_a_bad_confidence(self):
         self.assertRejected(variant(confidence="certain"), "confidence")
 
-    def test_kishoge_is_a_station_code(self):
-        # The one code in the snapshot that is not upper case.
-        self.assertEqual(survey.validate(variant(code="Kishoge"), "Kishoge"), [])
+    def test_case_is_not_enforced(self):
+        self.assertEqual(survey.validate(variant(code="MiXed1"), "MiXed1"), [])
 
     def test_the_code_must_match_the_file(self):
         self.assertRejected(variant(code="ATHY"), "in a file for TOY")

@@ -2067,6 +2067,31 @@
    "name": "Killiney",
    "step_free_platforms": []
   },
+  "KISHO": {
+   "claims_lift": true,
+   "denies_lift": false,
+   "entrance_lift_sentence": null,
+   "entrance_step_free": "Level from station entrance and concourse",
+   "input": {
+    "node": {
+     "platformAccess": {
+      "html": "<p>Access platforms 1 and 2 via stairs and lifts</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft.&nbsp;<a href=\"https://www.irishrail.ie/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
+     },
+     "stationCode": "KISHO",
+     "stationName": "Kishoge",
+     "ticketOfficeAccess": {
+      "html": "<p>Level from station entrance and concourse</p>"
+     }
+    },
+    "slug": "kishoge"
+   },
+   "lift_platforms": [
+    "1",
+    "2"
+   ],
+   "name": "Kishoge",
+   "step_free_platforms": []
+  },
   "KKNNY": {
    "claims_lift": false,
    "denies_lift": false,
@@ -2134,31 +2159,6 @@
    },
    "lift_platforms": [],
    "name": "Killester",
-   "step_free_platforms": []
-  },
-  "Kishoge": {
-   "claims_lift": true,
-   "denies_lift": false,
-   "entrance_lift_sentence": null,
-   "entrance_step_free": "Level from station entrance and concourse",
-   "input": {
-    "node": {
-     "platformAccess": {
-      "html": "<p>Access platforms 1 and 2 via stairs and lifts</p>\n<p>To access the lift, you must call via the help point at each landing of the lift shaft.&nbsp;<a href=\"https://www.irishrail.ie/en-ie/travel-information/accessibility-onboard-trains/lifts-and-escalators-reports/lift-call-operation\">Please see lift call operation page for steps to call the lift.</a></p>"
-     },
-     "stationCode": "Kishoge",
-     "stationName": "Kishoge",
-     "ticketOfficeAccess": {
-      "html": "<p>Level from station entrance and concourse</p>"
-     }
-    },
-    "slug": "kishoge"
-   },
-   "lift_platforms": [
-    "1",
-    "2"
-   ],
-   "name": "Kishoge",
    "step_free_platforms": []
   },
   "LBURN": {
@@ -3760,7 +3760,30 @@
    "text": "The lift both platforms are currently out of service. Iarnród Éireann apologise for the inconvenience caused."
   },
   {
+   "code": "ATLNE",
+   "detail": "Platforms 2, 3 are reached by lift, and Irish Rail's page names no other step-free way to them, so step-free access was gone while this was listed. Platform 1 needed no lift, so it kept step-free access: \"Ramp to platform No.1\".",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2",
+    "3"
+   ],
+   "state": "lost",
+   "text": "The lift on platform 2 and 3 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
    "code": "BBRHY",
+   "detail": "Platform 1 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1"
+   ],
+   "state": "lost",
+   "text": "Lift at platform 1 is currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "BRAY",
    "detail": "Platform 1 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
    "kind": "lift",
    "leg": "platform",
@@ -3780,6 +3803,29 @@
    ],
    "state": "lost",
    "text": "The lift at platform 1 is out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "BTSTN",
+   "detail": "The notice names platform 1, which Irish Rail's page for Booterstown does not list a lift at.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1"
+   ],
+   "state": "unknown",
+   "text": "The lift on platform 1 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "CHORC",
+   "detail": "Platforms 2, 3 are reached by lift, and Irish Rail's page names no other step-free way to them, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2",
+    "3"
+   ],
+   "state": "lost",
+   "text": "The lift on platform 2 and 3 is out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
   },
   {
    "code": "CLDKN",
@@ -3948,10 +3994,32 @@
    "kind": "lift",
    "leg": "platform",
    "platforms": [
+    "1"
+   ],
+   "state": "unknown",
+   "text": "The lift on platform 1 is out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "KILNY",
+   "detail": "Irish Rail's page for Killiney does not mention a lift, so which platforms this one serves is not recorded.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
     "2"
    ],
    "state": "unknown",
    "text": "The lift on platform 2 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "KILNY",
+   "detail": "Irish Rail's page for Killiney does not mention a lift, so which platforms this one serves is not recorded.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "unknown",
+   "text": "The lift on platform 2 is out of service. Iarnród Éireann apologise for the inconvenience caused."
   },
   {
    "code": "KKNNY",
@@ -3973,6 +4041,28 @@
    ],
    "state": "unknown",
    "text": "The lifts at platform 1 and 4 are temporarily unavailable due to planned works. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "LTOWN",
+   "detail": "The notice names platform 2, which Irish Rail's page for Laytown does not list a lift at.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "unknown",
+   "text": "Lift at platform 2 is currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
+  },
+  {
+   "code": "M3WAY",
+   "detail": "Irish Rail's page for M3 Parkway does not mention a lift, so which platforms this one serves is not recorded.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "unknown",
+   "text": "The lift on platform 2 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
   },
   {
    "code": "MDLTN",
@@ -4096,6 +4186,17 @@
    "text": "The lift on platform 2 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
   },
   {
+   "code": "SCOVE",
+   "detail": "The notice names platform 1, which Irish Rail's page for Sandycove and Glasthule does not list a lift at.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1"
+   ],
+   "state": "unknown",
+   "text": "The lift on platform 1 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
    "code": "SEAPT",
    "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
    "kind": "lift",
@@ -4116,6 +4217,50 @@
    ],
    "state": "lost",
    "text": "The lift on platform 2 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "SHILL",
+   "detail": "The notice names platform 1, which Irish Rail's page for Salthill and Monkstown does not list a lift at.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1"
+   ],
+   "state": "unknown",
+   "text": "The Lift on platform 1 is currently out of service due to planned maintenance. Iarnród Éireann apologise for any inconvenience caused."
+  },
+  {
+   "code": "SHILL",
+   "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed. The notice also names platform 1, which the page does not list a lift at.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "The Lifts on platforms 1 and 2 are currently out of service due to planned maintenance. Iarnród Éireann apologise for any inconvenience caused."
+  },
+  {
+   "code": "SHILL",
+   "detail": "The notice names platform 1, which Irish Rail's page for Salthill and Monkstown does not list a lift at.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1"
+   ],
+   "state": "unknown",
+   "text": "The lift on platform 1 is currently out of service. Iarnród Éireann apologise for the inconvenience caused."
+  },
+  {
+   "code": "SKRES",
+   "detail": "The notice names platform 1, which Irish Rail's page for Skerries does not list a lift at.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "1"
+   ],
+   "state": "unknown",
+   "text": "The lift at platform 1 is currently out of service. Iarnród Éireann Irish Rail apologise for the inconvenience caused."
   },
   {
    "code": "SKRES",
@@ -4150,6 +4295,17 @@
    ],
    "state": "lost",
    "text": "The lift on Platform 1 and 2 are out of service. Iarnród Éireann Irish Rail apologise for any inconvenience caused."
+  },
+  {
+   "code": "THRLS",
+   "detail": "Platform 2 is reached by lift, and Irish Rail's page names no other step-free way to it, so step-free access was gone while this was listed.",
+   "kind": "lift",
+   "leg": "platform",
+   "platforms": [
+    "2"
+   ],
+   "state": "lost",
+   "text": "The lift on Platform 2 is out of service. Iarnród Éireann Irish Rail apologise for any inconvenience caused."
   },
   {
    "code": "TMORE",
