@@ -225,12 +225,8 @@ def read_platform_access(fragment):
     return frozenset({ALL_PLATFORMS} if general else ()), claims, denies
 
 
-# Irish Rail's own page for Kishoge publishes `stationCode: "Kishoge"` - the
-# station name, not a code - while the message feed's `locationCodes` uses
-# "KISHO" for the same station (checked against a real notice, issue #52).
-# Every other station's `stationCode` matches `locationCodes` 1:1
-# (`notes/station-access.md` § The join is free), so this is one page's bug to
-# correct by hand, not a shape to generalise a fallback from.
+# Irish Rail's page for Kishoge publishes stationCode "Kishoge" (the name),
+# not "KISHO", the code locationCodes uses everywhere else. Issue #52.
 STATION_CODE_FIXUPS = {"kishoge": "KISHO"}
 
 

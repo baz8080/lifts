@@ -94,9 +94,6 @@ class Validation(unittest.TestCase):
         self.assertRejected(variant(confidence="certain"), "confidence")
 
     def test_case_is_not_enforced(self):
-        # model.STATION_CODE_FIXUPS corrects Kishoge, the one station code
-        # Irish Rail's page ever got wrong (issue #52), but this validator
-        # does not assume every future snapshot will be as clean.
         self.assertEqual(survey.validate(variant(code="MiXed1"), "MiXed1"), [])
 
     def test_the_code_must_match_the_file(self):
