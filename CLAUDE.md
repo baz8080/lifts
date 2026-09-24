@@ -85,7 +85,7 @@ CLAUDE.md.
 Nothing is parsed before it is written to the log, and `rebuild` replays the
 logs through the same code path a live run uses. If a parse is wrong, fix it and
 rebuild; never edit the logs. `json.dumps(..., sort_keys=True)` in
-`store.py:write_raw` is load-bearing - it is what lets two machines' logs be
+`store.py:append_raw` is load-bearing - it is what lets two machines' logs be
 merged with `sort -u`.
 
 ## Data-shape traps
@@ -175,6 +175,7 @@ merged with `sort -u`.
 | Station access is labelled by hand into an append-only observation log, `lifts-data/survey/<CODE>.jsonl`, one line per fact with who, when and from what; a hand-maintained `stations.json` stays the failure mode. The graph replays the log, last line for a key wins, and says "another step-free way" only on a route every edge of which a person confirmed, so a page-seeded graph never says more than the prose. The site does not read it yet | `notes/step-free-graph.md` |
 | The Metro Nation Dublin rail map is not a source: undefined "step-free", already behind the network, nothing it says survives one survey answer | `notes/step-free-graph.md` § What was learned |
 | A delays site is a fourth repo, `baz8080/rail-delays`, reading `lifts-data`: not a second collector and not a poll target, because there is one endpoint, one response, and every delay notice is already logged. It carries its own decisions, and the collector here is not duplicated, extended or touched | `notes/delays-site.md` |
+| The raw line is written before the database is opened, so a corrupt or locked database costs the derived rows and never the response, and alerts as exit 7. The collector and its units were reviewed whole once; two findings are open by choice | `notes/collector-review.md` |
 | The access golden file pins the inputs it derives from, not just the outputs, so it guards code and nothing else. Corpus movement no longer fails it in either direction, a refreshed snapshot no longer fails it by name, and it runs without a `lifts-data` checkout instead of skipping. Reading `messages.text_raw` as if it were append-only reddened `main` three times in five days: the raw logs are append-only, the derived row is overwritten when Irish Rail rewords a live notice | `notes/station-access.md` § The golden file pins its inputs |
 
 Decisions go in `notes/`, dated, with the rejected alternatives and their

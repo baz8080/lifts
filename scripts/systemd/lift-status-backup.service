@@ -16,7 +16,13 @@ Environment=LIFT_STATUS_DATA_DIR=/var/lib/lift-status
 # inside the tree being backed up.
 # Quoted: systemd splits an unquoted Environment= value on whitespace into
 # separate assignments, which would set GIT_SSH_COMMAND to just "ssh".
-Environment="GIT_SSH_COMMAND=ssh -i /etc/lift-status-deploy-key -o IdentitiesOnly=yes -o UserKnownHostsFile=/etc/lift-status-known_hosts -o StrictHostKeyChecking=accept-new"
+Environment="GIT_SSH_COMMAND=ssh -i /etc/lift-status-deploy-key -o IdentitiesOnly=yes -o UserKnownHostsFile=/etc/lift-status-known_hosts -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4"
+
+# A oneshot has no start timeout by default, so a push stalled on a half-open
+# connection would hold the unit "activating" and turn every later firing into
+# a no-op. The ssh keepalives above make the stall fail into the script's own
+# alert; this is the backstop.
+TimeoutStartSec=15min
 
 EnvironmentFile=-/etc/lift-status.env
 ExecStart=/opt/lift-status/scripts/backup-to-git.sh

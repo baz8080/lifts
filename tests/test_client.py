@@ -107,6 +107,18 @@ class TestMessagesClient(unittest.TestCase):
             status, body = client.get_messages_raw()
         self.assertEqual(body, "[]")
 
+    def test_a_truncated_or_corrupt_gzip_body_is_a_transient_error(self):
+        import gzip
+
+        whole = gzip.compress(b"[]" * 1000)
+        for broken in (whole[: len(whole) // 2], whole[:10] + b"x" * 20 + whole[30:]):
+            resp = FakeResponse(broken, headers={"Content-Encoding": "gzip"})
+            client = MessagesClient(retries=2, sleep=lambda s: None)
+            with mock.patch("urllib.request.urlopen", return_value=resp) as urlopen:
+                with self.assertRaises(TransientError):
+                    client.get_messages_raw()
+            self.assertEqual(urlopen.call_count, 2)
+
 
 if __name__ == "__main__":
     unittest.main()

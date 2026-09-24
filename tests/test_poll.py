@@ -1,3 +1,4 @@
+import errno
 import fcntl
 import json
 import os
@@ -16,6 +17,10 @@ class PollTestCase(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
         self.data_dir = Path(self._tmp.name)
+        # The alert marker lives under this variable, and a clean run deletes it.
+        env = mock.patch.dict("os.environ", {"LIFT_STATUS_DATA_DIR": str(self.data_dir)})
+        env.start()
+        self.addCleanup(env.stop)
 
     def tearDown(self):
         self._tmp.cleanup()
@@ -184,6 +189,39 @@ class TestRunPollEndToEnd(PollTestCase):
             self.assertEqual(code, alert.EXIT_STORAGE)
         finally:
             os.chmod(self.data_dir, 0o700)
+
+
+class TestTheRawLineDoesNotDependOnTheDatabase(PollTestCase):
+    def _raw_lines(self):
+        return [
+            json.loads(line)
+            for path in (self.data_dir / "raw").glob("*.jsonl")
+            for line in path.read_text(encoding="utf-8").splitlines()
+        ]
+
+    def test_a_corrupt_database_still_logs_the_response_and_alerts(self):
+        (self.data_dir / "lift_status.db").write_bytes(b"not a database, after a power cut")
+        body = json.dumps([make_item()])
+        code = poll.run_poll(self.data_dir, client=FakeClient([(200, body)]))
+        self.assertEqual(code, alert.EXIT_DATABASE)
+        self.assertEqual([r["body"] for r in self._raw_lines()], [body])
+
+    def test_a_full_disk_at_the_append_is_a_storage_alert(self):
+        full = OSError(errno.ENOSPC, "No space left on device")
+        with mock.patch.object(poll, "append_raw", side_effect=full):
+            code = poll.run_poll(self.data_dir, client=FakeClient([(200, "[]")]))
+        self.assertEqual(code, alert.EXIT_STORAGE)
+        self.assertEqual(self._run_count(), 0)
+
+
+class TestACleanRunClosesTheRepeatWindow(PollTestCase):
+    def test_a_successful_run_clears_the_marker_and_a_failed_one_does_not(self):
+        marker = self.data_dir / ".last-alert.json"
+        marker.write_text("{}", encoding="utf-8")
+        poll.run_poll(self.data_dir, client=FakeClient([TransientError("down")]))
+        self.assertTrue(marker.exists())
+        poll.run_poll(self.data_dir, client=FakeClient([(200, "[]")]))
+        self.assertFalse(marker.exists())
 
 
 class TestMissingApiKey(PollTestCase):

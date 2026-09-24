@@ -17,6 +17,7 @@ from __future__ import annotations
 import contextlib
 import fcntl
 import json
+import sqlite3
 import sys
 import uuid
 from dataclasses import dataclass, field
@@ -25,7 +26,7 @@ from pathlib import Path
 from . import alert
 from .client import ApiError, AuthError, MessagesClient, TransientError
 from .parse import NOT_A_LIST, check_item_schema, parse_top_level
-from .store import Store, utc_now_iso
+from .store import Store, append_raw, utc_now_iso
 
 
 @dataclass
@@ -171,9 +172,20 @@ def _run(data_dir: Path, client: MessagesClient) -> int:
         body_text = None
         network_error = repr(exc)
 
-    with Store(data_dir) as store:
-        store.write_raw(run_uuid, fetched_at, http_status, body_text, network_error)
-        result = apply_response(store, run_uuid, fetched_at, http_status, body_text, network_error)
+    try:
+        append_raw(data_dir, run_uuid, fetched_at, http_status, body_text, network_error)
+    except OSError as exc:
+        # check_writable's empty probe file passes on a full SD card.
+        problem = f"cannot append to the raw log: {exc}"
+        return alert.fail(alert.storage_banner(data_dir, problem), alert.EXIT_STORAGE)
+
+    try:
+        with Store(data_dir) as store:
+            result = apply_response(
+                store, run_uuid, fetched_at, http_status, body_text, network_error
+            )
+    except (sqlite3.Error, OSError) as exc:
+        return alert.fail(alert.database_banner(data_dir, repr(exc)), alert.EXIT_DATABASE)
 
     if result.outcome == "auth_error":
         banner = alert.auth_banner(client.masked_key, result.error_detail or "")
@@ -192,6 +204,7 @@ def _run(data_dir: Path, client: MessagesClient) -> int:
     )
     if result.schema_drift_count:
         return alert.fail(alert.schema_banner(result.drift_problems), result.exit_code)
+    alert.clear()
     return alert.EXIT_OK
 
 

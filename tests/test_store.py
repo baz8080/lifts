@@ -65,6 +65,16 @@ class TestWriteRaw(StoreTestCase):
         lines = path.read_text().strip().splitlines()
         self.assertEqual(len(lines), 2)
 
+    def test_a_line_cut_off_by_a_power_cut_does_not_take_the_next_one_with_it(self):
+        path = self.data_dir / "raw" / "messages-20260808.jsonl"
+        self.store.write_raw("run-1", "2026-08-08T12:00:00Z", 200, "[]", None)
+        with path.open("a", encoding="utf-8") as f:
+            f.write('{"body": "[{\\"head')
+        self.store.write_raw("run-3", "2026-08-08T13:00:00Z", 200, "[]", None)
+        replayed = [r["run_uuid"] for r in self.store.iter_raw_lines()]
+        self.assertEqual(replayed, ["run-1", "run-3"])
+        self.assertEqual(self.store.raw_decode_errors, 1)
+
 
 class TestDiffAndUpdateMessages(StoreTestCase):
     def test_new_message_is_inserted_open(self):

@@ -9,6 +9,7 @@ reading one of these has the context of this repository in front of them.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -23,6 +24,7 @@ EXIT_AUTH = 2
 EXIT_UNREACHABLE = 3
 EXIT_SCHEMA_DRIFT = 4
 EXIT_STORAGE = 6
+EXIT_DATABASE = 7
 
 EXIT_MEANINGS = {
     EXIT_OK: "success",
@@ -30,6 +32,7 @@ EXIT_MEANINGS = {
     EXIT_UNREACHABLE: "messages API unreachable",
     EXIT_SCHEMA_DRIFT: "API response shape changed",
     EXIT_STORAGE: "data directory not writable",
+    EXIT_DATABASE: "database unusable; raw log still written",
 }
 
 BANNER_WIDTH = 78
@@ -153,6 +156,22 @@ def storage_banner(data_dir, problem: str) -> str:
     )
 
 
+def database_banner(data_dir, detail: str) -> str:
+    return banner(
+        "LIFT-STATUS: DATABASE UNUSABLE",
+        [
+            f"{detail}",
+            "",
+            "This run's response WAS written to the raw log, so nothing has been",
+            "lost yet, but the database is not being updated. A database left",
+            "corrupt by a power cut is rebuilt from the raw log:",
+            "",
+            f"  sudo mv {data_dir}/lift_status.db {data_dir}/lift_status.db.broken",
+            "  sudo lift rebuild",
+        ],
+    )
+
+
 def _marker_path() -> Path:
     state_dir = os.environ.get("LIFT_STATUS_DATA_DIR") or tempfile.gettempdir()
     return Path(state_dir) / ".last-alert.json"
@@ -195,6 +214,13 @@ def _mark_delivered(message: str) -> None:
         )
     except OSError:
         pass
+
+
+def clear() -> None:
+    """Close the repeat window on a clean run, so the same fault coming back
+    later is a new incident and alerts again rather than sitting out the day."""
+    with contextlib.suppress(OSError):
+        _marker_path().unlink(missing_ok=True)
 
 
 def notify(message: str, dedup: bool = True) -> bool:

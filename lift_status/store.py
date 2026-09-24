@@ -97,6 +97,46 @@ def utc_now_iso() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def append_raw(data_dir, run_uuid, fetched_at, http_status, body, network_error) -> None:
+    """Append one line for this run attempt. Called before any parsing, and
+    before the database is opened, so a database that cannot be opened never
+    costs the response.
+
+    Fsynced: a run happens once per 30 minutes, so the extra syscall cost
+    is irrelevant, and this is the durability point the rest of the design
+    depends on - a crash or power loss right after this call must not lose
+    the response.
+    """
+    raw_dir = Path(data_dir) / RAW_DIRNAME
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    date_part = fetched_at[:10].replace("-", "")
+    path = raw_dir / f"messages-{date_part}.jsonl"
+    line = json.dumps(
+        {
+            "run_uuid": run_uuid,
+            "fetched_at_utc": fetched_at,
+            "http_status": http_status,
+            "body": body,
+            "network_error": network_error,
+        },
+        sort_keys=True,
+    )
+    with path.open("ab") as f:
+        # A power cut mid-append leaves a last line with no newline, and the
+        # next record appended onto it would be lost with the fragment.
+        if f.tell() and _last_byte(path) != b"\n":
+            f.write(b"\n")
+        f.write((line + "\n").encode("utf-8"))
+        f.flush()
+        os.fsync(f.fileno())
+
+
+def _last_byte(path: Path) -> bytes:
+    with path.open("rb") as f:
+        f.seek(-1, os.SEEK_END)
+        return f.read(1)
+
+
 class Store:
     def __init__(self, data_dir):
         self.data_dir = Path(data_dir)
@@ -119,29 +159,7 @@ class Store:
     # -- raw JSONL log -----------------------------------------------------
 
     def write_raw(self, run_uuid, fetched_at, http_status, body, network_error) -> None:
-        """Append one line for this run attempt. Called before any parsing.
-
-        Fsynced: a run happens once per 30 minutes, so the extra syscall cost
-        is irrelevant, and this is the durability point the rest of the design
-        depends on - a crash or power loss right after this call must not lose
-        the response.
-        """
-        date_part = fetched_at[:10].replace("-", "")
-        path = self.raw_dir / f"messages-{date_part}.jsonl"
-        line = json.dumps(
-            {
-                "run_uuid": run_uuid,
-                "fetched_at_utc": fetched_at,
-                "http_status": http_status,
-                "body": body,
-                "network_error": network_error,
-            },
-            sort_keys=True,
-        )
-        with path.open("a", encoding="utf-8") as f:
-            f.write(line + "\n")
-            f.flush()
-            os.fsync(f.fileno())
+        append_raw(self.data_dir, run_uuid, fetched_at, http_status, body, network_error)
 
     def iter_raw_lines(self):
         """Yield every recorded run attempt, oldest file first, append order

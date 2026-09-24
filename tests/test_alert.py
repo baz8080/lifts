@@ -64,6 +64,12 @@ class TheRepeatWindowOpensOnDelivery(unittest.TestCase):
         self.assertTrue(self._send())
         self.assertTrue(alert._suppressed(BANNER))
 
+    def test_a_clean_run_in_between_makes_the_same_fault_a_new_alert(self):
+        self._send()
+        alert.clear()
+        self.assertFalse(alert._suppressed(BANNER))
+        alert.clear()
+
     def test_a_different_banner_is_never_suppressed(self):
         self._send()
         self.assertFalse(alert._suppressed("lift-status: the disk is full"))
