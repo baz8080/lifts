@@ -9,7 +9,7 @@ repository was left alone: `lift_access/` and most of `lift_site/` have been
 reviewed diff by diff since 2026-08-26, and the real-corpus and golden tests pin
 what they publish.
 
-Ten findings. Seven were fixed, one was not a real path, and two are open.
+Ten findings. Eight were fixed, one was not a real path, and one is left for now.
 
 ## Fixed
 
@@ -42,6 +42,17 @@ Ten findings. Seven were fixed, one was not a real path, and two are open.
   unit "activating" and turned every later firing into a no-op. ssh now has
   `ConnectTimeout` and `ServerAliveInterval`, and the unit has a 15-minute cap.
 
+- **A `sort -u` merge replayed out of order.** `sort_keys=True` is there so two
+  collectors' logs can be merged with `sort -u`, which is also how git's
+  conflict on a shared day file gets resolved. But `sort -u` orders lines by
+  their first key, `body`, and replay followed line order, so a merged file
+  replayed out of time order. Replay now sorts each file by `fetched_at_utc`,
+  stably. The line-order rule was there for clock jumps, and it only ever
+  covered part of them: a pre-NTP stamp already lands in the wrong day's file,
+  which is ordered by name. On 2026-09-24 all 2,224 real lines were already in
+  time order within their files, so no rebuild moved. The owner's call:
+  merging logs has to work.
+
 ## Not a real path
 
 - **The backup merges `origin` into the tree the poller appends to, without the
@@ -50,18 +61,13 @@ Ten findings. Seven were fixed, one was not a real path, and two are open.
   `survey/`, through PRs. Taking the lock for a whole fetch and push would
   instead make a poll skip.
 
-## Open
+## Left for now
 
-- **`sort -u` and replay order disagree.** CLAUDE.md says `sort_keys=True` lets
-  two machines' logs be merged with `sort -u`. Replay follows line order within
-  a file, and `sort -u` orders lines by their first key, `body`, so a merged
-  file replays out of time order. It has never happened (one collector), and
-  the fix is a choice: sort by `fetched_at_utc` within a file on replay, which
-  `iter_raw_lines` currently refuses because of clock jumps, or merge by
-  timestamp rather than `sort -u`.
 - **`time-sync.target` does not wait for NTP.** It is reached as soon as
   timesyncd starts unless `systemd-time-wait-sync.service` is enabled, and the
   install does not enable it, so a catch-up poll after a reboot can be stamped
   with fake-hwclock's time. Enabling the wait service risks a poll that never
   runs if NTP is unreachable, which is the silent failure this collector exists
-  to avoid, so it is not changed blind.
+  to avoid. Left as it is by the owner on 2026-09-24. If it is taken up, the
+  shape is a poll that checks whether the clock is synced and still writes the
+  line, flagged, rather than one that waits or skips.

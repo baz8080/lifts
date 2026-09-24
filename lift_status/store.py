@@ -162,33 +162,35 @@ class Store:
         append_raw(self.data_dir, run_uuid, fetched_at, http_status, body, network_error)
 
     def iter_raw_lines(self):
-        """Yield every recorded run attempt, oldest file first, append order
-        within a file. Never sorts by the embedded timestamp - a Pi's clock can
-        jump (e.g. before NTP sync after a reboot), and replay must follow the
-        order runs actually happened in, not a timestamp that might be wrong.
+        """Yield every recorded run attempt, oldest file first, and in
+        `fetched_at_utc` order within a file, so two collectors' logs merged
+        with `sort -u` (which orders lines by their text) replay as they
+        happened. The sort is stable, so runs stamped in the same second keep
+        their order in the file.
 
         An undecodable line is skipped and counted in self.raw_decode_errors
-        rather than aborting the replay: write_raw's append is not atomic, so a
+        rather than aborting the replay: append_raw is not atomic, so a
         power cut leaves a truncated last line, and one bad line must not make
         every good line behind it unreplayable.
         """
         self.raw_decode_errors = 0
         for path in sorted(self.raw_dir.glob("messages-*.jsonl")):
+            records = []
             with path.open("r", encoding="utf-8") as f:
                 for lineno, line in enumerate(f, 1):
                     line = line.strip()
                     if not line:
                         continue
                     try:
-                        record = json.loads(line)
+                        records.append(json.loads(line))
                     except json.JSONDecodeError as exc:
                         self.raw_decode_errors += 1
                         print(
                             f"warning: skipping unreadable line {path.name}:{lineno}: {exc}",
                             file=sys.stderr,
                         )
-                        continue
-                    yield record
+            records.sort(key=lambda r: r.get("fetched_at_utc") or "")
+            yield from records
 
     # -- runs ----------------------------------------------------------
 

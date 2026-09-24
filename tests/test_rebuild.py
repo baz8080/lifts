@@ -118,6 +118,34 @@ class TestRebuildRoundTrip(unittest.TestCase):
         self.assertEqual(before["runs"], after["runs"])
         self.assertEqual(before["unidentifiable"], after["unidentifiable"])
 
+    def test_two_collectors_logs_merged_with_sort_u_rebuild_the_same_history(self):
+        seen = json.dumps([STATION_A, STATION_B])
+        only_a = json.dumps([STATION_A])
+        history = [
+            ("r1", "2026-08-08T12:00:00Z", 200, seen, None),
+            ("r2", "2026-08-08T12:30:00Z", None, None, "TransientError('down')"),
+            ("r3", "2026-08-08T13:00:00Z", 200, only_a, None),
+            ("r4", "2026-08-08T13:30:00Z", 200, only_a, None),
+            ("r5", "2026-08-08T14:00:00Z", 200, seen, None),
+        ]
+        with Store(self.data_dir) as store:
+            for run in history:
+                store.write_raw(*run)
+        self.assertEqual(poll.run_rebuild(self.data_dir), 0)
+        before = _snapshot(self.data_dir)
+        [b] = [m for m in before["messages"].values() if m["head"] == STATION_B["head"]]
+        self.assertEqual(b["reopen_count"], 1)
+
+        # The second machine logged the same runs; git's conflict, resolved the
+        # way CLAUDE.md says, is both copies through sort -u.
+        path = self.data_dir / "raw" / "messages-20260808.jsonl"
+        lines = path.read_text(encoding="utf-8").splitlines()
+        path.write_text("\n".join(sorted(set(lines + lines))) + "\n", encoding="utf-8")
+        self.assertNotEqual(path.read_text(encoding="utf-8").splitlines(), lines)
+
+        self.assertEqual(poll.run_rebuild(self.data_dir), 0)
+        self.assertEqual(_snapshot(self.data_dir), before)
+
     def test_rebuild_with_no_raw_logs_is_a_harmless_noop(self):
         # A fresh install has nothing to replay and nothing to lose.
         code = poll.run_rebuild(self.data_dir)
