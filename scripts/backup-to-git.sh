@@ -29,7 +29,15 @@ notify() {
 # So a `set -e` abort anywhere below still alerts instead of failing silently.
 on_exit() {
     status=$?
-    if [ "$status" -ne 0 ] && [ "$notified" -eq 0 ]; then
+    # Ignored, not trapped, so the alert's curl inherits it and survives the
+    # TERM systemd sends to the whole cgroup.
+    trap '' TERM
+    if [ "$status" -eq 143 ]; then
+        notify "lift-status backup: stopped by SIGTERM before it finished: the
+unit's 15-minute timeout if a git fetch or push hung, or a stop or shutdown
+mid-backup. Nothing new may be offsite. Check:
+  journalctl -u lift-status-backup.service -n 30"
+    elif [ "$status" -ne 0 ] && [ "$notified" -eq 0 ]; then
         notify "lift-status backup: failed unexpectedly (exit $status) in $DATA_DIR.
 Nothing new is offsite. Check:
   journalctl -u lift-status-backup.service -n 30"
@@ -38,8 +46,10 @@ Nothing new is offsite. Check:
 }
 trap on_exit EXIT
 # dash skips the EXIT trap on a signal it does not trap, and TERM is how the
-# unit's TimeoutStartSec ends a stalled push.
-trap 'exit 143' TERM INT
+# unit's TimeoutStartSec ends a stalled push. It can also kill a curl that was
+# mid-alert, which is why 143 always alerts rather than checking `notified`.
+trap 'exit 143' TERM
+trap 'exit 130' INT
 
 cd "$DATA_DIR" || {
     notify "lift-status backup: $DATA_DIR does not exist. Nothing is being backed up."

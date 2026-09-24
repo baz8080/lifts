@@ -58,9 +58,9 @@ Ten findings. Eight were fixed, one was not a real path, and one is left for now
   be stamped up to an hour before runs already in the same file, and a rebuild
   applies it before them where the live run applied it after. Line order only
   ever covered part of that, since a stamp that crosses midnight already lands
-  in the wrong day's file, and it cannot survive a merge at all. On 2026-09-24 all 2,224 real lines were already in
-  time order within their files, so no rebuild moved. The owner's call:
-  merging logs has to work.
+  in the wrong day's file, and it cannot survive a merge at all. On
+  2026-09-24 all 2,224 real lines were already in time order within their
+  files, so no rebuild moved. The owner's call: merging logs has to work.
 
 ## Not a real path
 
@@ -80,3 +80,41 @@ Ten findings. Eight were fixed, one was not a real path, and one is left for now
   to avoid. Left as it is by the owner on 2026-09-24. If it is taken up, the
   shape is a poll that checks whether the clock is synced and still writes the
   line, flagged, rather than one that waits or skips.
+
+## The review of the review - 2026-09-24
+
+The commit that acted on the PR's review was merged without a review of its
+own, and one found ten more. The root of three was the dedup marker: it held a
+single digest of the whole banner, raw error included. The fixes were reviewed
+in turn before they shipped, and that round changed the first of them.
+
+- **Two faults at once took turns to alert.** With the database broken and the
+  API flapping, the database and unreachable banners alternated, and each
+  change of digest was delivered. Each kind now has its own window.
+- **The same fault with different words was never suppressed.** 'timed out'
+  then 'connection refused', or `lift check` wording the error with `str()`
+  where the poll uses `repr()`, hashed apart. The kind is now the exit code,
+  plus a detail where a difference is news: a rejected key carries the masked
+  key, so a second key rejected within the day is pushed. Keying on the
+  banner's title was tried first and rejected in review for exactly that: it
+  would have sat on a newly captured key that was also refused. Schema root
+  and schema drift share an exit code and so a window; the first push already
+  said the shape moved.
+- **A failure that was not delivered did not break the clean stretch.** The
+  count was reset only when an alert was suppressed, so a fault lost to a
+  webhook blip counted as clean. `fail()` resets it on every failure.
+- **The database banner blamed `lift rebuild` for a lock.** A rebuild holds the
+  poll lock, so a poll never sees its lock, and `lift stats` holds its read
+  lock for far less than the 5s busy timeout. It says to find the holder with
+  `fuser`.
+- **The backup's TERM alert said nothing of the cause**, INT reported 143, and
+  a TERM landing on a curl mid-alert lost the alert. 143 now always alerts,
+  naming the timeout or a stop or shutdown; `on_exit` ignores TERM, which its
+  curl inherits, so the cgroup-wide TERM cannot kill it; INT is 130.
+- Three copies of the marker read became `_read_marker`, and `_run` classifies
+  the fetch before opening the database rather than again inside the error
+  handler. A marker in the older shape reads as empty, so the first failure
+  after deploying can send one extra alert.
+
+The finding that replay order no longer reproduces a live run after a
+fake-hwclock jump is the trade-off above, restated, and stands.

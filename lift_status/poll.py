@@ -186,23 +186,21 @@ def _run(data_dir: Path, client: MessagesClient) -> int:
         problem = f"cannot append to the raw log: {exc}"
         return alert.fail(alert.storage_banner(data_dir, problem), alert.EXIT_STORAGE)
 
+    fetch_failure = classify_fetch_failure(http_status, body_text, network_error)
     try:
         with Store(data_dir) as store:
             result = apply_response(
                 store, run_uuid, fetched_at, http_status, body_text, network_error
             )
     except (sqlite3.Error, OSError) as exc:
-        fetch_failure = classify_fetch_failure(http_status, body_text, network_error)
+        # With nothing collected the fetch is the news; the database alerts on
+        # the first run that has a response to lose.
         if fetch_failure:
-            # Nothing was collected, so the fetch is the news; the database
-            # alerts on the first run that has a response to lose.
             return _fetch_failure_alert(client, *fetch_failure)
         return alert.fail(alert.database_banner(data_dir, repr(exc)), alert.EXIT_DATABASE)
 
-    if result.outcome in ("auth_error", "unreachable"):
-        return _fetch_failure_alert(
-            client, result.outcome, result.error_detail or "", result.exit_code
-        )
+    if fetch_failure:
+        return _fetch_failure_alert(client, *fetch_failure)
     if result.outcome in ("parse_error", "not_a_list"):
         return alert.fail(alert.schema_root_banner(), result.exit_code)
 
@@ -221,7 +219,8 @@ def _run(data_dir: Path, client: MessagesClient) -> int:
 
 def _fetch_failure_alert(client: MessagesClient, outcome, detail, exit_code) -> int:
     if outcome == "auth_error":
-        return alert.fail(alert.auth_banner(client.masked_key, detail), exit_code)
+        banner = alert.auth_banner(client.masked_key, detail)
+        return alert.fail(banner, exit_code, client.masked_key)
     return alert.fail(alert.unreachable_banner(detail), exit_code)
 
 
@@ -237,7 +236,8 @@ def run_check(client: MessagesClient | None = None) -> int:
     try:
         items = client.get_messages()
     except AuthError as exc:
-        return alert.fail(alert.auth_banner(client.masked_key, str(exc)), alert.EXIT_AUTH)
+        banner = alert.auth_banner(client.masked_key, str(exc))
+        return alert.fail(banner, alert.EXIT_AUTH, client.masked_key)
     except (TransientError, ApiError) as exc:
         return alert.fail(alert.unreachable_banner(str(exc)), alert.EXIT_UNREACHABLE)
 

@@ -1,7 +1,7 @@
 """The repeat window, and the one thing it must not do: swallow a first alert.
 
-An unchanged banner is suppressed for a day so a stuck condition does not push
-every 30 minutes until the user mutes the topic. The window therefore has to
+A fault of the same kind is suppressed for a day so a stuck condition does not
+push every 30 minutes until the user mutes the topic. The window therefore has to
 open on delivery and not on the attempt, because the attempt most likely to fail
 is the first one after the collector stops.
 """
@@ -76,19 +76,61 @@ class TheRepeatWindowOpensOnDelivery(unittest.TestCase):
         self.assertFalse(alert._suppressed(BANNER))
 
     def test_a_fault_flapping_between_clean_polls_stays_one_alert(self):
-        self._send()
-        for _ in range(3):
-            self._clean_runs(alert.RECOVERED_AFTER_CLEAN_RUNS - 1)
-            self.assertFalse(self._send())
+        with mock.patch.object(urllib.request, "urlopen") as urlopen:
+            for _ in range(4):
+                alert.fail(alert.unreachable_banner("timed out"), alert.EXIT_UNREACHABLE)
+                self._clean_runs(alert.RECOVERED_AFTER_CLEAN_RUNS - 1)
+        self.assertEqual(urlopen.call_count, 1)
 
-    def test_a_different_banner_is_never_suppressed(self):
+    def test_a_failure_that_was_not_delivered_still_breaks_the_clean_stretch(self):
         self._send()
-        self.assertFalse(alert._suppressed("lift-status: the disk is full"))
+        self._clean_runs(alert.RECOVERED_AFTER_CLEAN_RUNS - 1)
+        with mock.patch.object(urllib.request, "urlopen", side_effect=OSError("blip")):
+            alert.fail("lift-status: the disk is full", alert.EXIT_STORAGE)
+        self._clean_runs(1)
+        self.assertTrue(alert._suppressed(BANNER))
+
+    def _fail(self, *banners_and_codes):
+        with mock.patch.object(urllib.request, "urlopen") as urlopen:
+            for args in banners_and_codes:
+                alert.fail(*args)
+        return urlopen.call_count
+
+    def test_the_same_kind_of_fault_with_a_different_raw_error_is_one_alert(self):
+        delivered = self._fail(
+            (alert.unreachable_banner("TimeoutError('timed out')"), alert.EXIT_UNREACHABLE),
+            (alert.unreachable_banner("ConnectionRefusedError(111)"), alert.EXIT_UNREACHABLE),
+        )
+        self.assertEqual(delivered, 1)
+
+    def test_a_second_rejected_key_is_news(self):
+        delivered = self._fail(
+            (alert.auth_banner("abcdef...1234", "401"), alert.EXIT_AUTH, "abcdef...1234"),
+            (alert.auth_banner("abcdef...1234", "403"), alert.EXIT_AUTH, "abcdef...1234"),
+            (alert.auth_banner("ghijkl...5678", "401"), alert.EXIT_AUTH, "ghijkl...5678"),
+        )
+        self.assertEqual(delivered, 2)
+
+    def test_two_faults_at_once_do_not_take_turns_to_alert(self):
+        unreachable = (alert.unreachable_banner("timed out"), alert.EXIT_UNREACHABLE)
+        database = (alert.database_banner("/data", "malformed"), alert.EXIT_DATABASE)
+        self.assertEqual(self._fail(*[unreachable, database] * 4), 2)
+
+    def test_an_older_marker_shape_means_send(self):
+        self.marker.write_text(json.dumps({"digest": "x", "sent_at": 1e12}), encoding="utf-8")
+        self.assertFalse(alert._suppressed(BANNER))
+
+    def test_a_different_kind_is_never_suppressed(self):
+        delivered = self._fail(
+            (alert.unreachable_banner("timed out"), alert.EXIT_UNREACHABLE),
+            (alert.storage_banner("/data", "No space left on device"), alert.EXIT_STORAGE),
+        )
+        self.assertEqual(delivered, 2)
 
     def test_an_expired_window_sends_again(self):
         self._send()
         stale = json.loads(self.marker.read_text(encoding="utf-8"))
-        stale["sent_at"] -= alert.ALERT_REPEAT_SECONDS + 1
+        stale["sent"] = {k: v - alert.ALERT_REPEAT_SECONDS - 1 for k, v in stale["sent"].items()}
         self.marker.write_text(json.dumps(stale), encoding="utf-8")
         self.assertFalse(alert._suppressed(BANNER))
 
