@@ -115,7 +115,7 @@ That last row is the spine of the back half of the series.
 | **a run** | a poll (as a noun), a pass | one scheduled collection attempt, every 30 minutes |
 | **the log** | the archive, the JSONL | the raw append-only files; the source of truth |
 | **the horizon** | last update, cutoff | the last moment a run actually reached the feed |
-| **planned works** | maintenance, scheduled | a notice whose text says "due to planned works" |
+| **planned works** | maintenance, scheduled | a notice whose text says "planned works", "planned maintenance" or "engineering works" (the last two since 18 Sep 2026). Quote the notice's own word where it matters |
 | **availability** | uptime, score | the share of days watched with nothing reported out at that station |
 | **grade** | rating, mark | the A to F letter, station-month only |
 | **step-free** | wheelchair-accessible, accessible | a route with no steps on it. The narrower, checkable claim |
@@ -173,6 +173,13 @@ rather than edited away: chapter 12's account of the golden file is corrected by
 chapter 06's "hand-curation is deliberately out" by chapter 15. Four chapters were added and the
 closing, which had outgrown the series' own 3,000-word ceiling, was split into 17a and 17b.
 Every current figure was re-measured against `../lifts-data` at its 12 September state.
+
+Session 3 (24 September 2026) merged `main` and extended the series over pull requests #55 to
+#58. Two chapters were added and the closing renumbered 19a and 19b. Chapter 17 closes chapter
+16's two bugs and corrects its diagnosis of one of them; chapter 18 corrects two sentences of
+chapter 01. Re-measuring found something no pull request mentions: August's national figure moved
+from 76% to 75% after August ended, because a planned-works notice at Tullamore came back. It is
+narrated in chapter 17 as a finding, not a decision.
 
 `figures.md` marks which rows come from a measurement and which are quoted at the date they
 were first measured. `PROGRESS.md` is the ledger for any later session.

@@ -8,7 +8,87 @@ Unlike the two sibling series, this one had the data to hand, so the current fig
 measured rather than lifted. Historical figures are quoted as measured on their stated date and
 say so where the number has since moved.
 
-## Measured 12 September 2026 (Session 2)
+## Measured 24 September 2026 (Session 3)
+
+Everything in this section was re-run on 24 September after merging `main` (through PR #58),
+with `../lifts-data` pulled to commit `cd7ea6a`. Same commands as the 12 September block below.
+Chapters 00, 17, 18, 19a and 19b quote this block; chapters 13 to 16 quote the 12 September one.
+
+### The corpus
+
+| Figure | Value | How |
+|---|---|---|
+| Runs recorded | 2,224 | `stats` |
+| Run outcomes | 2,217 ok, 7 unreachable | `stats` |
+| Coverage | 2026-08-08T21:30:55Z to 2026-09-24T05:02:51Z, 46 days | `stats` |
+| Messages tracked | 737 (13 open, 724 closed, 10 reopened at least once) | `stats` |
+| Unidentifiable items | 952 | `stats` |
+| Raw log size | 10.5 MiB; database 1.4 MiB | `stats` |
+| Outages after merging | 69, across 44 stations; 5 escalator, 9 planned | `lift_site.model.load_outages` |
+| Listed at the horizon | 4 lift and 1 escalator notice across 5 stations (HWTHJ, BROCK, BTSTN, TMORE lift; PERSE escalator) | site build |
+| Notices on record for the access report | 58 | `report` |
+| Verdicts | 31 lost, 23 unknown, 4 escalator | `report`, counting `->` lines |
+| Unknown by reason | 13 page does not mention a lift; 10 notice names a platform the page puts no lift at | same |
+| Unknown share over time | 6 of 24 (31 Aug), 7 of 30 (4 Sep), 14 of 45 (12 Sep), 23 of 58 (24 Sep) | the four measured blocks |
+| Tests | 526, OK, 11 skipped with `LIFT_STATUS_DATA_DIR` set; 34 skipped without | `unittest discover` |
+| Commits on `main` | 215, of which 142 carry `Co-Authored-By` | `git log origin/main` |
+| Trailer identifiers | seven: Opus 5 (78), Fable 5 (27), Fable 5.1 (18), Opus 5 (1M context) (9), Sonnet 5 (4), Opus 5.5 (3), bare "Claude" (3) | same |
+| Merged pull requests | 48 | `gh pr list --state merged` |
+| Open issues | none | `gh issue list` |
+
+### The site
+
+| Figure | Value | How |
+|---|---|---|
+| `index.html` | 61.5 KB | site build |
+| `data.js` | 7.9 KB | site build |
+| Initial load | 69.4 KB against a 500 KB budget | site build |
+| `outages.csv` | 28.7 KB, on demand | site build |
+| `feed.xml` | 43.0 KB, on demand | site build |
+| Station pages | 1,243.7 KB over 44 files | site build |
+| Shards | 32.3 KB over 44 files, largest `PERSE.js` at 2.5 KB | site build |
+| August national row | 21 stations, 28 outages, 22 faults, 6 planned, **75%**, 2 still out at month end | `national_month` |
+| August grade mix | A 2, B 1, C 4, D 7, E 5, F 2 | `station_month` per station |
+| September national row, so far | 30 stations, 43 outages, 39 faults, 4 planned, 85%, 5 ongoing | `national_month` |
+| September grade mix, so far | A 2, B 7, C 10, D 6, E 5 | `station_month` per station |
+
+### Chapter 17
+
+| Figure | Value | How |
+|---|---|---|
+| `PLANNED_MARKERS` | "planned works", "planned maintenance", "engineering works" | PR #56, `lift_site/model.py` |
+| Salthill and Monkstown, notice 1 | platform 1, planned maintenance, 2026-09-11T13:32:31Z to 2026-09-15T14:32:55Z; Irish Rail's start 2025-11-03 | database, messages 2049 |
+| Salthill and Monkstown, notice 2 | platforms 1 and 2, planned maintenance, from 2026-09-16T14:01:41Z; reissued 2026-09-17T09:01:12Z as a fault with head "Station - Lift out of order", closed 2026-09-17T23:02:21Z | database, messages 2184 and 2189 |
+| Salthill and Monkstown, September | old marker E 66% (8 of 24 days against); new marker C 91% (2 of 24) | `station_month` with the tuple swapped |
+| National September, old marker vs new | 85% both; planned 3 vs 4; C 9 vs 10, E 6 vs 5 | same |
+| Kishoge's `stationCode` | the literal name "Kishoge" | PR #55; `snapshot.load` with the fixup table emptied |
+| Feed location codes joining a station record | 76 of 76 with the table; 75 without, the miss being KISHO | `messages.location_codes` against `snapshot.load` |
+| Notices at KISHO | 1, "Delays of up to +15mins" | database |
+| Snapshot codes not matching `[A-Z0-9]+` | none with the table; "Kishoge" without | same |
+| August, 12 Sep corpus vs today, same code | 76% and A 3, then 75% and A 2; only Tullamore differs | raw logs cut at 2026-09-12 morning, rebuilt in a scratch dir |
+| Tullamore, August | A 100% then D 83% (4 of 24 watched days against) | `station_month` |
+| Tullamore's notice, stretch 1 | 2026-08-28T15:01:32Z to 2026-09-01T09:02:41Z, 3 d 18 h 01 m, planned | `load_outages` |
+| Tullamore's notice, stretch 2 | from 2026-09-16T14:01:41Z, still listed; pooled planned total 11 d 09 h at the horizon | same |
+| Irish Rail's start on Tullamore's notice | 31 Aug 2026 00:00 Dublin | station page |
+| When the pooled total crossed a week | about 2026-09-19T20:00Z, by arithmetic | 7 d minus 3 d 18 h 01 m 09 s after stretch 2 opened |
+| Tullamore, September so far | E 58% | station page |
+
+### Chapter 18
+
+| Figure | Value | How |
+|---|---|---|
+| Findings in the collector review | 10: 8 fixed, 1 not a real path, 1 left | `notes/collector-review.md` |
+| Collector files unchanged since 18 Aug | `parse.py`, `client.py`, `__main__.py`; `poll.py` by 16 lines | same |
+| Diff-by-diff review of the rest | since 2026-08-26 | same |
+| Database failure exit code | 7 | same; `lift_status/alert.py` |
+| Alert marker clears after | 4 consecutive clean runs, two hours | same |
+| `TimeoutStartSec` | 60, now 300; client worst case 3 attempts of 15 s connect and 15 s read, plus backoff and DNS | same |
+| Backup unit cap | 15 minutes | PR #58 |
+| Raw lines already in time order | all 2,224, so no rebuild moved | `notes/collector-review.md`; PR #58 verification |
+| `fake-hwclock` skew after a power cut | up to an hour | `notes/collector-review.md` |
+| First review of the access branch | 9 findings | ch 12 § The golden file |
+
+## Measured 12 September 2026 (Session 2), quoted by chapters 13 to 16
 
 Session 0 measured on 31 August and Session 1 on 4 September. Everything in this section was
 re-run on 12 September after merging `main`. Where a chapter quotes an earlier figure it says so,

@@ -1,5 +1,5 @@
-# 17a. Closing: what the site can and cannot say
-*~9 min read · the whole series · 12 September 2026*
+# 19a. Closing: what the site can and cannot say
+*~10 min read · the whole series · 24 September 2026*
 
 *Where we are:* the end, in two halves. This one is the account: the figures, the two lists, and
 the table of where the three sites diverged. The next is what I would tell somebody starting a
@@ -9,28 +9,33 @@ fourth.
 
 **Which Irish Rail stations have lifts out of service, and for how long?**
 
-As of 12 September 2026, over 35 days of collection, 1,648 runs and 497 recorded notices:
+As of 24 September 2026, over 46 days of collection, 2,224 runs and 737 recorded notices:
 
-- **53 outages across 37 stations.** 6 planned works in August and 1 in September, 3 escalators.
-- Lift availability across the 21 stations named in August: **76%**, and **79%** across the 22
+- **69 outages across 44 stations.** 6 planned works in August and 4 in September, 5
+  escalators.
+- Lift availability across the 21 stations named in August: **75%**, and **85%** across the 30
   named in September so far. That is the share of watched days on which no lift was reported
   out at those stations.
-- August grades across 21 station-months: **A 3, B 1, C 4, D 6, E 5, F 2.** September so far,
-  across 22: **A 2, C 7, D 10, E 1, F 2.**
-- At the last poll: three lift notices, across three stations.
-- **28 of the 45 notices removed step-free access** to at least one platform, as worked out
-  from Irish Rail's own station pages. 3 were escalators. **14 are unknown**, because the two
+- August grades across 21 station-months: **A 2, B 1, C 4, D 7, E 5, F 2.** September so far,
+  across 30: **A 2, B 7, C 10, D 6, E 5.**
+- At the last poll: four lift notices and one escalator, across five stations.
+- **31 of the 58 notices removed step-free access** to at least one platform, as worked out
+  from Irish Rail's own station pages. 4 were escalators. **23 are unknown**, because the two
   hand-written sources disagree.
 
-Thirty-five days is not a season and none of these numbers should be quoted as a fact about
-Irish Rail. They are a fact about thirty-five days, which is the honest scope, and the site says
-the collection start date on every page. Several of them were different a week ago for reasons
-that had nothing to do with lifts breaking: chapters 10 and 11.
+Forty-six days is not a season and none of these numbers should be quoted as a fact about Irish
+Rail. They are a fact about forty-six days, which is the honest scope, and the site says the
+collection start date on every page. Several of them have moved for reasons that had nothing to
+do with lifts breaking: chapters 10 and 11. And one of them moved **after its month had ended**.
+August was 76% when chapter 16 was written and is 75% now, because a planned-works notice at
+Tullamore came back in September and took its August grace with it (chapter 17).
 
-The unknown share is the row to watch, and it is going the wrong way: 6 of 24 on 31 August, 7 of
-30 on 4 September, **14 of 45** now. The corpus is reaching stations whose pages are thinner
-than the ones it started with, which is what chapter 12's reliability section meant by the
-page's own error rate being the ceiling, and chapter 15 is the attempt to raise it.
+The unknown share is the row to watch, and it is still going the wrong way: 6 of 24 on 31
+August, 7 of 30 on 4 September, 14 of 45 on 12 September, **23 of 58** now, which is two in
+five. Thirteen of the twenty-three are notices at stations whose page does not mention a lift. The
+corpus keeps reaching stations whose pages are thinner than the ones it started with, which is
+what chapter 12's reliability section meant by the page's own error rate being the ceiling, and
+chapter 15 is the attempt to raise it.
 
 ## What the site can say
 
@@ -41,8 +46,8 @@ page's own error rate being the ceiling, and chapter 15 is the attempt to raise 
   and a letter for that share on a scale it declares as its own.
 - **How long each stretch a notice was on the feed ran**, rather than the envelope of its first
   and last appearance, and **which stations are out right now**.
-- **Whether a notice was a fault or planned works**, from the notice's own words, and how long
-  works ran past a week of grace.
+- **Whether a notice was a fault or planned works**, from the notice's own words in any of the
+  three wordings the corpus uses for it, and how long works ran past a week of grace.
 - **What Irish Rail claims the start date was**, printed as their claim and used for nothing.
 - **What an outage did to step-free access**, worked out from Irish Rail's own station page,
   labelled as an inference, with a link inviting correction, and **which platform kept it**
@@ -71,8 +76,11 @@ page's own error rate being the ceiling, and chapter 15 is the attempt to raise 
   because the feed names a station only when something is wrong with it, and the page says so.
 - **Judge an entrance-leg lift outage against experience.** The machinery exists, no notice has
   exercised it, and a sixth of the network says it has no ticket office.
-- **Tell "planned maintenance" from a fault.** The marker is one literal phrase and Irish Rail
-  used another on 11 September. Open as issue #53.
+- **Promise that a past month's letter is final.** A planned-works notice that comes back can
+  move a month that has already ended, and Tullamore's August did, on 19 September. Nothing on
+  the page says so yet (chapter 17).
+- **Recognise a fourth word for planned works**, or a fifth page that puts a name in the code
+  field, until a second reader or a tripwire notices. Both fixes in chapter 17 are closed lists.
 - **Colour a day before 8 August 2026.** Nothing was watching.
 
 ## The three-way table
@@ -98,8 +106,10 @@ differently, and every one traces to a property of the data rather than a prefer
 Some things all three do the same way, and they are the conventions worth carrying to a fourth
 site:
 
-- Raw responses written verbatim before any parsing, with sorted keys, so two machines' logs
-  merge with `sort -u`.
+- Raw responses written verbatim before any parsing, and before anything else can fail, with
+  sorted keys, so two machines' logs merge with `sort -u`. Here that needed a second half: the
+  merge reorders lines, so replay sorts each file by fetch time (chapter 18). Whether the
+  siblings need the same is worth checking.
 - A window that ends at the last **successful** collection, never at the build clock, with the
   gap drawn as "no data".
 - A failed run structurally unable to reach the code that closes records.
@@ -123,11 +133,13 @@ The repository keeps a table of things not to re-litigate. Translated out of its
   the feed blinking rather than an outage ending.
 - **A notice reissued at the very poll the old one vanished is the same outage.** A gap of a
   poll or more is two.
-- **Planned works are whatever the notice text calls planned works**, and they are excused for
-  their first week and counted in full after it, in their own colour once they are.
+- **Planned works are whatever the notice text calls planned works, planned maintenance or
+  engineering works**, and they are excused for their first week and counted in full after it,
+  in their own colour once they are. The week is measured over every stretch of the notice, so
+  a notice that comes back can take back a grace it had already been given.
 - **A station's grade is lift availability**: days watched with no lift reported out, on this
   site's own A to F scale, because no Irish or EU target exists. It is not step-free
-  availability either, because it counts notices rather than access, and a quarter of the
+  availability either, because it counts notices rather than access, and two in five of the
   access verdicts are unknown.
 - **The scale runs A to F inclusive**, with E splitting the old F band at 50%, which lands in a
   real gap in the data.
@@ -150,12 +162,16 @@ The repository keeps a table of things not to re-litigate. Translated out of its
   rather than to the method.
 - **How reliable the derivation is has its own dated section**, by class of claim, including
   the classes that are untested.
+- **The collector writes the raw line before it opens the database**, and a database failure is
+  its own alert. The one piece of the collector's review left open, waiting for NTP after a
+  reboot, is left by decision, with the shape of the fix written down.
 
 ## Notes
 
-- Corpus figures measured 12 September 2026 by rebuilding `../lifts-data` and running the site
+- Corpus figures measured 24 September 2026 by rebuilding `../lifts-data` and running the site
   build and `python -m lift_access report`. All registered in `figures.md`.
 - The settled-decisions list is a plain-language rendering of the table in `CLAUDE.md` §
   Settled - don't re-litigate without reading the note, whose rows point at `notes/site.md`,
-  `notes/station-access.md`, `notes/publish-cadence.md` and `notes/step-free-graph.md`.
-- Continued in **17b**, which carries the moral and the glossary.
+  `notes/station-access.md`, `notes/publish-cadence.md`, `notes/step-free-graph.md` and
+  `notes/collector-review.md`.
+- Continued in **19b**, which carries the moral and the glossary.

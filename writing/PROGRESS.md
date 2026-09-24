@@ -14,6 +14,12 @@ later session) -> `final`.
   06's "hand-curation is deliberately out" by chapter 15. Four chapters added; the closing,
   which had passed the series' own 3,000-word ceiling, split into 17a and 17b; the new chapters
   numbered 13 to 16 so no number is skipped.
+- **Session 3 (24 Sep 2026)** merged `main` and extended over PRs #55 to #58. Two chapters added
+  (17, 18) and the closing renumbered 19a and 19b. Chapter 17 closes chapter 16's two bugs and
+  corrects its Kishoge diagnosis; chapter 18 corrects two sentences of chapter 01. Forward
+  pointers added to 01, 10 and 16. **Re-measuring found August's figure had moved after August
+  ended** (Tullamore, A to D on 19 Sep, from pooled planned-works grace), which no PR mentions;
+  it is narrated in 17 as a finding, not decided.
 
 A later session should do the continuity and review pass, and re-check the "quoted at the date
 they were measured" rows in `figures.md` against their stated sources.
@@ -36,17 +42,20 @@ they were measured" rows in `figures.md` against their stated sources.
 | 13 | What a reader can take away | #49, #50 | drafted | 1,364 |
 | 14 | A guard that was guarding the corpus | #51 | drafted | 1,421 |
 | 15 | Building the thing that does not exist | #46 | drafted | 2,403 |
-| 16 | A fourth site, and two bugs found sideways | #54, issues #52, #53 | drafted | 1,576 |
-| 17a | Closing: what the site can and cannot say | - | drafted | 2,111 |
-| 17b | Closing: what I would tell someone starting the fourth | - | drafted | 1,520 |
+| 16 | A fourth site, and two bugs found sideways | #54, issues #52, #53 | drafted | 1,655 |
+| 17 | The same thing, said differently | #55, #56 | drafted | 2,085 |
+| 18 | The one code a rebuild cannot undo | #57, #58 | drafted | 2,082 |
+| 19a | Closing: what the site can and cannot say | - | drafted | 2,355 |
+| 19b | Closing: what I would tell someone starting the fourth | - | drafted | 1,791 |
 
-Total ~37,200 words, 27 concept boxes, three hand-written SVGs and one mermaid flow (ch 01).
+Total ~42,200 words, 31 concept boxes, three hand-written SVGs and one mermaid flow (ch 01).
+Word counts for 00, 01, 10 and 16 include this session's refreshed figures and forward pointers.
 
 Now longer than both siblings (esb ~24,500 over 12, uisce ~32,600 over 18), which is a fact
-about the repository rather than about the writing: it has shipped 15 pull requests in the
-twelve days since the first draft. The shape still holds. Chapter 03 is still the compressed
-one, and **chapters 06 to 16 are 22,000 words, 59% of the series**, all of them on the access
-problem and what followed from it.
+about the repository rather than about the writing: it has merged 20 pull requests in the 24
+days since the first draft. The shape still holds. Chapter 03 is still the compressed one, and
+**chapters 06 to 17 are 24,700 words, 59% of the series**, all of them on the access problem and
+what followed from it. Chapter 18 is the first late chapter that goes back to the collector.
 
 ## Chapter summaries (3 lines each)
 
@@ -102,8 +111,15 @@ problem and what followed from it.
 - **16** A fourth site reads the same logs. The boundary written down, the location-codes trap
   (288 of 497, zero lift notices), and two bugs found by pointing a different tool at the same
   data. Box: a second reader of the same data is a test you did not write.
-- **17a** The figures, the two lists, the three-way table, the settled decisions.
-- **17b** The moral, its two codas, and a 26-entry glossary.
+- **17** #53 answered as vocabulary, which by ch 04's account of the grace is the purpose answer
+  too; Kishoge's page puts the name in the code field; Tullamore's August moved after it ended.
+  Boxes: a literal string is a vocabulary of one; a property of the notice, published as a
+  property of the month.
+- **18** The collector's one whole-file review: the raw line waited on the database, a probe that
+  passes on a full card, `sort -u` reorders so replay sorts by time. Boxes: the invariant has an
+  upstream edge; a merge that deduplicates also reorders.
+- **19a** The figures, the two lists, the three-way table, the settled decisions.
+- **19b** The moral, its three codas, and a 31-entry glossary.
 
 ## Open threads
 
@@ -122,10 +138,14 @@ problem and what followed from it.
   successor rather than an edit. Chapter 16's two issues are open, and #53 in particular turns
   on what chapter 04's grace is *for*, so whatever is decided belongs beside that argument.
   Chapter 12's entrance leg is still machinery with no live case.
-- **The unknown verdict share is the number to watch**: 6 of 24, then 7 of 30, now 14 of 45. If
+- **The unknown verdict share is the number to watch**: 6 of 24, 7 of 30, 14 of 45, now 23 of 58. If
   it keeps climbing, chapters 07 and 12's account of the prose derivation needs revisiting, and
   it is the strongest argument in the series for chapter 15's survey.
 - A root `README.md` pointer to `writing/` is deliberately left for the publish decision, as
   both sibling series did.
-- The repository has shipped 15 pull requests in twelve days. Check `git log origin/main` before
-  assuming this account is current; anything after #54 needs a new chapter or an extension.
+- **Tullamore's August is a live question the series raised rather than reported.** If an issue
+  or a note decides it (provisional months, frozen months, or grace spent in time order), chapter
+  17 needs a successor, and 19a's "cannot" list changes. As of 24 Sep 2026 no issue exists.
+- The Kishoge fixup has no guard; chapter 17 says so. If a tripwire lands, 17 needs a pointer.
+- The repository has merged 20 pull requests in 24 days. Check `git log origin/main` before
+  assuming this account is current; anything after #58 needs a new chapter or an extension.

@@ -164,6 +164,10 @@ reissued notices was summing the pooled total per chain member, and a chain can 
 stretches of one notice (A reissued as B, then reverted to A), so A's total was counted twice.
 Five and a half days of works reported as nine, which crosses the grace and drops the grade.
 
+Pooling has one consequence nobody wrote down, because it needs a notice to come back weeks
+later. The grace is recomputed every time the notice reappears, so a month that has already
+ended can change its letter. Tullamore's August did, on 19 September. Chapter 17.
+
 ## What the split moved
 
 | station, August 2026 | before | after |

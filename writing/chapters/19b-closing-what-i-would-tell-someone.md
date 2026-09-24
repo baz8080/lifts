@@ -1,15 +1,15 @@
-# 17b. Closing: what I would tell someone starting the fourth one
-*~7 min read · the whole series · 12 September 2026*
+# 19b. Closing: what I would tell someone starting the fourth one
+*~8 min read · the whole series · 24 September 2026*
 
-*Where we are:* the second half of the closing. 17a is the account of what the site can and
-cannot say; this is what four weeks of it taught, and a glossary of every idea the series
+*Where we are:* the second half of the closing. 19a is the account of what the site can and
+cannot say; this is what seven weeks of it taught, and a glossary of every idea the series
 boxed.
 
 ## What I would tell someone starting the fourth one
 
 The other two series each end with a sentence: the water site's about approximating carefully,
 the power site's *collect first, interpret later, keep the bytes*. This one is different, and it
-is the thing I did not know four weeks ago:
+is the thing I did not know seven weeks ago:
 
 > **Collect first, and publish no meaning you cannot source.**
 
@@ -38,9 +38,9 @@ objection to doing that had been written down in full, which is the only reason 
 read later as a specification rather than a verdict. **Write your rejections out properly. One
 of them is a design document you have not recognised yet.**
 
-So the second half of that sentence is where the work went. Say "unknown" a quarter of the
-time. Publish the derivation as an inference and link a way to correct it. Default every error
-to the direction that wastes a journey rather than strands one. Refuse to write a parser where
+So the second half of that sentence is where the work went. Say "unknown" as often as it is
+true, which here is two times in five. Publish the derivation as an inference and link a way to
+correct it. Default every error to the direction that wastes a journey rather than strands one. Refuse to write a parser where
 a reviewed list of two entries is the true claim. And when the number on the front of the page
 starts answering a question you did not ask it, write the issue with the measurements in it
 rather than adjusting the number quietly.
@@ -52,9 +52,16 @@ against the alternative had been written out in full rather than summarised as "
 against". A note that records why something was rejected also tells you, later, exactly what
 would have to change for it to be right.
 
+And a coda from the last week, which is about where not to look. The code that had never been
+reviewed was the collector, because it was the oldest and the quietest, and it was also the only
+code whose mistakes a rebuild cannot undo. The rule that made everything else safe to change
+made the thing upstream of it look safe too. Review by how permanent a mistake would be, not by
+how recently the code moved. And re-measure the months you think are finished: one of them was
+not.
+
 ## Glossary
 
-Every concept boxed in the series, in order of appearance. Twenty-seven of them.
+Every concept boxed in the series, in order of appearance. Thirty-one of them.
 
 | Concept | Chapter | In one line |
 |---|---|---|
@@ -85,9 +92,13 @@ Every concept boxed in the series, in order of appearance. Twenty-seven of them.
 | An edge that records ignorance | 15 | A model with no way to say "something is here and I do not know what" encodes absence as impossibility |
 | The boundary is a question about the artefact, not the code | 16 | Whose CI blocks whose merge, and how many credentials hit an endpoint, decide where code lives more than coupling does |
 | A second reader of the same data is a test you did not write | 16 | Run it beside yours and diff the answers: a disagreement count is a finding a regular expression cannot give you |
+| A literal string is a vocabulary of one | 17 | A phrase test cannot fail, only decline; let the corpus list the wordings, and know the list is still closed |
+| A property of the notice, published as a property of the month | 17 | If a past month's number depends on something that outlives the month, it is provisional, and should say so or stop at the edge |
+| The invariant has an upstream edge | 18 | "Everything derived is disposable" protects what runs after the log is written, and nothing that runs before it |
+| A merge that deduplicates also reorders | 18 | Removing duplicates by sorting imposes an order; keep order in a field, not in line position, and state what the field costs |
 
 ## Notes
 
-- Corpus figures measured 12 September 2026 by rebuilding `../lifts-data` and running the site
+- Corpus figures measured 24 September 2026 by rebuilding `../lifts-data` and running the site
   build and `python -m lift_access report`. All registered in `figures.md`.
 - The sibling closings: uisce series ch 17, esb series ch 8.

@@ -1,5 +1,5 @@
 # 01. A feed that is not about lifts
-*~7 min read · PR #1 · 8 to 18 August 2026*
+*~8 min read · PR #1 · 8 to 18 August 2026*
 
 *Where we are:* nothing exists yet. This chapter is the collector: what it writes down, in what
 order, and the one property everything else depends on.
@@ -52,6 +52,11 @@ written with `json.dumps(..., sort_keys=True)`. Because the keys are always in t
 the same observation written by two different machines produces byte-identical text, so two
 collectors' logs can be merged with `sort -u` and the duplicates simply vanish. That is the
 whole of the multi-machine story, and it is one keyword argument.
+
+That paragraph is left as it was written, and it was not the whole story. The merge removes
+duplicates by sorting, and sorting reorders, so replay had to learn to sort by fetch time. And
+the line written "before any parsing" was, until 24 September, written after the database had
+been opened. Chapter 18.
 
 ### The feed is not a lift feed
 

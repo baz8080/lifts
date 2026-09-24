@@ -110,6 +110,10 @@ What to do about it is genuinely open, and the issue says so rather than decidin
 "planned maintenance" should earn the same week of grace as "planned works" is a question about
 what the grace is for, which is chapter 04's argument, not a question about a regular expression.
 
+It closed on 18 September, and it was less open than this paragraph makes it sound: by chapter
+04's own account of what the grace is for, all three wordings claim the same kind of event.
+Chapter 17.
+
 ### Kishoge is keyed by its name
 
 The station facts are keyed by station code, read from the page's own code field. For one
@@ -132,6 +136,10 @@ The fix is not obvious and the issue does not pretend otherwise. Falling back to
 produced this; validating the code against the known code space, or refusing the record outright
 the way chapter 08's partial-fetch refusal does, are both defensible and both change what the
 denominator means.
+
+The diagnosis above is the issue's, repeated here without being checked, and it was wrong.
+Nothing fell back to anything: Irish Rail's page publishes the name in the code field. Neither of
+the two fixes offered here shipped either. Chapter 17.
 
 ## Where it left the site
 

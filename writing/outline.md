@@ -1,8 +1,8 @@
-# Outline - 16 posts plus intro and a two-part closing, chronological
+# Outline - 18 posts plus intro and a two-part closing, chronological
 
 Each entry: PRs and dates, thesis, concepts boxed, worked example, and the three-way contrast
-the chapter must state. The repo's history is small enough to read directly (204 commits, 42
-merged pull requests, six `notes/` files, two open issues), so there is no `sources/` extraction
+the chapter must state. The repo's history is small enough to read directly (215 commits, 48
+merged pull requests, seven `notes/` files, no open issues), so there is no `sources/` extraction
 as the uisce series needed; `figures.md` is the registry.
 
 The series' standing mandate, on top of the shared rules: **every fork from the sibling sites
@@ -266,15 +266,44 @@ its page's code field is unparseable. **Concept.** A second reader of the same d
 you did not write. **Contrast.** The boundary question is new; the siblings have no fourth
 reader.
 
-## Ch 17a - Closing: what the site can and cannot say
+## Ch 17 - The same thing, said differently · PRs #55, #56 · 18 to 24 Sep
+
+**Thesis.** Both of ch 16's bugs close, and neither the way its issue proposed. "planned
+maintenance" and "engineering works" join "planned works" because, by ch 04's own account of
+what the grace is for, all three claim the same kind of event, so ch 16 made #53 sound more open
+than it was. Kishoge's page publishes the name *in* the code field (the issue's "missing or
+unparseable, falls back" was wrong, and ch 16 repeated it); the fix is a one-entry hand table,
+not validation or refusal, and nothing guards the next one. Then a finding from re-measuring:
+Tullamore's planned works came back on 16 Sep, the pooled total crossed a week on the 19th, and
+August's A became a D nineteen days after August ended, with nothing on the page saying so.
+**Concepts.** A literal string is a vocabulary of one; a property of the notice, published as a
+property of the month. **Example.** Salthill and Monkstown's September, E 66% to C 91%, and the
+reissue whose head said "Station". **Contrast.** None needed; the month question is this site's
+own.
+
+## Ch 18 - The one code a rebuild cannot undo · PRs #57, #58 · 20 to 24 Sep
+
+**Thesis.** The collector was the oldest, least-changed code and the only code whose mistakes
+a rebuild cannot undo, so it got the repository's one whole-file review. Ten findings: the raw
+line was written inside the block that opened the database; an empty probe file passes on a full
+card (ch 08's shape, missed by ch 08's own audit); a power-cut fragment swallowed the next line;
+gzip errors escaped the retry; the alert marker outlived a recovery; systemd's 60 s cap was
+below the client's worst case; the backup could hang. And ch 01's "one keyword argument":
+`sort -u` deduplicates by sorting, which reorders by `body`, so replay now sorts by fetch time,
+at the stated cost of `fake-hwclock`'s hour. #57's comment rule as a coda. **Concepts.** The
+invariant has an upstream edge; a merge that deduplicates also reorders. **Example.** 2,224 lines
+already in order, so nothing moved. **Contrast.** Stated only as a question in 19a: whether the
+siblings' merges need the same.
+
+## Ch 19a - Closing: what the site can and cannot say
 
 The figures with their date, the two lists, the ten-row three-way table and the identical
-column, the settled decisions in plain language. Split from 17b because the closing outgrew the
+column, the settled decisions in plain language. Split from 19b because the closing outgrew the
 series' own 3,000-word ceiling.
 
-## Ch 17b - Closing: what I would tell someone starting the fourth one
+## Ch 19b - Closing: what I would tell someone starting the fourth one
 
 The moral, which is not either sibling's: *collect first, and publish no meaning you cannot
 source*, with the September coda on rejected alternatives and the newer one from ch 15: write
 your rejections out properly, because one of them is a design document you have not recognised
-yet. Glossary of all 27 concept boxes.
+yet. A coda from ch 17 and 18 on where not to look. Glossary of all 31 concept boxes.
