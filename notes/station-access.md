@@ -753,7 +753,7 @@ nothing may ever need to.
 ## The snapshot
 
 `lifts-data/stations/irishrail-<date>.jsonl` holds every payload **verbatim**,
-one per line, `sort_keys=True`, the shape `store.write_raw` uses. 7.8 MB plain,
+one per line, `sort_keys=True`, the shape `store.append_raw` uses. 7.8 MB plain,
 which git stores at about 2 MB and which greps and diffs. Never edited; the
 derivation is always recomputed from it.
 

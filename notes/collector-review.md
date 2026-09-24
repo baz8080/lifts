@@ -14,11 +14,13 @@ Ten findings. Eight were fixed, one was not a real path, and one is left for now
 ## Fixed
 
 - **The database could cost the response.** `Store()` opened SQLite and ran the
-  schema before `write_raw`, so a database left corrupt by a power cut, or
+  schema before the raw append, so a database left corrupt by a power cut, or
   locked past the 5s busy timeout, stopped every poll from reaching the log,
   with a traceback and no alert. `append_raw` now writes the line before the
   database is opened, and a database failure is its own alert and exit code 7,
-  saying the response was kept.
+  saying the response was kept and what to do for a lock, a full card or
+  corruption. A fetch that failed keeps its own alert even when the database
+  is broken too, since then there was no response to keep.
 - **A full SD card was a traceback, not the storage alert.** `check_writable`
   touches an empty file, which needs no data block and passes on a full disk.
   An `OSError` from the append now goes to the storage banner.
@@ -30,10 +32,12 @@ Ten findings. Eight were fixed, one was not a real path, and one is left for now
   raises `EOFError` or `zlib.error`, neither an `OSError`, so they bypassed the
   retry, the raw line and the alert. They are now a `TransientError`.
 - **A second outage within a day of the first was silent.** The alert dedup
-  marker outlived a recovery, so the same banner after a clean run was
-  suppressed for up to 24h. A clean run now clears it. The cost is that a
-  fault flapping at poll granularity alerts on each return; each poll already
-  retries three times, so that is a real outage each time.
+  marker outlived a recovery, so the same banner after a clean stretch was
+  suppressed for up to 24h. The marker now counts consecutive clean runs and
+  goes after four, two hours at the 30-minute cadence; a suppressed failure
+  resets the count. Clearing it on the first clean run was tried first and
+  rejected in review: a flapping API would then alert on every failure, which
+  is what the window exists to stop.
 - **systemd could kill a poll before it logged anything.** `TimeoutStartSec=60`
   was below the client's own worst case (three attempts of a 15s connect and a
   15s read, plus backoff and DNS). It is 300 now.
@@ -41,15 +45,20 @@ Ten findings. Eight were fixed, one was not a real path, and one is left for now
   and ssh had no keepalive, so a push stalled on a half-open connection held the
   unit "activating" and turned every later firing into a no-op. ssh now has
   `ConnectTimeout` and `ServerAliveInterval`, and the unit has a 15-minute cap.
+  The script traps TERM, because dash skips the EXIT trap on a signal it does
+  not trap, and the cap would otherwise end the backup without an alert.
 
 - **A `sort -u` merge replayed out of order.** `sort_keys=True` is there so two
   collectors' logs can be merged with `sort -u`, which is also how git's
   conflict on a shared day file gets resolved. But `sort -u` orders lines by
   their first key, `body`, and replay followed line order, so a merged file
   replayed out of time order. Replay now sorts each file by `fetched_at_utc`,
-  stably. The line-order rule was there for clock jumps, and it only ever
-  covered part of them: a pre-NTP stamp already lands in the wrong day's file,
-  which is ordered by name. On 2026-09-24 all 2,224 real lines were already in
+  stably. The cost is the clock jump the old line-order rule was for: after a
+  power cut, fake-hwclock restores the last hourly save, so a catch-up poll can
+  be stamped up to an hour before runs already in the same file, and a rebuild
+  applies it before them where the live run applied it after. Line order only
+  ever covered part of that, since a stamp that crosses midnight already lands
+  in the wrong day's file, and it cannot survive a merge at all. On 2026-09-24 all 2,224 real lines were already in
   time order within their files, so no rebuild moved. The owner's call:
   merging logs has to work.
 

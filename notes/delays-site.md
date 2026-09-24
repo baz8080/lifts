@@ -18,7 +18,7 @@ and 2026-09-11, over 1620 successful runs.
 The question "a second collector, or a delay poll target added to `lift_status`"
 has a shorter answer than it looks: **there is nothing to collect**. One endpoint
 returns the whole feed in one response - `client.py` says so and the log proves
-it - and `store.write_raw` writes that response verbatim before anything reads
+it - and `store.append_raw` writes that response verbatim before anything reads
 it. Every delay notice the other site will ever show is already on disk, back to
 the first poll.
 

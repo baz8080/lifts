@@ -121,20 +121,17 @@ def append_raw(data_dir, run_uuid, fetched_at, http_status, body, network_error)
         },
         sort_keys=True,
     )
-    with path.open("ab") as f:
+    with path.open("a+b") as f:
         # A power cut mid-append leaves a last line with no newline, and the
         # next record appended onto it would be lost with the fragment.
-        if f.tell() and _last_byte(path) != b"\n":
-            f.write(b"\n")
+        end = f.seek(0, os.SEEK_END)
+        if end:
+            f.seek(end - 1)
+            if f.read(1) != b"\n":
+                f.write(b"\n")
         f.write((line + "\n").encode("utf-8"))
         f.flush()
         os.fsync(f.fileno())
-
-
-def _last_byte(path: Path) -> bytes:
-    with path.open("rb") as f:
-        f.seek(-1, os.SEEK_END)
-        return f.read(1)
 
 
 class Store:
@@ -157,9 +154,6 @@ class Store:
         self.conn.close()
 
     # -- raw JSONL log -----------------------------------------------------
-
-    def write_raw(self, run_uuid, fetched_at, http_status, body, network_error) -> None:
-        append_raw(self.data_dir, run_uuid, fetched_at, http_status, body, network_error)
 
     def iter_raw_lines(self):
         """Yield every recorded run attempt, oldest file first, and in
@@ -369,7 +363,7 @@ class Store:
             grace = max(1, int(raw_grace))
         except ValueError:
             # A typo in the env file must not stop collection dead here, after
-            # write_raw and before any alert path.
+            # the raw append and before any alert path.
             print(
                 f"warning: LIFT_STATUS_GRACE_MISSES={raw_grace!r} is not a number; "
                 f"using {DEFAULT_GRACE_MISSES}",

@@ -40,6 +40,11 @@ BANNER_WIDTH = 78
 # How long before an unchanged banner is worth pushing again.
 ALERT_REPEAT_SECONDS = 24 * 60 * 60
 
+# Consecutive clean runs (two hours at the 30-minute cadence) before the same
+# fault counts as a new incident. One clean poll between two failures of a
+# flapping API is not a recovery.
+RECOVERED_AFTER_CLEAN_RUNS = 4
+
 
 def banner(title: str, lines: list[str]) -> str:
     bar = "!" * BANNER_WIDTH
@@ -163,11 +168,17 @@ def database_banner(data_dir, detail: str) -> str:
             f"{detail}",
             "",
             "This run's response WAS written to the raw log, so nothing has been",
-            "lost yet, but the database is not being updated. A database left",
-            "corrupt by a power cut is rebuilt from the raw log:",
+            "lost yet, but the database is not being updated. By the error above:",
             "",
-            f"  sudo mv {data_dir}/lift_status.db {data_dir}/lift_status.db.broken",
-            "  sudo lift rebuild",
+            "  'locked': something else holds it, usually 'lift rebuild' or",
+            "  'lift stats'. It clears when that finishes.",
+            "",
+            f"  'full' or 'No space': the SD card is full. Check: df -h {data_dir}",
+            "",
+            "  'malformed' or 'not a database': a power cut corrupted it. The raw",
+            "  log rebuilds it:",
+            f"    sudo mv {data_dir}/lift_status.db {data_dir}/lift_status.db.broken",
+            "    sudo lift rebuild",
         ],
     )
 
@@ -208,19 +219,37 @@ def _mark_delivered(message: str) -> None:
     blip, which lands hardest at the only moment that matters: the first alert
     of a collector that has stopped.
     """
-    try:
-        _marker_path().write_text(
-            json.dumps({"digest": _digest(message), "sent_at": time.time()}), encoding="utf-8"
-        )
-    except OSError:
-        pass
+    _write_marker({"digest": _digest(message), "sent_at": time.time(), "clean_runs": 0})
 
 
-def clear() -> None:
-    """Close the repeat window on a clean run, so the same fault coming back
-    later is a new incident and alerts again rather than sitting out the day."""
+def _write_marker(state: dict) -> None:
     with contextlib.suppress(OSError):
-        _marker_path().unlink(missing_ok=True)
+        _marker_path().write_text(json.dumps(state), encoding="utf-8")
+
+
+def _restart_recovery() -> None:
+    with contextlib.suppress(OSError, ValueError, TypeError, AttributeError):
+        state = json.loads(_marker_path().read_text(encoding="utf-8"))
+        if state.get("clean_runs"):
+            _write_marker({**state, "clean_runs": 0})
+
+
+def note_clean_run() -> None:
+    """Close the repeat window once collection has stayed clean, so the same
+    fault coming back later is a new incident rather than sitting out the day."""
+    path = _marker_path()
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+        clean_runs = int(state.get("clean_runs", 0)) + 1
+    except FileNotFoundError:
+        return
+    except (OSError, ValueError, TypeError, AttributeError):
+        clean_runs = RECOVERED_AFTER_CLEAN_RUNS
+    if clean_runs >= RECOVERED_AFTER_CLEAN_RUNS:
+        with contextlib.suppress(OSError):
+            path.unlink(missing_ok=True)
+    else:
+        _write_marker({**state, "clean_runs": clean_runs})
 
 
 def notify(message: str, dedup: bool = True) -> bool:
@@ -234,6 +263,7 @@ def notify(message: str, dedup: bool = True) -> bool:
     if not url:
         return False
     if dedup and _suppressed(message):
+        _restart_recovery()
         return False
     try:
         if "ntfy" in url:

@@ -206,6 +206,12 @@ class TestTheRawLineDoesNotDependOnTheDatabase(PollTestCase):
         self.assertEqual(code, alert.EXIT_DATABASE)
         self.assertEqual([r["body"] for r in self._raw_lines()], [body])
 
+    def test_a_failed_fetch_keeps_its_own_alert_when_the_database_is_broken_too(self):
+        (self.data_dir / "lift_status.db").write_bytes(b"not a database, after a power cut")
+        code = poll.run_poll(self.data_dir, client=FakeClient([AuthError("401", status=401)]))
+        self.assertEqual(code, alert.EXIT_AUTH)
+        self.assertEqual(len(self._raw_lines()), 1)
+
     def test_a_full_disk_at_the_append_is_a_storage_alert(self):
         full = OSError(errno.ENOSPC, "No space left on device")
         with mock.patch.object(poll, "append_raw", side_effect=full):
@@ -215,12 +221,16 @@ class TestTheRawLineDoesNotDependOnTheDatabase(PollTestCase):
 
 
 class TestACleanRunClosesTheRepeatWindow(PollTestCase):
-    def test_a_successful_run_clears_the_marker_and_a_failed_one_does_not(self):
+    def test_clean_runs_clear_the_marker_and_a_failed_one_does_not(self):
         marker = self.data_dir / ".last-alert.json"
         marker.write_text("{}", encoding="utf-8")
         poll.run_poll(self.data_dir, client=FakeClient([TransientError("down")]))
         self.assertTrue(marker.exists())
-        poll.run_poll(self.data_dir, client=FakeClient([(200, "[]")]))
+        clean = [(200, "[]")] * alert.RECOVERED_AFTER_CLEAN_RUNS
+        for response in clean[:-1]:
+            poll.run_poll(self.data_dir, client=FakeClient([response]))
+        self.assertTrue(marker.exists())
+        poll.run_poll(self.data_dir, client=FakeClient(clean[-1:]))
         self.assertFalse(marker.exists())
 
 

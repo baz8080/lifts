@@ -14,7 +14,7 @@ from pathlib import Path
 
 from lift_status import poll
 from lift_status.client import AuthError
-from lift_status.store import Store
+from lift_status.store import Store, append_raw
 from tests.helpers import FakeClient, make_item
 
 STATION_A = make_item(head="Station A - Lift out of order", codes=["AAA"])
@@ -128,9 +128,8 @@ class TestRebuildRoundTrip(unittest.TestCase):
             ("r4", "2026-08-08T13:30:00Z", 200, only_a, None),
             ("r5", "2026-08-08T14:00:00Z", 200, seen, None),
         ]
-        with Store(self.data_dir) as store:
-            for run in history:
-                store.write_raw(*run)
+        for run in history:
+            append_raw(self.data_dir, *run)
         self.assertEqual(poll.run_rebuild(self.data_dir), 0)
         before = _snapshot(self.data_dir)
         [b] = [m for m in before["messages"].values() if m["head"] == STATION_B["head"]]

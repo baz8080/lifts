@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from lift_status.store import Store, utc_now_iso
+from lift_status.store import Store, append_raw, utc_now_iso
 from tests.helpers import make_item
 
 _run_counter = itertools.count()
@@ -49,7 +49,7 @@ class StoreTestCase(unittest.TestCase):
 
 class TestWriteRaw(StoreTestCase):
     def test_writes_one_jsonl_line(self):
-        self.store.write_raw("run-1", "2026-08-08T12:00:00Z", 200, "[]", None)
+        append_raw(self.data_dir, "run-1", "2026-08-08T12:00:00Z", 200, "[]", None)
         path = self.data_dir / "raw" / "messages-20260808.jsonl"
         self.assertTrue(path.exists())
         line = json.loads(path.read_text().strip())
@@ -59,18 +59,18 @@ class TestWriteRaw(StoreTestCase):
         self.assertIsNone(line["network_error"])
 
     def test_appends_multiple_lines_same_day(self):
-        self.store.write_raw("run-1", "2026-08-08T12:00:00Z", 200, "[]", None)
-        self.store.write_raw("run-2", "2026-08-08T12:30:00Z", 200, "[]", None)
+        append_raw(self.data_dir, "run-1", "2026-08-08T12:00:00Z", 200, "[]", None)
+        append_raw(self.data_dir, "run-2", "2026-08-08T12:30:00Z", 200, "[]", None)
         path = self.data_dir / "raw" / "messages-20260808.jsonl"
         lines = path.read_text().strip().splitlines()
         self.assertEqual(len(lines), 2)
 
     def test_a_line_cut_off_by_a_power_cut_does_not_take_the_next_one_with_it(self):
         path = self.data_dir / "raw" / "messages-20260808.jsonl"
-        self.store.write_raw("run-1", "2026-08-08T12:00:00Z", 200, "[]", None)
+        append_raw(self.data_dir, "run-1", "2026-08-08T12:00:00Z", 200, "[]", None)
         with path.open("a", encoding="utf-8") as f:
             f.write('{"body": "[{\\"head')
-        self.store.write_raw("run-3", "2026-08-08T13:00:00Z", 200, "[]", None)
+        append_raw(self.data_dir, "run-3", "2026-08-08T13:00:00Z", 200, "[]", None)
         replayed = [r["run_uuid"] for r in self.store.iter_raw_lines()]
         self.assertEqual(replayed, ["run-1", "run-3"])
         self.assertEqual(self.store.raw_decode_errors, 1)

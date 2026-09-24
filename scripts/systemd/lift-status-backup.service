@@ -21,7 +21,7 @@ Environment="GIT_SSH_COMMAND=ssh -i /etc/lift-status-deploy-key -o IdentitiesOnl
 # A oneshot has no start timeout by default, so a push stalled on a half-open
 # connection would hold the unit "activating" and turn every later firing into
 # a no-op. The ssh keepalives above make the stall fail into the script's own
-# alert; this is the backstop.
+# alert; this is the backstop, and the script alerts on its TERM too.
 TimeoutStartSec=15min
 
 EnvironmentFile=-/etc/lift-status.env
