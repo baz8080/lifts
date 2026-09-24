@@ -17,6 +17,7 @@ from __future__ import annotations
 import contextlib
 import fcntl
 import json
+import sqlite3
 import sys
 import uuid
 from dataclasses import dataclass, field
@@ -25,7 +26,7 @@ from pathlib import Path
 from . import alert
 from .client import ApiError, AuthError, MessagesClient, TransientError
 from .parse import NOT_A_LIST, check_item_schema, parse_top_level
-from .store import Store, utc_now_iso
+from .store import Store, append_raw, utc_now_iso
 
 
 @dataclass
@@ -38,6 +39,24 @@ class ApplyResult:
     schema_drift_count: int = 0
     drift_problems: list[str] = field(default_factory=list)
     diff: dict | None = None
+
+
+def classify_fetch_failure(http_status, body_text, network_error):
+    """(outcome, detail, exit_code) when nothing was collected, else None."""
+    if http_status is None or http_status >= 400 or body_text is None:
+        # Either a true network-level failure (no response at all) or an HTTP
+        # error status. auth_error is split out because it needs a distinct,
+        # much louder alert; every other error status is folded into
+        # "unreachable" since the practical outcome is identical either way -
+        # nothing was collected this run.
+        #
+        # A sub-400 status does not imply a body: urllib does not follow a 300
+        # or 304, so those arrive as ApiError with no body, and a None body
+        # reaching json.loads() would crash past every alert path.
+        outcome = "auth_error" if http_status in (401, 403) else "unreachable"
+        exit_code = alert.EXIT_AUTH if outcome == "auth_error" else alert.EXIT_UNREACHABLE
+        return outcome, network_error or f"HTTP {http_status}", exit_code
+    return None
 
 
 def apply_response(
@@ -57,20 +76,9 @@ def apply_response(
             outcome=outcome, exit_code=exit_code, http_status=http_status, error_detail=detail
         )
 
-    if http_status is None or http_status >= 400 or body_text is None:
-        # Either a true network-level failure (no response at all) or an HTTP
-        # error status. auth_error is split out because it needs a distinct,
-        # much louder alert; every other error status is folded into
-        # "unreachable" since the practical outcome is identical either way -
-        # nothing was collected this run.
-        #
-        # A sub-400 status does not imply a body: urllib does not follow a 300
-        # or 304, so those arrive as ApiError with no body, and a None body
-        # reaching json.loads() would crash past every alert path.
-        outcome = "auth_error" if http_status in (401, 403) else "unreachable"
-        exit_code = alert.EXIT_AUTH if outcome == "auth_error" else alert.EXIT_UNREACHABLE
-        detail = network_error or f"HTTP {http_status}"
-        return failed(outcome, detail, exit_code)
+    fetch_failure = classify_fetch_failure(http_status, body_text, network_error)
+    if fetch_failure:
+        return failed(*fetch_failure)
 
     try:
         parsed = parse_top_level(body_text)
@@ -171,15 +179,30 @@ def _run(data_dir: Path, client: MessagesClient) -> int:
         body_text = None
         network_error = repr(exc)
 
-    with Store(data_dir) as store:
-        store.write_raw(run_uuid, fetched_at, http_status, body_text, network_error)
-        result = apply_response(store, run_uuid, fetched_at, http_status, body_text, network_error)
+    try:
+        append_raw(data_dir, run_uuid, fetched_at, http_status, body_text, network_error)
+    except OSError as exc:
+        # check_writable's empty probe file passes on a full SD card.
+        problem = f"cannot append to the raw log: {exc}"
+        return alert.fail(alert.storage_banner(data_dir, problem), alert.EXIT_STORAGE)
 
-    if result.outcome == "auth_error":
-        banner = alert.auth_banner(client.masked_key, result.error_detail or "")
-        return alert.fail(banner, result.exit_code)
-    if result.outcome == "unreachable":
-        return alert.fail(alert.unreachable_banner(result.error_detail or ""), result.exit_code)
+    try:
+        with Store(data_dir) as store:
+            result = apply_response(
+                store, run_uuid, fetched_at, http_status, body_text, network_error
+            )
+    except (sqlite3.Error, OSError) as exc:
+        fetch_failure = classify_fetch_failure(http_status, body_text, network_error)
+        if fetch_failure:
+            # Nothing was collected, so the fetch is the news; the database
+            # alerts on the first run that has a response to lose.
+            return _fetch_failure_alert(client, *fetch_failure)
+        return alert.fail(alert.database_banner(data_dir, repr(exc)), alert.EXIT_DATABASE)
+
+    if result.outcome in ("auth_error", "unreachable"):
+        return _fetch_failure_alert(
+            client, result.outcome, result.error_detail or "", result.exit_code
+        )
     if result.outcome in ("parse_error", "not_a_list"):
         return alert.fail(alert.schema_root_banner(), result.exit_code)
 
@@ -192,7 +215,14 @@ def _run(data_dir: Path, client: MessagesClient) -> int:
     )
     if result.schema_drift_count:
         return alert.fail(alert.schema_banner(result.drift_problems), result.exit_code)
+    alert.note_clean_run()
     return alert.EXIT_OK
+
+
+def _fetch_failure_alert(client: MessagesClient, outcome, detail, exit_code) -> int:
+    if outcome == "auth_error":
+        return alert.fail(alert.auth_banner(client.masked_key, detail), exit_code)
+    return alert.fail(alert.unreachable_banner(detail), exit_code)
 
 
 def run_check(client: MessagesClient | None = None) -> int:

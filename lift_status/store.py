@@ -97,6 +97,43 @@ def utc_now_iso() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def append_raw(data_dir, run_uuid, fetched_at, http_status, body, network_error) -> None:
+    """Append one line for this run attempt. Called before any parsing, and
+    before the database is opened, so a database that cannot be opened never
+    costs the response.
+
+    Fsynced: a run happens once per 30 minutes, so the extra syscall cost
+    is irrelevant, and this is the durability point the rest of the design
+    depends on - a crash or power loss right after this call must not lose
+    the response.
+    """
+    raw_dir = Path(data_dir) / RAW_DIRNAME
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    date_part = fetched_at[:10].replace("-", "")
+    path = raw_dir / f"messages-{date_part}.jsonl"
+    line = json.dumps(
+        {
+            "run_uuid": run_uuid,
+            "fetched_at_utc": fetched_at,
+            "http_status": http_status,
+            "body": body,
+            "network_error": network_error,
+        },
+        sort_keys=True,
+    )
+    with path.open("a+b") as f:
+        # A power cut mid-append leaves a last line with no newline, and the
+        # next record appended onto it would be lost with the fragment.
+        end = f.seek(0, os.SEEK_END)
+        if end:
+            f.seek(end - 1)
+            if f.read(1) != b"\n":
+                f.write(b"\n")
+        f.write((line + "\n").encode("utf-8"))
+        f.flush()
+        os.fsync(f.fileno())
+
+
 class Store:
     def __init__(self, data_dir):
         self.data_dir = Path(data_dir)
@@ -118,59 +155,36 @@ class Store:
 
     # -- raw JSONL log -----------------------------------------------------
 
-    def write_raw(self, run_uuid, fetched_at, http_status, body, network_error) -> None:
-        """Append one line for this run attempt. Called before any parsing.
-
-        Fsynced: a run happens once per 30 minutes, so the extra syscall cost
-        is irrelevant, and this is the durability point the rest of the design
-        depends on - a crash or power loss right after this call must not lose
-        the response.
-        """
-        date_part = fetched_at[:10].replace("-", "")
-        path = self.raw_dir / f"messages-{date_part}.jsonl"
-        line = json.dumps(
-            {
-                "run_uuid": run_uuid,
-                "fetched_at_utc": fetched_at,
-                "http_status": http_status,
-                "body": body,
-                "network_error": network_error,
-            },
-            sort_keys=True,
-        )
-        with path.open("a", encoding="utf-8") as f:
-            f.write(line + "\n")
-            f.flush()
-            os.fsync(f.fileno())
-
     def iter_raw_lines(self):
-        """Yield every recorded run attempt, oldest file first, append order
-        within a file. Never sorts by the embedded timestamp - a Pi's clock can
-        jump (e.g. before NTP sync after a reboot), and replay must follow the
-        order runs actually happened in, not a timestamp that might be wrong.
+        """Yield every recorded run attempt, oldest file first, and in
+        `fetched_at_utc` order within a file, so two collectors' logs merged
+        with `sort -u` (which orders lines by their text) replay as they
+        happened. The sort is stable, so runs stamped in the same second keep
+        their order in the file.
 
         An undecodable line is skipped and counted in self.raw_decode_errors
-        rather than aborting the replay: write_raw's append is not atomic, so a
+        rather than aborting the replay: append_raw is not atomic, so a
         power cut leaves a truncated last line, and one bad line must not make
         every good line behind it unreplayable.
         """
         self.raw_decode_errors = 0
         for path in sorted(self.raw_dir.glob("messages-*.jsonl")):
+            records = []
             with path.open("r", encoding="utf-8") as f:
                 for lineno, line in enumerate(f, 1):
                     line = line.strip()
                     if not line:
                         continue
                     try:
-                        record = json.loads(line)
+                        records.append(json.loads(line))
                     except json.JSONDecodeError as exc:
                         self.raw_decode_errors += 1
                         print(
                             f"warning: skipping unreadable line {path.name}:{lineno}: {exc}",
                             file=sys.stderr,
                         )
-                        continue
-                    yield record
+            records.sort(key=lambda r: r.get("fetched_at_utc") or "")
+            yield from records
 
     # -- runs ----------------------------------------------------------
 
@@ -349,7 +363,7 @@ class Store:
             grace = max(1, int(raw_grace))
         except ValueError:
             # A typo in the env file must not stop collection dead here, after
-            # write_raw and before any alert path.
+            # the raw append and before any alert path.
             print(
                 f"warning: LIFT_STATUS_GRACE_MISSES={raw_grace!r} is not a number; "
                 f"using {DEFAULT_GRACE_MISSES}",

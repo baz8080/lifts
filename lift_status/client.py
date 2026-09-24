@@ -19,6 +19,7 @@ import random
 import time
 import urllib.error
 import urllib.request
+import zlib
 
 URL = "https://connect.irishrail.ie/realtime/messages?lang=en"
 
@@ -136,10 +137,11 @@ class MessagesClient:
             raise ApiError(f"{exc.code} from {self.url}: {body}", status=exc.code) from exc
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             raise TransientError(f"network failure for {self.url}: {exc}", status=None) from exc
-        # IncompleteRead/BadStatusLine are HTTPException, and UnicodeDecodeError
-        # from _decode is a ValueError - neither is an OSError, so without these
-        # two clauses they escape _run and the attempt is never logged at all.
-        except http.client.HTTPException as exc:
+        # IncompleteRead/BadStatusLine are HTTPException, a truncated or corrupt
+        # gzip body is EOFError or zlib.error, and UnicodeDecodeError from
+        # _decode is a ValueError - none is an OSError, so without these clauses
+        # they escape _run and the attempt is never logged at all.
+        except (http.client.HTTPException, EOFError, zlib.error) as exc:
             raise TransientError(f"broken response from {self.url}: {exc!r}", status=None) from exc
         except UnicodeDecodeError as exc:
             raise ApiError(

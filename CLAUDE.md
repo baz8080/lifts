@@ -85,7 +85,7 @@ CLAUDE.md.
 Nothing is parsed before it is written to the log, and `rebuild` replays the
 logs through the same code path a live run uses. If a parse is wrong, fix it and
 rebuild; never edit the logs. `json.dumps(..., sort_keys=True)` in
-`store.py:write_raw` is load-bearing - it is what lets two machines' logs be
+`store.py:append_raw` is load-bearing - it is what lets two machines' logs be
 merged with `sort -u`.
 
 ## Data-shape traps
@@ -147,6 +147,7 @@ merged with `sort -u`.
 | A notice absent from a single poll is the feed blinking, not an outage ending: `DEFAULT_GRACE_MISSES` is 2, and the close is still dated to the first miss | `notes/site.md` § One missed poll is the feed blinking |
 | The planned-works grace is earned per notice, pooled over all its stretches (`Outage.planned_total`), and spent per stretch - so a gap splits what is measured without refreshing what is excused | `notes/site.md` § The grace is earned per notice and spent per stretch |
 | Planned works is what the notice text says | `notes/site.md` § Planned works |
+| "planned maintenance" and "engineering works" earn the same grace as "planned works" - they are the same claim in different words | `notes/site.md` § Planned works is what the notice says |
 | Stations are graded on lift availability - days watched with no lift notice - on this site's own scale, there being no Irish or EU target; an escalator notice has its own bar and knocks nothing. Named for what it counts, not "step-free": a lift out knocks even where the page names a ramp round it, and so does an unknown verdict. Overview sorts by listed-now, whatever the kind, then availability | `notes/site.md` § The grade is availability, § The grade is lift availability |
 | The scale runs A to F inclusive. E splits the old F band at **50%**, which over a 31-day month is 8 to 15 days listed against F's 16 or more: up to half the month, then more than half. Every A-D cut is unmoved, and the cut lands in a real gap in the data | `notes/site.md` § The scale grew an E |
 | Planned works are excused for their first week and count in full past it, in their own colour once they do | `notes/site.md` § Planned works are excused for a week, § Blue said two opposite things |
@@ -174,6 +175,7 @@ merged with `sort -u`.
 | Station access is labelled by hand into an append-only observation log, `lifts-data/survey/<CODE>.jsonl`, one line per fact with who, when and from what; a hand-maintained `stations.json` stays the failure mode. The graph replays the log, last line for a key wins, and says "another step-free way" only on a route every edge of which a person confirmed, so a page-seeded graph never says more than the prose. The site does not read it yet | `notes/step-free-graph.md` |
 | The Metro Nation Dublin rail map is not a source: undefined "step-free", already behind the network, nothing it says survives one survey answer | `notes/step-free-graph.md` § What was learned |
 | A delays site is a fourth repo, `baz8080/rail-delays`, reading `lifts-data`: not a second collector and not a poll target, because there is one endpoint, one response, and every delay notice is already logged. It carries its own decisions, and the collector here is not duplicated, extended or touched | `notes/delays-site.md` |
+| The raw line is written before the database opens, and a database failure is exit 7. Replay orders each file by `fetched_at_utc`, so a `sort -u` merge is safe. The NTP wait is left for now | `notes/collector-review.md` |
 | The access golden file pins the inputs it derives from, not just the outputs, so it guards code and nothing else. Corpus movement no longer fails it in either direction, a refreshed snapshot no longer fails it by name, and it runs without a `lifts-data` checkout instead of skipping. Reading `messages.text_raw` as if it were append-only reddened `main` three times in five days: the raw logs are append-only, the derived row is overwritten when Irish Rail rewords a live notice | `notes/station-access.md` § The golden file pins its inputs |
 
 Decisions go in `notes/`, dated, with the rejected alternatives and their
@@ -182,13 +184,21 @@ pointers only, never the rationale, or it becomes the thing it exists to fix.
 
 ## Comments
 
-Comments earn their place or they go. Say **why**, not what - never a paraphrase
-of the line below, a heading for an obviously-named block, or an explanation of a
-standard flag. What does earn a comment: a reason the obvious approach was
-rejected, a dependency nothing else records, a constraint from outside the code.
+**Comment sparingly.** Say **why**, not what - never a paraphrase of the line
+below, a heading for an obviously-named block, or an explanation of a standard
+flag. Do not restate a settled decision at each site that follows it: state it
+once, in `notes/` or the PR, and let the code stand.
+
+A comment earns its place only when it records something the reader cannot see:
+an external system's behaviour, a measurement, a dependency nothing else
+records, a reason the obvious approach was rejected, or a trap that would
+otherwise be refactored away. The data-shape traps above are what that looks
+like in code.
 
 One line where one will do. If the reasoning needs a paragraph it belongs in the
-commit message, the PR, or `notes/` - not above the line.
+commit message, the PR, or `notes/`, not above the line. No docstring on a test
+whose name already says what it asserts, and none on a function whose name and
+signature already say it.
 
 ## Punctuation
 

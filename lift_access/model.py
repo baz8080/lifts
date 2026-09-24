@@ -225,6 +225,11 @@ def read_platform_access(fragment):
     return frozenset({ALL_PLATFORMS} if general else ()), claims, denies
 
 
+# Irish Rail's page for Kishoge publishes stationCode "Kishoge" (the name),
+# not "KISHO", the code locationCodes uses everywhere else. Issue #52.
+STATION_CODE_FIXUPS = {"kishoge": "KISHO"}
+
+
 def station_from_node(node, slug):
     """A Station from one resolved payload, or None if it carries no code."""
     if not isinstance(node, dict) or not node.get("stationCode"):
@@ -232,8 +237,9 @@ def station_from_node(node, slug):
     fragment = (node.get("platformAccess") or {}).get("html") or ""
     entry = (node.get("ticketOfficeAccess") or {}).get("html") or ""
     lift_platforms, claims, denies = read_platform_access(fragment)
+    code = STATION_CODE_FIXUPS.get(slug, str(node["stationCode"]).strip())
     return Station(
-        code=str(node["stationCode"]).strip(),
+        code=code,
         name=str(node.get("stationName") or "").strip(),
         slug=slug,
         latitude=node.get("latitude"),

@@ -37,6 +37,9 @@ Nothing new is offsite. Check:
     exit "$status"
 }
 trap on_exit EXIT
+# dash skips the EXIT trap on a signal it does not trap, and TERM is how the
+# unit's TimeoutStartSec ends a stalled push.
+trap 'exit 143' TERM INT
 
 cd "$DATA_DIR" || {
     notify "lift-status backup: $DATA_DIR does not exist. Nothing is being backed up."
