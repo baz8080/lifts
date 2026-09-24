@@ -164,7 +164,7 @@ def fetch_stations(log=print, attempts=3):
 
 
 def write_snapshot(path, records, fetched_at=None):
-    """One JSONL file, sorted, `sort_keys=True`, in the shape `store.write_raw` uses.
+    """One JSONL file, sorted, `sort_keys=True`, in the shape `store.append_raw` uses.
 
     Sorted so that two refreshes of unchanged data produce an identical file and
     the scheduled job opens no PR.

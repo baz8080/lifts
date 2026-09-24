@@ -9,6 +9,7 @@ reading one of these has the context of this repository in front of them.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -23,6 +24,7 @@ EXIT_AUTH = 2
 EXIT_UNREACHABLE = 3
 EXIT_SCHEMA_DRIFT = 4
 EXIT_STORAGE = 6
+EXIT_DATABASE = 7
 
 EXIT_MEANINGS = {
     EXIT_OK: "success",
@@ -30,12 +32,18 @@ EXIT_MEANINGS = {
     EXIT_UNREACHABLE: "messages API unreachable",
     EXIT_SCHEMA_DRIFT: "API response shape changed",
     EXIT_STORAGE: "data directory not writable",
+    EXIT_DATABASE: "database unusable; raw log still written",
 }
 
 BANNER_WIDTH = 78
 
 # How long before an unchanged banner is worth pushing again.
 ALERT_REPEAT_SECONDS = 24 * 60 * 60
+
+# Consecutive clean runs (two hours at the 30-minute cadence) before the same
+# fault counts as a new incident. One clean poll between two failures of a
+# flapping API is not a recovery.
+RECOVERED_AFTER_CLEAN_RUNS = 4
 
 
 def banner(title: str, lines: list[str]) -> str:
@@ -153,6 +161,28 @@ def storage_banner(data_dir, problem: str) -> str:
     )
 
 
+def database_banner(data_dir, detail: str) -> str:
+    return banner(
+        "LIFT-STATUS: DATABASE UNUSABLE",
+        [
+            f"{detail}",
+            "",
+            "This run's response WAS written to the raw log, so nothing has been",
+            "lost yet, but the database is not being updated. By the error above:",
+            "",
+            "  'locked': something else holds it, usually 'lift rebuild' or",
+            "  'lift stats'. It clears when that finishes.",
+            "",
+            f"  'full' or 'No space': the SD card is full. Check: df -h {data_dir}",
+            "",
+            "  'malformed' or 'not a database': a power cut corrupted it. The raw",
+            "  log rebuilds it:",
+            f"    sudo mv {data_dir}/lift_status.db {data_dir}/lift_status.db.broken",
+            "    sudo lift rebuild",
+        ],
+    )
+
+
 def _marker_path() -> Path:
     state_dir = os.environ.get("LIFT_STATUS_DATA_DIR") or tempfile.gettempdir()
     return Path(state_dir) / ".last-alert.json"
@@ -189,12 +219,37 @@ def _mark_delivered(message: str) -> None:
     blip, which lands hardest at the only moment that matters: the first alert
     of a collector that has stopped.
     """
+    _write_marker({"digest": _digest(message), "sent_at": time.time(), "clean_runs": 0})
+
+
+def _write_marker(state: dict) -> None:
+    with contextlib.suppress(OSError):
+        _marker_path().write_text(json.dumps(state), encoding="utf-8")
+
+
+def _restart_recovery() -> None:
+    with contextlib.suppress(OSError, ValueError, TypeError, AttributeError):
+        state = json.loads(_marker_path().read_text(encoding="utf-8"))
+        if state.get("clean_runs"):
+            _write_marker({**state, "clean_runs": 0})
+
+
+def note_clean_run() -> None:
+    """Close the repeat window once collection has stayed clean, so the same
+    fault coming back later is a new incident rather than sitting out the day."""
+    path = _marker_path()
     try:
-        _marker_path().write_text(
-            json.dumps({"digest": _digest(message), "sent_at": time.time()}), encoding="utf-8"
-        )
-    except OSError:
-        pass
+        state = json.loads(path.read_text(encoding="utf-8"))
+        clean_runs = int(state.get("clean_runs", 0)) + 1
+    except FileNotFoundError:
+        return
+    except (OSError, ValueError, TypeError, AttributeError):
+        clean_runs = RECOVERED_AFTER_CLEAN_RUNS
+    if clean_runs >= RECOVERED_AFTER_CLEAN_RUNS:
+        with contextlib.suppress(OSError):
+            path.unlink(missing_ok=True)
+    else:
+        _write_marker({**state, "clean_runs": clean_runs})
 
 
 def notify(message: str, dedup: bool = True) -> bool:
@@ -208,6 +263,7 @@ def notify(message: str, dedup: bool = True) -> bool:
     if not url:
         return False
     if dedup and _suppressed(message):
+        _restart_recovery()
         return False
     try:
         if "ntfy" in url:

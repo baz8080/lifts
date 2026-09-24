@@ -26,7 +26,11 @@ EnvironmentFile=-/etc/lift-status.env
 WorkingDirectory=/opt/lift-status
 ExecStart=/usr/bin/python3 -m lift_status poll
 
-TimeoutStartSec=60
+# Above the client's own worst case - three attempts, each a 15s connect and a
+# 15s read, plus backoff and DNS - so a slow API ends in a logged run and an
+# alert rather than a SIGTERM that writes neither. Still well inside the
+# 30-minute interval.
+TimeoutStartSec=300
 
 # It reads its own code and writes one state directory. Nothing else.
 NoNewPrivileges=true
