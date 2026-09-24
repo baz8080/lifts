@@ -221,16 +221,18 @@ class TestTheRawLineDoesNotDependOnTheDatabase(PollTestCase):
 
 
 class TestACleanRunClosesTheRepeatWindow(PollTestCase):
-    def test_clean_runs_clear_the_marker_and_a_failed_one_does_not(self):
+    def _clean(self, n):
+        for _ in range(n):
+            poll.run_poll(self.data_dir, client=FakeClient([(200, "[]")]))
+
+    def test_consecutive_clean_runs_clear_the_marker_and_a_failed_one_restarts_them(self):
         marker = self.data_dir / ".last-alert.json"
-        marker.write_text("{}", encoding="utf-8")
+        marker.write_text(json.dumps({"sent": {"k": 1e12}, "clean_runs": 0}), encoding="utf-8")
+        self._clean(alert.RECOVERED_AFTER_CLEAN_RUNS - 1)
         poll.run_poll(self.data_dir, client=FakeClient([TransientError("down")]))
+        self._clean(alert.RECOVERED_AFTER_CLEAN_RUNS - 1)
         self.assertTrue(marker.exists())
-        clean = [(200, "[]")] * alert.RECOVERED_AFTER_CLEAN_RUNS
-        for response in clean[:-1]:
-            poll.run_poll(self.data_dir, client=FakeClient([response]))
-        self.assertTrue(marker.exists())
-        poll.run_poll(self.data_dir, client=FakeClient(clean[-1:]))
+        self._clean(1)
         self.assertFalse(marker.exists())
 
 

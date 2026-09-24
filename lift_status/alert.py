@@ -37,7 +37,7 @@ EXIT_MEANINGS = {
 
 BANNER_WIDTH = 78
 
-# How long before an unchanged banner is worth pushing again.
+# How long before the same kind of fault is worth pushing again.
 ALERT_REPEAT_SECONDS = 24 * 60 * 60
 
 # Consecutive clean runs (two hours at the 30-minute cadence) before the same
@@ -170,8 +170,8 @@ def database_banner(data_dir, detail: str) -> str:
             "This run's response WAS written to the raw log, so nothing has been",
             "lost yet, but the database is not being updated. By the error above:",
             "",
-            "  'locked': something else holds it, usually 'lift rebuild' or",
-            "  'lift stats'. It clears when that finishes.",
+            "  'locked': another process holds it. Find it with:",
+            f"    sudo fuser -v {data_dir}/lift_status.db",
             "",
             f"  'full' or 'No space': the SD card is full. Check: df -h {data_dir}",
             "",
@@ -188,38 +188,22 @@ def _marker_path() -> Path:
     return Path(state_dir) / ".last-alert.json"
 
 
-def _digest(message: str) -> str:
-    return hashlib.sha256(message.encode("utf-8")).hexdigest()
+def _key(kind: str) -> str:
+    return hashlib.sha256(kind.encode("utf-8")).hexdigest()
 
 
-def _suppressed(message: str) -> bool:
-    """True if this exact banner was already *delivered* within the repeat window.
+def _read_marker() -> dict:
+    """The marker as {"sent": {kind: sent_at}, "clean_runs": n}, or empty.
 
-    A stuck condition would otherwise push every 30 minutes until someone
-    patches the code, teaching the user to mute the topic. Best-effort: any
-    problem reading the marker means send.
+    Best-effort: a marker that is missing, unreadable, not an object or in an
+    older shape reads as empty, so the worst it can cause is an extra alert.
     """
     try:
         state = json.loads(_marker_path().read_text(encoding="utf-8"))
-        sent_at = float(state.get("sent_at", 0))
-        if state.get("digest") == _digest(message) and time.time() - sent_at < ALERT_REPEAT_SECONDS:
-            return True
-    except (OSError, ValueError, TypeError, AttributeError):
-        # AttributeError: the file parsed but is not an object (`null`, a list,
-        # a bare string), so .get is not there. Best-effort means send, not die
-        # here - notify()'s own guard starts after this call.
-        pass
-    return False
-
-
-def _mark_delivered(message: str) -> None:
-    """Start the repeat window, and only once the webhook has actually taken it.
-
-    Writing this on the attempt instead silences the next 24 hours on a webhook
-    blip, which lands hardest at the only moment that matters: the first alert
-    of a collector that has stopped.
-    """
-    _write_marker({"digest": _digest(message), "sent_at": time.time(), "clean_runs": 0})
+        sent = {str(k): float(v) for k, v in state["sent"].items()}
+        return {"sent": sent, "clean_runs": int(state.get("clean_runs", 0))}
+    except (OSError, ValueError, TypeError, AttributeError, KeyError):
+        return {}
 
 
 def _write_marker(state: dict) -> None:
@@ -227,43 +211,64 @@ def _write_marker(state: dict) -> None:
         _marker_path().write_text(json.dumps(state), encoding="utf-8")
 
 
+def _suppressed(kind: str) -> bool:
+    """True if this kind of fault was already *delivered* within the repeat window.
+
+    A stuck condition would otherwise push every 30 minutes until someone
+    patches the code, teaching the user to mute the topic. Each kind has its
+    own window, so two faults at once do not take turns un-suppressing each
+    other.
+    """
+    sent_at = _read_marker().get("sent", {}).get(_key(kind))
+    return sent_at is not None and time.time() - sent_at < ALERT_REPEAT_SECONDS
+
+
+def _mark_delivered(kind: str) -> None:
+    """Start the repeat window, and only once the webhook has actually taken it.
+
+    Writing this on the attempt instead silences the next 24 hours on a webhook
+    blip, which lands hardest at the only moment that matters: the first alert
+    of a collector that has stopped.
+    """
+    state = _read_marker()
+    sent = {**state.get("sent", {}), _key(kind): time.time()}
+    _write_marker({"sent": sent, "clean_runs": state.get("clean_runs", 0)})
+
+
 def _restart_recovery() -> None:
-    with contextlib.suppress(OSError, ValueError, TypeError, AttributeError):
-        state = json.loads(_marker_path().read_text(encoding="utf-8"))
-        if state.get("clean_runs"):
-            _write_marker({**state, "clean_runs": 0})
+    state = _read_marker()
+    if state.get("clean_runs"):
+        _write_marker({**state, "clean_runs": 0})
 
 
 def note_clean_run() -> None:
     """Close the repeat window once collection has stayed clean, so the same
     fault coming back later is a new incident rather than sitting out the day."""
     path = _marker_path()
-    try:
-        state = json.loads(path.read_text(encoding="utf-8"))
-        clean_runs = int(state.get("clean_runs", 0)) + 1
-    except FileNotFoundError:
+    if not path.exists():
         return
-    except (OSError, ValueError, TypeError, AttributeError):
-        clean_runs = RECOVERED_AFTER_CLEAN_RUNS
-    if clean_runs >= RECOVERED_AFTER_CLEAN_RUNS:
+    state = _read_marker()
+    clean_runs = state.get("clean_runs", 0) + 1
+    if not state or clean_runs >= RECOVERED_AFTER_CLEAN_RUNS:
         with contextlib.suppress(OSError):
             path.unlink(missing_ok=True)
     else:
         _write_marker({**state, "clean_runs": clean_runs})
 
 
-def notify(message: str, dedup: bool = True) -> bool:
+def notify(message: str, dedup: bool = True, kind: str | None = None) -> bool:
     """Push to LIFT_STATUS_ALERT_WEBHOOK. Returns whether it was delivered.
 
     Best-effort by design: a webhook failure must never mask the underlying
-    problem or change the exit code. An unchanged banner is suppressed for
-    ALERT_REPEAT_SECONDS unless dedup=False (test-alert always sends).
+    problem or change the exit code. A fault of the same kind (the whole
+    message, unless one is given) is suppressed for ALERT_REPEAT_SECONDS
+    unless dedup=False (test-alert always sends).
     """
     url = os.environ.get("LIFT_STATUS_ALERT_WEBHOOK")
     if not url:
         return False
-    if dedup and _suppressed(message):
-        _restart_recovery()
+    kind = message if kind is None else kind
+    if dedup and _suppressed(kind):
         return False
     try:
         if "ntfy" in url:
@@ -274,15 +279,21 @@ def notify(message: str, dedup: bool = True) -> bool:
         req = urllib.request.Request(url, data=data, headers=headers, method="POST")
         urllib.request.urlopen(req, timeout=10).close()
         if dedup:
-            _mark_delivered(message)
+            _mark_delivered(kind)
         return True
     except Exception as exc:  # pragma: no cover - never let alerting break the run
         print(f"warning: alert webhook failed: {exc}", file=sys.stderr)
         return False
 
 
-def fail(message: str, code: int) -> int:
-    """Print a fatal banner to stderr, fire the optional webhook, return the code."""
+def fail(message: str, code: int, detail: str = "") -> int:
+    """Print a fatal banner to stderr, fire the optional webhook, return the code.
+
+    The exit code is the kind of fault, not the banner's text, which carries a
+    raw error that differs between two failures of the same kind. `detail`
+    splits a kind where a difference is news, such as a second rejected key.
+    """
     print(message, file=sys.stderr)
-    notify(message)
+    _restart_recovery()
+    notify(message, kind=f"exit {code} {detail}")
     return code
