@@ -13,6 +13,8 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
+import statusui
+
 from lift_access import model as access_model
 from lift_access import snapshot
 from lift_site import model, render
@@ -20,8 +22,8 @@ from tests.test_site_model import NOW, T0, SiteModelCase, escalator, lift
 
 
 def _data(site_dir):
-    text = (site_dir / "data.js").read_text(encoding="utf-8")
-    return json.loads(text.split("= ", 1)[1].rstrip(";\n"))
+    text = (site_dir / "index.html").read_text(encoding="utf-8")
+    return json.loads(re.search(r"window\.LIFT_DATA = (.*?);</script>", text, re.S).group(1))
 
 
 class TestWrite(SiteModelCase):
@@ -37,9 +39,10 @@ class TestWrite(SiteModelCase):
         self.data = render.write(self.site, outages, NOW, self.until)
 
     def test_the_files_a_reader_and_a_crawler_expect(self):
-        expected = ("index.html", "data.js", "sitemap.xml", "robots.txt", "feed.xml", "outages.csv")
+        expected = ("index.html", "sitemap.xml", "robots.txt", "feed.xml", "outages.csv")
         for name in expected:
             self.assertTrue((self.site / name).exists(), name)
+        self.assertFalse((self.site / "data.js").exists())
         for code in self.data["stations"]:
             self.assertTrue((self.site / "h" / f"{code}.js").exists(), code)
             self.assertTrue((self.site / "s" / f"{self.data['slugs'][code]}.html").exists(), code)
@@ -147,7 +150,7 @@ class TestWrite(SiteModelCase):
         athy = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
         self.assertNotIn("nowtag", athy.split("</style>", 1)[-1])
 
-    def test_data_js_is_what_build_produced(self):
+    def test_the_inline_payload_is_what_build_produced(self):
         self.assertEqual(_data(self.site), json.loads(json.dumps(self.data)))
         d = _data(self.site)
         self.assertEqual(d["months"], ["2026-08"])
@@ -322,6 +325,38 @@ class TestWrite(SiteModelCase):
         total, report = render.size_report(self.site)
         self.assertLess(total, render.BUDGET_BYTES)
         self.assertIn("initial load", report)
+
+    def test_the_payload_is_inline_and_nothing_fetches_a_data_file(self):
+        for page in ("index.html", "s/athy.html"):
+            text = (self.site / page).read_text(encoding="utf-8")
+            self.assertNotIn("data.js", text, page)
+        index = (self.site / "index.html").read_text(encoding="utf-8")
+        self.assertNotIn("<!--DATA-->", index)
+
+    def test_the_payload_cannot_end_its_own_script(self):
+        risky = {"legend": "<span>x</span><!-- y --></script><script>"}
+        literal = render._inline_json(risky)
+        self.assertNotIn("</", literal)
+        self.assertNotIn("<!--", literal)
+        self.assertEqual(json.loads(literal), risky)
+
+    def test_the_overview_is_held_back_until_the_app_has_drawn_it(self):
+        template = render.SITE_HTML.read_text(encoding="utf-8")
+        head = template.split("</head>", 1)[0]
+        self.assertIn("<!--UI-WAIT-->", head)
+        self.assertIn('<section id="overview" data-wait>', template)
+        self.assertIn("<footer data-wait>", template)
+        # the render's early return has to let go too, or an error would sit hidden
+        self.assertEqual(len(re.findall(r"pending\(false\);", template)), 2)
+        self.assertRegex(template, r"route\(\);\s*pending\(false\);\s*\}\s*boot\(\);")
+        index = (self.site / "index.html").read_text(encoding="utf-8")
+        self.assertIn(statusui.WAIT_HEAD, index.split("</head>", 1)[0])
+        self.assertNotIn("<!--UI-WAIT-->", index)
+
+    def test_station_pages_do_not_wait_on_anything(self):
+        page = (self.site / "s" / "athy.html").read_text(encoding="utf-8")
+        self.assertNotIn("data-wait", page.split("</style>", 1)[1])
+        self.assertNotIn(statusui.WAIT_HEAD, page)
 
     def test_index_html_is_the_template_with_its_canonical_filled(self):
         page = (self.site / "index.html").read_text(encoding="utf-8")

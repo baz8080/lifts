@@ -947,3 +947,83 @@ Rejected: widening the name column unconditionally (overflows every row between
 640px and 740px, where the layout is already at its tightest), and putting the
 tag immediately after the name with no widening (in a 170px column "Clontarf
 Road" would have been cut to eight characters to make room).
+
+## The overview waits for the app, and the payload is inline - 2026-10-02
+
+The template shipped an empty overview ("Loading…", no tabs, no list) above the
+static footer, and `boot()` filled all of it in one go, pushing the footer down
+by the whole list. The sibling app pages did the same: Cloudflare RUM put
+uisce's index at CLS 0.45 on `div.wrap`, and a lab audit of the four sites
+found the same shape here.
+
+Lab, Chromium on the harness's two profiles (412x915 phone at DPR 2.625 and
+1366x768 desktop), cache off, 1.6 Mbps and 150 ms RTT, 4x CPU. Nine runs for the
+index, three for the deep link, whose shifts did not vary between runs. Before
+is the same page on the new statusui pin without these changes:
+
+| | before | after |
+|---|---|---|
+| index CLS, phone | 0.417 | 0 |
+| index CLS, desktop | 0.143 | 0 |
+| `#station/PERSE` CLS, phone | 0.597 | 0 |
+| `#station/PERSE` CLS, desktop | 0.245 | 0 |
+| overview first painted, phone | about 520 ms | about 380 ms |
+| overview first painted, desktop | 450-540 ms | 390-420 ms |
+| LCP, phone (median) | 252 ms | 376 ms |
+| LCP, desktop (median) | 560 ms | 260 ms |
+| requests before the page is whole | 2 | 1 |
+
+The phone LCP went up because the old figure is the static footer paragraph,
+painted over an empty overview at about 250 ms and never beaten by anything
+smaller: the largest element on a page with nothing on it. After, the first paint
+is the header and the next is the overview itself, which is the number to read.
+The desktop median is a mix of runs that stop at the header and runs that reach
+the overview, so read the row above it. CLS is what this change is for.
+
+Gzipped, `index.html` plus `data.js` was 20.8 + 2.6 KB before the pin moved
+(63.1 + 9.0 KB raw), 13.9 + 2.6 KB after it, and is 16.2 KB in one file now
+(55.2 KB raw). The pin's comment stripping paid for the inlining.
+
+### The gate
+
+`<!--UI-WAIT-->` in the head, `data-wait` on `#overview` and `footer`, and
+`pending(false)` as the last line of `boot()` and in its no-data branch, all
+from statusui. The header is static and paints at once; the station view is
+`hidden` until `render()` fills it in the same task, so it needs no gate. The
+station pages have no app to wait for and stay at CLS 0.
+
+Checked by hand against the built page: JavaScript off (nothing is hidden, the
+page reads "Loading…" as before), opened from `file://`, a null payload (the
+error line shows at once), a `boot()` that throws (the page appears at `load`),
+the same with a subresource that never answers (the 8 s timer clears it, at 8.1
+s), a mangled `#station/%`, and the deep link.
+
+### The payload moved into `index.html`
+
+With the page held until the data is in, `data.js` became the critical path: it
+was requested at about 205 ms and finished at about 380 ms, a second round trip
+the first render waited for. It is 9.0 KB raw and 2.6 KB gzipped, so inlining it
+costs the page almost nothing. `render._inline_json` escapes `</` and `<!--`,
+the two sequences that end or reparse a `<script>`; both read back as the same
+string, and a test round-trips them. `size_report` counts `data.js` only where
+it exists, so the 500 KB budget now covers `index.html` alone, which carries
+what `data.js` did. It is the same constraint: the bytes before the reader has
+touched anything. No other page loaded `data.js`.
+
+Rejected, with the audit's prototypes measured on the same harness (5 runs,
+phone / desktop LCP, CLS 0 in all of them):
+
+- The gate with `data.js` left external at the end of the body: 544 / 556 ms.
+  It pays the second round trip with the page held.
+- The gate with `data.js` moved into the head: 468 / 488 ms, and first paint
+  moves from 240 to 460 ms because the head now blocks on the fetch.
+- Gate and inline payload without the comment stripping statusui does now:
+  428 / 444 ms, against 400 / 396 with it.
+- Rendering the overview into `index.html` at build: 296 / 308 ms, the best
+  case, for a 75.9 KB raw page and a second renderer in Python that has to
+  match `renderOverview` and its list, banner and tiles line for line. The gate
+  already takes CLS to 0. Worth a look if a real-user LCP says so.
+- Keeping `data.js` published beside the page for a reader whose cached
+  `index.html` still asks for it: a page cached for up to ten minutes would
+  show "Could not load the data. Try reloading." once, and reloading is the fix
+  it names. Not worth a file nothing else reads.

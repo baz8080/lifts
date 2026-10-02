@@ -10,6 +10,7 @@
 <meta property="og:type" content="website">
 <link rel="canonical" href="<!--CANONICAL-->">
 <link rel="alternate" type="application/atom+xml" title="<!--FEED-TITLE-->" href="feed.xml">
+<!--UI-WAIT-->
 <style>
 <!--UI-CSS-->
 <!--SITE-CSS-->
@@ -24,7 +25,7 @@
   </header>
 
   <main>
-    <section id="overview">
+    <section id="overview" data-wait>
       <div class="banner">
         <span id="natline">Loading…</span>
         <span class="meta" id="natmeta"></span>
@@ -46,7 +47,7 @@
     <section id="stationview" hidden></section>
   </main>
 
-  <footer>
+  <footer data-wait>
     <p><b>A notice going up is the only signal, and a notice coming down is the only other
     one.</b> The feed has no “fixed” field: an outage ends here when its notice is no longer
     listed, which usually means the lift is back.</p>
@@ -97,7 +98,7 @@
   </footer>
 </div>
 
-<script src="data.js"></script>
+<script>window.LIFT_DATA = <!--DATA-->;</script>
 <script>
 <!--UI-JS-->
 </script>
@@ -170,7 +171,7 @@ function bars(cells, esc, ym, tall) {
 }
 
 /* --- the grade ------------------------------------------------------------ */
-// The bands ship in data.js, from the one table in the model, so the chip on a
+// The bands ship in the payload, from the one table in the model, so the chip on a
 // row and the chip on that station's static page can never disagree.
 function gradeFor(avail) {
   if (avail == null) return null;
@@ -484,7 +485,7 @@ function render() {
 }
 
 /* --- search -------------------------------------------------------------- */
-/* Every station ever seen ships in data.js - it is a short list - so the
+/* Every station ever seen ships in the payload - it is a short list - so the
    shared search runs over an index built at boot instead of fetching one:
    each station keyed under its own name, which is what makes the match a
    substring match, and it finds a station that is quiet this month and so
@@ -522,6 +523,7 @@ function boot() {
   if (!D) {
     document.getElementById("natline").textContent =
       "Could not load the data for this page. Try reloading.";
+    pending(false);
     return;
   }
   curMonth = D.months[D.months.length - 1];
@@ -538,6 +540,7 @@ function boot() {
   bindMonthReveal();
   addEventListener("hashchange", route);
   route();
+  pending(false);
 }
 boot();
 </script>

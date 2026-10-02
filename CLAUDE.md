@@ -177,6 +177,7 @@ merged with `sort -u`.
 | A delays site is a fourth repo, `baz8080/rail-delays`, reading `lifts-data`: not a second collector and not a poll target, because there is one endpoint, one response, and every delay notice is already logged. It carries its own decisions, and the collector here is not duplicated, extended or touched | `notes/delays-site.md` |
 | The raw line is written before the database opens, and a database failure is exit 7. Replay orders each file by `fetched_at_utc`, so a `sort -u` merge is safe. The NTP wait is left for now | `notes/collector-review.md` |
 | The access golden file pins the inputs it derives from, not just the outputs, so it guards code and nothing else. Corpus movement no longer fails it in either direction, a refreshed snapshot no longer fails it by name, and it runs without a `lifts-data` checkout instead of skipping. Reading `messages.text_raw` as if it were append-only reddened `main` three times in five days: the raw logs are append-only, the derived row is overwritten when Irish Rail rewords a live notice | `notes/station-access.md` § The golden file pins its inputs |
+| The overview and footer are held out of the first paint until `boot()` has drawn the overview, and the payload is inline in `index.html`: there is no `data.js`, and the 500 KB budget covers the one file | `notes/site.md` § The overview waits for the app, and the payload is inline (2026-10-02) |
 
 Decisions go in `notes/`, dated, with the rejected alternatives and their
 numbers. Add a row here when one closes something off - this file carries

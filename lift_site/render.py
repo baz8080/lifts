@@ -1,11 +1,11 @@
 """Emit the static site.
 
-Same shape as the sibling esb site: `data.js` carries only what the front page
-needs - one row per station per month, with the day bar packed into a string -
-while the individual outages live in a per-station shard that is never fetched
-until a reader opens that station. The corpus is tiny today, but the site is
-meant to run for years, and the only way to keep the first download flat is to
-never put a per-outage record in `data.js`.
+Same shape as the sibling esb site: the payload inlined in `index.html` carries
+only what the front page needs - one row per station per month, with the day bar
+packed into a string - while the individual outages live in a per-station shard
+that is never fetched until a reader opens that station. The corpus is tiny
+today, but the site is meant to run for years, and the only way to keep the
+first download flat is to never put a per-outage record in the payload.
 """
 
 from __future__ import annotations
@@ -602,7 +602,7 @@ def _bars(cells, esc_cells, ym, partial, tall=False):
 
 # What each day-cell colour means. The swatches take their colours from the
 # same site.css rules that colour the cells, so the key cannot drift from the
-# bars; the spans ship in data.js too, so the app's legend cannot drift from
+# bars; the spans ship in the payload too, so the app's legend cannot drift from
 # the static pages'.
 LEGEND_ITEMS = (
     ("b0", "nothing listed"),
@@ -818,6 +818,12 @@ def station_page(code, data, by_month, listed_now=(), facts=None):
     )
 
 
+def _inline_json(data):
+    # In a <script>, `</script>` ends the element and `<!--` changes how the rest
+    # parses; both escapes read back as the same string.
+    return _dumps(data).replace("</", "<\\/").replace("<!--", "<\\u0021--")
+
+
 def _page(template, markers):
     """A template with the shared UI and this site's stylesheet inlined, then its markers."""
     markers = dict(markers, **{"SITE-CSS": SITE_CSS.read_text(encoding="utf-8")})
@@ -961,7 +967,7 @@ def write(site_dir, outages, now, until, facts=None):
     data, by_station, months = build(outages, now, until, facts)
 
     # Every station page, linked from one page rather than from all of them.
-    # The overview's own list is built by the app from data.js, so without this
+    # The overview's own list is built by the app from the payload, so without this
     # a reader with no JavaScript - and a crawler that does not run it - has no
     # path to any station page at all.
     (site_dir / "index.html").write_text(
@@ -972,12 +978,10 @@ def write(site_dir, outages, now, until, facts=None):
                 "FEED-TITLE": FEED_TITLE,
                 "START": data["start"],
                 "STATIONS": _station_links(data["stations"], data).replace('href="', 'href="s/'),
+                "DATA": _inline_json(data),
             },
         ),
         encoding="utf-8",
-    )
-    (site_dir / "data.js").write_text(
-        "window.LIFT_DATA = " + _dumps(data) + ";\n", encoding="utf-8"
     )
     records = case_records(by_station, facts)
     (site_dir / CSV_NAME).write_text(outages_csv(outages, records), encoding="utf-8")
