@@ -819,9 +819,8 @@ def station_page(code, data, by_month, listed_now=(), facts=None):
 
 
 def _inline_json(data):
-    # In a <script>, `</script>` ends the element and `<!--` changes how the rest
-    # parses; both escapes read back as the same string.
-    return _dumps(data).replace("</", "<\\/").replace("<!--", "<\\u0021--")
+    # "<" cannot end the script or open a comment early if it never appears
+    return _dumps(data).replace("<", "\\u003c")
 
 
 def _page(template, markers):
@@ -983,6 +982,8 @@ def write(site_dir, outages, now, until, facts=None):
         ),
         encoding="utf-8",
     )
+    # a data.js left by a build before the payload was inlined would be counted
+    (site_dir / "data.js").unlink(missing_ok=True)
     records = case_records(by_station, facts)
     (site_dir / CSV_NAME).write_text(outages_csv(outages, records), encoding="utf-8")
     # Capped; the whole record is in the CSV.

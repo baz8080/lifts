@@ -481,6 +481,9 @@ function render() {
   document.getElementById("overview").hidden = station;
   document.getElementById("stationview").hidden = !station;
   if (station) renderStation(); else renderOverview();
+  // before the reveal, which would measure a held strip as zero wide; and held while
+  // the station's shard is in flight, or its arrival pushes the footer down
+  pending(station && HSTATE[curStation] === "loading");
   revealMonthTab(document.getElementById(station ? "stationview" : "overview").querySelector(".months"));
 }
 
@@ -540,7 +543,6 @@ function boot() {
   bindMonthReveal();
   addEventListener("hashchange", route);
   route();
-  pending(false);
 }
 boot();
 </script>

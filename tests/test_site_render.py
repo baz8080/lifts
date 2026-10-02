@@ -275,7 +275,7 @@ class TestWrite(SiteModelCase):
     def test_the_index_is_the_one_page_that_links_every_station(self):
         """Without it a reader with no JavaScript, and a crawler that does not
         run it, has no path to a station page at all: the overview's own list is
-        built from data.js."""
+        built from the inline payload."""
         index = (self.site / "index.html").read_text(encoding="utf-8")
         for code, name in self.data["stations"].items():
             with self.subTest(code=code):
@@ -346,9 +346,11 @@ class TestWrite(SiteModelCase):
         self.assertIn("<!--UI-WAIT-->", head)
         self.assertIn('<section id="overview" data-wait>', template)
         self.assertIn("<footer data-wait>", template)
-        # the render's early return has to let go too, or an error would sit hidden
-        self.assertEqual(len(re.findall(r"pending\(false\);", template)), 2)
-        self.assertRegex(template, r"route\(\);\s*pending\(false\);\s*\}\s*boot\(\);")
+        # boot()'s no-data branch has to let go too, or the error would sit hidden
+        self.assertEqual(len(re.findall(r"pending\(false\);", template)), 1)
+        render_fn = template[template.index("function render() {"):]
+        hold = 'pending(station && HSTATE[curStation] === "loading");'
+        self.assertLess(render_fn.index(hold), render_fn.index("revealMonthTab("))
         index = (self.site / "index.html").read_text(encoding="utf-8")
         self.assertIn(statusui.WAIT_HEAD, index.split("</head>", 1)[0])
         self.assertNotIn("<!--UI-WAIT-->", index)

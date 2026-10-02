@@ -100,7 +100,7 @@ top of that would be claiming more than is known.
 So the card carries a caveat in the site's own words: worked out from Irish
 Rail's page, written by hand, wrong before, a careful reading rather than a
 survey, and blind to whatever the page leaves out. The app shows verdicts
-without that card, so the caveat travels in `data.js` and renders there too.
+without that card, so the caveat travels in the payload `index.html` inlines and renders there too.
 
 And it asks. A static site has no feedback channel, so the caveat ends in a
 prefilled GitHub issue link: "Know this station? Tell us what this gets wrong."

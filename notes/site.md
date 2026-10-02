@@ -1025,5 +1025,13 @@ phone / desktop LCP, CLS 0 in all of them):
   already takes CLS to 0. Worth a look if a real-user LCP says so.
 - Keeping `data.js` published beside the page for a reader whose cached
   `index.html` still asks for it: a page cached for up to ten minutes would
-  show "Could not load the data. Try reloading." once, and reloading is the fix
+  show "Could not load the data for this page. Try reloading." once, and reloading is the fix
   it names. Not worth a file nothing else reads.
+
+### Amended after review, 2026-10-02
+
+- `pending()` moved from the end of `boot()` into `render()`, ahead of `revealMonthTab()`: called after it, the strip was measured while still held, at zero width, so once the months overflow a phone's strip the current month would have stayed off to the right. uisce and esb hit the same order.
+- A `#station/<CODE>` deep link stays held while that station's shard is in flight, as uisce's and esb's views do: released at the first render, the footer showed under the "Loading..." cards and was pushed down when the shard landed. `#station/PERSE`, the one link measured, has its footer below the fold, which is why the first measurement did not see it.
+- `write()` deletes a `data.js` left by an earlier build; `size_report` counts one whenever it exists.
+- The payload escape is now `<` as `\u003c`, the one rule uisce and esb ship, rather than escaping `</` and `<!--` separately.
+
